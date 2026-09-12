@@ -72,9 +72,10 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       onMouseUp={handleDragEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleDragEnd}
-      className={`relative w-full min-h-[100dvh] flex flex-col bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
+      className={`fixed inset-0 flex flex-col bg-[#121212] text-white overflow-y-auto overflow-x-hidden select-none transition-all duration-500 ease-in-out ${
         isLeaving ? "opacity-0 -translate-y-6 scale-95" : "opacity-100 translate-y-0 scale-100"
       }`}
+      style={{ zIndex: 50 }}
     >
       {/* Background decorations — absolute, no padding interference */}
       <svg
