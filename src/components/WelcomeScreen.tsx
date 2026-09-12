@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import Logo from "@/assets/logo.png";
+import Logo from "@/assets/logo-giallo.png";
 
 interface WelcomeScreenProps {
   onStart: () => void;

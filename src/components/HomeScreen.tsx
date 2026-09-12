@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
+import Logo from "@/assets/logo.png";
 import {
   Plus,
   ArrowUpRight,
@@ -64,9 +66,16 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
         </div>
         <button
           onClick={() => onNavigate("profilo")}
-          className="relative h-10 w-10 rounded-full bg-[#0B0B0B] flex items-center justify-center text-[#FDC909] font-extrabold text-sm shadow-md hover:scale-105 transition-transform"
+          className="relative h-10 w-10 rounded-full bg-[#0B0B0B] flex items-center justify-center shadow-md hover:scale-105 transition-transform overflow-hidden p-1.5"
         >
-          G
+          <Image
+            src={Logo}
+            alt="ZERO"
+            width={40}
+            height={40}
+            className="h-full w-full object-contain"
+            priority
+          />
           <div className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-[#FDC909] ring-2 ring-[#F7F7F5]" />
         </button>
       </div>
