@@ -12,9 +12,28 @@ import { StatisticheScreen } from "@/components/StatisticheScreen";
 import { ProfiloScreen } from "@/components/ProfiloScreen";
 import { AddSpesaModal } from "@/components/AddSpesaModal";
 import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
+import { ThemeSync } from "@/components/ThemeSync";
 import { ArrowRight, TrendingUp, Shield, Zap, BarChart3, CreditCard, Target } from "lucide-react";
 
 type ExtendedTab = NavTab | "welcome";
+
+/**
+ * Global background map.
+ * ThemeSync uses this to sync html/body/theme-color with each screen,
+ * so the status bar area is always the same color as the active screen.
+ */
+const TAB_BACKGROUNDS: Record<ExtendedTab, string> = {
+  welcome:      "#121212",
+  home:         "#F8F8F5",
+  spese:        "#F8F8F5",
+  analisi:      "#F8F8F5",
+  carte:        "#F8F8F5",
+  obiettivi:    "#F8F8F5",
+  abbonamenti:  "#F8F8F5",
+  statistiche:  "#F8F8F5",
+  profilo:      "#F8F8F5",
+};
+
 
 // ─── Desktop Landing Page ───────────────────────────────────────────────────
 function DesktopLanding({ onLaunchApp }: { onLaunchApp: () => void }) {
@@ -295,40 +314,51 @@ function MobileApp() {
     }
   };
 
-  const bgColor = activeTab === "welcome" ? "#121212" : "#F8F8F5";
+  const bgColor = TAB_BACKGROUNDS[activeTab];
 
   return (
-    <main
-      className="w-full min-h-[100dvh] flex flex-col selection:bg-[#F5E050]/50 transition-colors duration-500"
-      style={{ backgroundColor: bgColor }}
-    >
-      <div
-        className="flex-1 flex flex-col w-full transition-colors duration-500"
+    <>
+      {/*
+        ThemeSync — the single global fix.
+        Syncs html background, body background, and <meta name="theme-color"> with
+        the active screen's color so the status bar area is never a different shade.
+        No individual screen needs to be touched.
+      */}
+      <ThemeSync screenBackground={bgColor} />
+
+      <main
+        className="w-full min-h-[100dvh] flex flex-col selection:bg-[#F5E050]/50 transition-colors duration-500"
         style={{ backgroundColor: bgColor }}
       >
         <div
-          key={activeTab}
-          className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in slide-in-from-bottom-2 duration-500"
+          className="flex-1 flex flex-col w-full transition-colors duration-500"
+          style={{ backgroundColor: bgColor }}
         >
-          {renderActiveScreen()}
+          <div
+            key={activeTab}
+            className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in slide-in-from-bottom-2 duration-500"
+          >
+            {renderActiveScreen()}
+          </div>
+
+          {activeTab !== "welcome" && (
+            <BottomNavBar
+              currentTab={activeTab as NavTab}
+              onSelectTab={(tab) => setActiveTab(tab)}
+            />
+          )}
         </div>
 
-        {activeTab !== "welcome" && (
-          <BottomNavBar
-            currentTab={activeTab as NavTab}
-            onSelectTab={(tab) => setActiveTab(tab)}
-          />
-        )}
-      </div>
-
-      <AddSpesaModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleSaveSpesa}
-      />
-    </main>
+        <AddSpesaModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={handleSaveSpesa}
+        />
+      </main>
+    </>
   );
 }
+
 
 // ─── Root: responsive switch ─────────────────────────────────────────────────
 export default function Home() {

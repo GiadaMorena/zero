@@ -13,18 +13,18 @@ export const metadata: Metadata = {
   description: "Zero: Gestisci spese, abbonamenti, carte e obiettivi finanziari con chiarezza e stile.",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "black-translucent", // transparent: the app bg shows through
     title: "Zero",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#121212",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  // themeColor is managed dynamically by ThemeSync to match each screen's background
 };
 
 export default function RootLayout({
