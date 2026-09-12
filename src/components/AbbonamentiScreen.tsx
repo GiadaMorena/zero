@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { Plus, Bell, ChevronRight, Film, Music, Cloud, Search, Brain, Phone } from "lucide-react";
 
@@ -19,14 +21,23 @@ export function AbbonamentiScreen() {
     );
   };
 
+  const filteredSubs = subscriptions.filter((s) => {
+    if (filter === "Attivi") return s.active;
+    if (filter === "In scadenza") return s.active && s.id === "1";
+    return true;
+  });
+
   return (
-    <div className="flex flex-col gap-5 p-5 pt-safe pb-24 bg-[#F8F8F5] select-none">
+    <div
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 1.25rem)" }}
+      className="flex flex-col gap-4 px-4 pb-32 bg-[#F8F8F5] select-none min-h-screen max-w-md mx-auto"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#121212]">
+      <div className="flex items-center justify-between pt-1 px-1">
+        <h1 className="text-2xl font-black tracking-tight text-[#121212]">
           Abbonamenti
         </h1>
-        <button className="p-2.5 rounded-full bg-[#121212] text-white hover:bg-black shadow-md transition-transform">
+        <button className="h-9 w-9 rounded-full bg-[#121212] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform">
           <Plus className="h-4 w-4 stroke-[2.5]" />
         </button>
       </div>
@@ -39,7 +50,7 @@ export function AbbonamentiScreen() {
             onClick={() => setFilter(f)}
             className={`py-2 rounded-xl text-xs font-bold transition-all ${
               filter === f
-                ? "bg-[#F5E050] text-[#121212] shadow-sm"
+                ? "bg-[#F5E050] text-[#121212] shadow-xs"
                 : "text-[#73736E] hover:text-[#121212]"
             }`}
           >
@@ -50,21 +61,21 @@ export function AbbonamentiScreen() {
 
       {/* Subscription List */}
       <div className="flex flex-col gap-2.5">
-        {subscriptions.map((sub) => {
+        {filteredSubs.map((sub) => {
           const Icon = sub.icon;
           return (
             <div
               key={sub.id}
-              className="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#EBEBE5] shadow-sm hover:border-[#F5E050]/60 transition-all"
+              className="flex items-center justify-between p-3.5 rounded-[22px] bg-white border border-[#EBEBE5] shadow-xs hover:border-[#121212]/30 transition-all"
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`h-10 w-10 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${sub.color}`}
+                  className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${sub.color}`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4.5 w-4.5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-[#121212] leading-tight">
+                  <h4 className="text-xs font-extrabold text-[#121212] leading-tight">
                     {sub.name}
                   </h4>
                   <p className="text-[11px] text-[#73736E] font-medium mt-0.5">
@@ -76,7 +87,7 @@ export function AbbonamentiScreen() {
               {/* Toggle Switch */}
               <button
                 onClick={() => toggleSub(sub.id)}
-                className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+                className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none shrink-0 ${
                   sub.active ? "bg-[#121212]" : "bg-[#EBEBE5]"
                 }`}
               >
@@ -92,19 +103,21 @@ export function AbbonamentiScreen() {
       </div>
 
       {/* Reminder Banner */}
-      <div className="rounded-[24px] bg-[#F8F8F5] border border-[#EBEBE5] p-4 flex items-center justify-between">
+      <div className="rounded-[20px] bg-white border border-[#EBEBE5] p-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-[#121212] text-[#F5E050] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-full bg-[#121212] text-[#F5E050] flex items-center justify-center shrink-0">
             <Bell className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-xs font-bold text-[#121212]">
+            <p className="text-xs font-bold text-[#121212] leading-tight">
               Tieni tutto sotto controllo.
             </p>
-            <p className="text-[11px] text-[#73736E]">Niente sorprese in estratto conto.</p>
+            <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
+              Niente sorprese in estratto conto.
+            </p>
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-[#73736E]" />
+        <ChevronRight className="h-4 w-4 text-[#A3A39E]" />
       </div>
     </div>
   );

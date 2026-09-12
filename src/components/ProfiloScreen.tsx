@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { User, CreditCard, Download, Bell, Shield, HelpCircle, ChevronRight, Settings, Sparkles } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
@@ -8,23 +10,26 @@ interface ProfiloScreenProps {
 
 export function ProfiloScreen({ onNavigate }: ProfiloScreenProps) {
   const menuItems = [
-    { title: "Profilo", icon: User },
-    { title: "Rivedi schermata iniziale", icon: Sparkles, action: () => onNavigate("welcome") },
+    { title: "Profilo personale", icon: User },
     { title: "Metodi di pagamento", icon: CreditCard, action: () => onNavigate("carte") },
+    { title: "Rivedi benvenuto", icon: Sparkles, action: () => onNavigate("welcome") },
     { title: "Esporta dati", icon: Download },
     { title: "Notifiche", icon: Bell },
     { title: "Sicurezza", icon: Shield },
-    { title: "Aiuto e feedback", icon: HelpCircle },
+    { title: "Aiuto e supporto", icon: HelpCircle },
   ];
 
   return (
-    <div className="flex flex-col gap-5 p-5 pt-safe pb-24 bg-[#F8F8F5] select-none">
+    <div
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 1.25rem)" }}
+      className="flex flex-col gap-4 px-4 pb-32 bg-[#F8F8F5] select-none min-h-screen max-w-md mx-auto"
+    >
       {/* Header with Logo & Tagline */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-1 px-1">
         <div className="flex items-center gap-3">
           <BrandLogo size="md" />
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-[#121212]">
+            <h1 className="text-xl font-black tracking-tight text-[#121212]">
               Zero
             </h1>
             <p className="text-[11px] text-[#73736E] font-medium">
@@ -32,20 +37,20 @@ export function ProfiloScreen({ onNavigate }: ProfiloScreenProps) {
             </p>
           </div>
         </div>
-        <button className="p-2.5 rounded-full bg-white border border-[#EBEBE5] text-[#121212] hover:bg-[#F8F8F5] shadow-sm transition-colors">
+        <button className="h-9 w-9 rounded-full bg-white border border-[#EBEBE5] text-[#121212] flex items-center justify-center hover:bg-[#F8F8F5] shadow-xs transition-colors">
           <Settings className="h-4 w-4" />
         </button>
       </div>
 
       {/* Menu List */}
-      <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-3 shadow-sm flex flex-col gap-1">
+      <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-2.5 shadow-xs flex flex-col gap-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
             <button
               key={item.title}
               onClick={item.action}
-              className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-[#F8F8F5] transition-colors text-left group"
+              className="flex items-center justify-between p-3 rounded-2xl hover:bg-[#F8F8F5] transition-colors text-left group"
             >
               <div className="flex items-center gap-3">
                 <Icon className="h-4 w-4 text-[#73736E] group-hover:text-[#121212] transition-colors" />
@@ -60,12 +65,12 @@ export function ProfiloScreen({ onNavigate }: ProfiloScreenProps) {
       </div>
 
       {/* Inspirational Bottom Banner Card */}
-      <div className="relative overflow-hidden rounded-[28px] bg-[#121212] text-white p-6 shadow-xl border border-[#262626]">
+      <div className="relative overflow-hidden rounded-[24px] bg-[#121212] text-white p-5 shadow-xl border border-[#262626]">
         {/* Yellow ambient glow gradient */}
-        <div className="absolute -bottom-10 -left-10 w-44 h-44 rounded-full bg-[#F5E050]/20 blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-[#F5E050]/20 blur-2xl pointer-events-none" />
 
         <div className="relative z-10 max-w-[220px]">
-          <p className="text-sm font-bold text-white leading-relaxed">
+          <p className="text-xs font-bold text-white leading-relaxed">
             Le scelte di oggi costruiscono la libertà di domani.
           </p>
         </div>

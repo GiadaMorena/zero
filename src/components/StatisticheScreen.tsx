@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { ChevronDown, Home, Utensils, Fuel, ShoppingBag } from "lucide-react";
 
@@ -24,10 +26,13 @@ export function StatisticheScreen() {
   ];
 
   return (
-    <div className="flex flex-col gap-5 p-5 pt-safe pb-24 bg-[#F8F8F5] select-none">
+    <div
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 1.25rem)" }}
+      className="flex flex-col gap-4 px-4 pb-32 bg-[#F8F8F5] select-none min-h-screen max-w-md mx-auto"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#121212]">
+      <div className="flex items-center justify-between pt-1 px-1">
+        <h1 className="text-2xl font-black tracking-tight text-[#121212]">
           Statistiche
         </h1>
       </div>
@@ -40,7 +45,7 @@ export function StatisticheScreen() {
             onClick={() => setTab(t)}
             className={`py-2 rounded-xl text-xs font-bold transition-all ${
               tab === t
-                ? "bg-[#F5E050] text-[#121212] shadow-sm"
+                ? "bg-[#F5E050] text-[#121212] shadow-xs"
                 : "text-[#73736E]"
             }`}
           >
@@ -52,10 +57,10 @@ export function StatisticheScreen() {
       {/* Amount Display & Month Dropdown */}
       <div className="flex items-end justify-between px-1">
         <div>
-          <span className="text-3xl font-extrabold tracking-tight text-[#121212]">
-            € 554,20
+          <span className="text-3xl font-black tracking-tight text-[#121212]">
+            554,20 €
           </span>
-          <div className="flex items-center gap-1 text-xs text-[#73736E] font-medium mt-1">
+          <div className="flex items-center gap-1 text-xs text-[#73736E] font-medium mt-0.5">
             <span>Settembre 2026</span>
             <ChevronDown className="h-3.5 w-3.5" />
           </div>
@@ -63,8 +68,8 @@ export function StatisticheScreen() {
       </div>
 
       {/* Monthly Bar Chart Container */}
-      <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-5 shadow-sm">
-        <div className="flex items-end justify-between h-44 gap-1.5 pt-4">
+      <div className="rounded-[26px] bg-white border border-[#EBEBE5] p-5 shadow-xs">
+        <div className="flex items-end justify-between h-40 gap-1.5 pt-4">
           {monthlyBars.map((b) => (
             <div key={b.month} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
               <div className="w-full bg-[#F8F8F5] rounded-t-full h-full flex items-end">
@@ -84,8 +89,8 @@ export function StatisticheScreen() {
       </div>
 
       {/* Category Breakdown */}
-      <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-5 shadow-sm flex flex-col gap-3">
-        <h3 className="text-xs font-bold text-[#73736E] uppercase tracking-wider mb-1">
+      <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-4 shadow-xs flex flex-col gap-2.5">
+        <h3 className="text-[10px] font-bold text-[#73736E] uppercase tracking-wider mb-1">
           Categorie
         </h3>
         {breakdown.map((item) => {
@@ -93,13 +98,13 @@ export function StatisticheScreen() {
           return (
             <div key={item.name} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212]">
+                <div className="h-8 w-8 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212]">
                   <Icon className="h-4 w-4" />
                 </div>
                 <span className="text-xs font-bold text-[#121212]">{item.name}</span>
               </div>
               <div className="text-right">
-                <span className="text-xs font-extrabold text-[#121212] block">
+                <span className="text-xs font-black text-[#121212] block">
                   {item.amount}
                 </span>
                 <span className="text-[10px] text-[#73736E] font-semibold">
