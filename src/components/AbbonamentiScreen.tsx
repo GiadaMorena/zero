@@ -4,6 +4,35 @@ import React, { useState } from "react";
 import { Plus, Bell, ChevronRight, Film, Music, Cloud, Search, Brain, Phone, X } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
+export function SubscriptionToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange();
+      }}
+      className={`relative inline-flex h-[22px] w-[38px] shrink-0 cursor-pointer rounded-full p-[2px] border border-transparent transition-colors duration-200 ease-in-out focus:outline-none select-none ${
+        checked ? "bg-[#F5E050]" : "bg-[#E5E5E0]"
+      }`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-[18px] w-[18px] rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out transform ${
+          checked ? "translate-x-[16px]" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+}
+
 export function AbbonamentiScreen() {
   const { subscriptions, toggleSubscription, addSubscription, totalActiveSubscriptionsCost } = useApp();
   const [filter, setFilter] = useState<"Tutti" | "Attivi" | "In scadenza">("Attivi");
@@ -106,19 +135,11 @@ export function AbbonamentiScreen() {
               </div>
             </div>
 
-            {/* Toggle Switch */}
-            <button
-              onClick={() => toggleSubscription(sub.id)}
-              className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none shrink-0 ${
-                sub.active ? "bg-[#121212]" : "bg-[#EBEBE5]"
-              }`}
-            >
-              <span
-                className={`inline-block w-4 h-4 rounded-full bg-white transition-transform duration-200 shadow-md transform ${
-                  sub.active ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
+            {/* Custom Sleek ZERO Subscription Toggle */}
+            <SubscriptionToggle
+              checked={sub.active}
+              onChange={() => toggleSubscription(sub.id)}
+            />
           </div>
         ))}
 

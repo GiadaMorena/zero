@@ -26,7 +26,7 @@ import { ReceiptScanModal } from "./ReceiptScanModal";
 import { AltroMenuSheet } from "./AltroMenuSheet";
 
 interface HomeScreenProps {
-  onOpenAddModal: () => void;
+  onOpenAddModal: (type?: "expense" | "income") => void;
   onNavigate: (tab: any) => void;
 }
 
@@ -106,7 +106,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
       <div className="grid grid-cols-4 gap-2.5">
         {/* Card 1: Aggiungi Spesa */}
         <button
-          onClick={onOpenAddModal}
+          onClick={() => onOpenAddModal("expense")}
           className="flex flex-col items-center justify-center p-3 rounded-[20px] bg-[#FEF9C3] border border-[#F5E050]/80 shadow-xs hover:scale-105 active:scale-95 transition-all group"
         >
           <div className="h-9 w-9 rounded-full bg-[#F5E050] text-[#121212] flex items-center justify-center mb-1.5 shadow-xs">
@@ -119,7 +119,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
 
         {/* Card 2: Nuova Entrata */}
         <button
-          onClick={onOpenAddModal}
+          onClick={() => onOpenAddModal("income")}
           className="flex flex-col items-center justify-center p-3 rounded-[20px] bg-white border border-[#EBEBE5] shadow-xs hover:border-[#121212] active:scale-95 transition-all group"
         >
           <div className="h-9 w-9 rounded-full bg-[#F8F8F5] text-[#121212] flex items-center justify-center mb-1.5 border border-[#EBEBE5]">

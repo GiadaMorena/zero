@@ -1,7 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Home, Utensils, Fuel, ShoppingBag, Smile, Heart, RefreshCw, MoreHorizontal, Calendar, CreditCard } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  Home,
+  Utensils,
+  Fuel,
+  ShoppingBag,
+  Smile,
+  Heart,
+  RefreshCw,
+  MoreHorizontal,
+  DollarSign,
+  TrendingUp,
+  CreditCard,
+  Briefcase,
+  Gift,
+  Award,
+} from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 interface AddSpesaModalProps {
@@ -16,13 +32,27 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
   const [title, setTitle] = useState<string>("");
   const [amount, setAmount] = useState<string>("0");
   const [selectedCategory, setSelectedCategory] = useState<string>("Cibo");
-  const [selectedCardId, setSelectedCardId] = useState<string>(activeCard.id);
+  const [selectedCardId, setSelectedCardId] = useState<string>(activeCard?.id || "card-zero");
   const [note, setNote] = useState<string>("");
   const [date, setDate] = useState<string>("Oggi");
 
+  // Reset & sync state whenever the modal opens or defaultType changes
+  useEffect(() => {
+    if (isOpen) {
+      setType(defaultType);
+      setTitle("");
+      setAmount("0");
+      setSelectedCategory(defaultType === "income" ? "Entrata" : "Cibo");
+      setNote("");
+      if (activeCard?.id) {
+        setSelectedCardId(activeCard.id);
+      }
+    }
+  }, [isOpen, defaultType, activeCard?.id]);
+
   if (!isOpen) return null;
 
-  const categories = [
+  const expenseCategories = [
     { name: "Casa", icon: Home },
     { name: "Cibo", icon: Utensils },
     { name: "Trasporti", icon: Fuel },
@@ -32,6 +62,17 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
     { name: "Abbonamenti", icon: RefreshCw },
     { name: "Altro", icon: MoreHorizontal },
   ];
+
+  const incomeCategories = [
+    { name: "Entrata", icon: DollarSign },
+    { name: "Stipendio", icon: Briefcase },
+    { name: "Rimborso", icon: TrendingUp },
+    { name: "Regalo", icon: Gift },
+    { name: "Bonus", icon: Award },
+    { name: "Altro", icon: MoreHorizontal },
+  ];
+
+  const currentCategories = type === "expense" ? expenseCategories : incomeCategories;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +88,6 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
         cardId: selectedCardId,
       });
     }
-    // Reset and close
     setTitle("");
     setAmount("0");
     onClose();
@@ -66,9 +106,11 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
           </button>
           <div className="text-center">
             <h2 className="text-sm font-black text-[#121212] tracking-tight">
-              {type === "expense" ? "Aggiungi Spesa" : "Nuova Entrata"}
+              {type === "expense" ? "Aggiungi spesa" : "Nuova entrata"}
             </h2>
-            <p className="text-[10px] text-[#73736E] font-medium">Aggiorna il tuo saldo in tempo reale</p>
+            <p className="text-[10px] text-[#73736E] font-medium">
+              {type === "expense" ? "Registra un'uscita nel tuo bilancio" : "Registra un accredito nel tuo bilancio"}
+            </p>
           </div>
           <div className="w-8" />
         </div>
@@ -77,25 +119,31 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
         <div className="grid grid-cols-2 gap-2 bg-[#EBEBE5]/60 p-1.5 rounded-2xl mb-4">
           <button
             type="button"
-            onClick={() => setType("expense")}
+            onClick={() => {
+              setType("expense");
+              setSelectedCategory("Cibo");
+            }}
             className={`py-2 rounded-xl text-xs font-bold transition-all ${
               type === "expense"
                 ? "bg-[#121212] text-white shadow-xs"
-                : "text-[#73736E]"
+                : "text-[#73736E] hover:text-[#121212]"
             }`}
           >
-            − Uscite / Spesa
+            − Uscita / Spesa
           </button>
           <button
             type="button"
-            onClick={() => setType("income")}
+            onClick={() => {
+              setType("income");
+              setSelectedCategory("Entrata");
+            }}
             className={`py-2 rounded-xl text-xs font-bold transition-all ${
               type === "income"
-                ? "bg-[#F5E050] text-[#121212] shadow-xs"
-                : "text-[#73736E]"
+                ? "bg-[#F5E050] text-[#121212] font-black shadow-xs"
+                : "text-[#73736E] hover:text-[#121212]"
             }`}
           >
-            + Entrata / Accredito
+            + Nuova Entrata
           </button>
         </div>
 
@@ -104,13 +152,18 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
           <label className="text-[10px] font-bold text-[#73736E] uppercase tracking-wider mb-1">
             Importo in Euro (€)
           </label>
-          <input
-            type="text"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-            className="w-full text-center text-3xl font-black tracking-tight text-[#121212] focus:outline-none bg-transparent"
-          />
+          <div className="flex items-center justify-center gap-1">
+            <span className={`text-2xl font-black ${type === "income" ? "text-[#166534]" : "text-[#121212]"}`}>
+              {type === "income" ? "+" : "-"}
+            </span>
+            <input
+              type="text"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              className="w-40 text-center text-3xl font-black tracking-tight text-[#121212] focus:outline-none bg-transparent"
+            />
+          </div>
         </div>
 
         {/* Title Input */}
@@ -120,7 +173,7 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
           </label>
           <input
             type="text"
-            placeholder={type === "expense" ? "Es. Esselunga, Bar, Amazon..." : "Es. Stipendio, Rimborso..."}
+            placeholder={type === "expense" ? "Es. Esselunga, Bar, Amazon..." : "Es. Stipendio, Rimborso, Transfer..."}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full p-3 rounded-2xl bg-white border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
@@ -151,13 +204,13 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
           </div>
         </div>
 
-        {/* Category Grid Selection */}
+        {/* Category Selection */}
         <div className="mb-4">
           <label className="block text-xs font-bold text-[#73736E] mb-2">
             Categoria
           </label>
-          <div className="grid grid-cols-4 gap-2">
-            {categories.map((cat) => {
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {currentCategories.map((cat) => {
               const Icon = cat.icon;
               const isSelected = selectedCategory === cat.name;
               return (
@@ -167,7 +220,9 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
                   onClick={() => setSelectedCategory(cat.name)}
                   className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border transition-all ${
                     isSelected
-                      ? "bg-[#F5E050] border-[#F5E050] text-[#121212] font-bold shadow-xs scale-105"
+                      ? type === "income"
+                        ? "bg-[#F5E050] border-[#F5E050] text-[#121212] font-black shadow-xs scale-105"
+                        : "bg-[#121212] border-[#121212] text-white font-bold shadow-xs scale-105"
                       : "bg-white border-[#EBEBE5] text-[#73736E] hover:border-[#121212]"
                   }`}
                 >
@@ -196,9 +251,13 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
         {/* Save Button */}
         <button
           onClick={handleSave}
-          className="w-full py-3.5 rounded-full bg-[#121212] text-white font-black text-sm shadow-xl hover:bg-black transition-all active:scale-[0.98]"
+          className={`w-full py-3.5 rounded-full font-black text-sm shadow-xl transition-all active:scale-[0.98] ${
+            type === "income"
+              ? "bg-[#F5E050] text-[#121212] hover:bg-[#EAD900]"
+              : "bg-[#121212] text-white hover:bg-black"
+          }`}
         >
-          Salva Transazione
+          {type === "expense" ? "Salva Spesa" : "Salva Entrata"}
         </button>
       </div>
     </div>

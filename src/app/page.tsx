@@ -39,6 +39,12 @@ const TAB_BACKGROUNDS: Record<ExtendedTab, string> = {
 function MobileApp() {
   const [activeTab, setActiveTab] = useState<ExtendedTab>("welcome");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addModalType, setAddModalType] = useState<"expense" | "income">("expense");
+
+  const handleOpenAddModal = (type: "expense" | "income" = "expense") => {
+    setAddModalType(type);
+    setIsAddModalOpen(true);
+  };
 
   const renderActiveScreen = () => {
     switch (activeTab) {
@@ -47,12 +53,12 @@ function MobileApp() {
       case "home":
         return (
           <HomeScreen
-            onOpenAddModal={() => setIsAddModalOpen(true)}
+            onOpenAddModal={handleOpenAddModal}
             onNavigate={(tab) => setActiveTab(tab)}
           />
         );
       case "spese":
-        return <SpeseScreen onOpenAddModal={() => setIsAddModalOpen(true)} />;
+        return <SpeseScreen onOpenAddModal={(type) => handleOpenAddModal(type || "expense")} />;
       case "analisi":
         return <AnalisiScreen />;
       case "carte":
@@ -68,7 +74,7 @@ function MobileApp() {
       default:
         return (
           <HomeScreen
-            onOpenAddModal={() => setIsAddModalOpen(true)}
+            onOpenAddModal={handleOpenAddModal}
             onNavigate={(tab) => setActiveTab(tab)}
           />
         );
@@ -100,7 +106,7 @@ function MobileApp() {
             <BottomNavBar
               currentTab={activeTab as NavTab}
               onSelectTab={(tab) => setActiveTab(tab)}
-              onOpenScan={() => setIsAddModalOpen(true)}
+              onOpenScan={() => handleOpenAddModal("expense")}
             />
           )}
         </div>
@@ -108,6 +114,7 @@ function MobileApp() {
         <AddSpesaModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
+          defaultType={addModalType}
         />
       </main>
     </>

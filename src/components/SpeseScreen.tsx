@@ -5,7 +5,7 @@ import { Search, Plus, ShoppingCart, Music, Utensils, Fuel, Film, ShoppingBag, P
 import { useApp } from "@/context/AppContext";
 
 interface SpeseScreenProps {
-  onOpenAddModal: () => void;
+  onOpenAddModal: (type?: "expense" | "income") => void;
 }
 
 export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
@@ -47,7 +47,7 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
             <Search className="h-4 w-4" />
           </button>
           <button
-            onClick={onOpenAddModal}
+            onClick={() => onOpenAddModal("expense")}
             className="h-9 w-9 rounded-full bg-[#121212] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
