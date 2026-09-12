@@ -107,10 +107,14 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
       {/* Center Floating Clean Minimal Card */}
       <div className="relative my-auto py-8 z-10 flex flex-col items-center justify-center">
-        <div className="relative w-full max-w-[280px] h-44 rounded-2xl bg-gradient-to-tr from-[#1A1A1A] via-[#2A271B] to-[#3E3814] border border-[#F5E050]/30 p-5 shadow-2xl flex flex-col justify-between animate-float-card overflow-hidden">
-          {/* Internal ambient glow */}
-          <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-[#F5E050]/20 blur-xl pointer-events-none" />
-
+        <div
+          style={{
+            background:
+              "radial-gradient(circle at 85% 15%, rgba(245, 224, 80, 0.35) 0%, rgba(0,0,0,0) 60%), linear-gradient(135deg, #1C1C1C 0%, #2A261B 50%, #3D3712 100%)",
+            WebkitMaskImage: "-webkit-radial-gradient(white, black)",
+          }}
+          className="relative w-full max-w-[280px] h-44 rounded-2xl border border-[#F5E050]/40 p-5 shadow-[0_15px_35px_rgba(0,0,0,0.5)] flex flex-col justify-between animate-float-card overflow-hidden"
+        >
           {/* Top Row: Brand & VISA */}
           <div className="flex items-center justify-between z-10">
             <span className="font-extrabold text-xs tracking-wider text-white/90">ZERO</span>
