@@ -74,8 +74,16 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen w-full flex justify-center bg-[#F8F8F5] selection:bg-[#F5E050]/50">
-      <div className="w-full max-w-md min-h-screen bg-[#F8F8F5] flex flex-col justify-between relative">
+    <main
+      className={`min-h-screen w-full flex justify-center selection:bg-[#F5E050]/50 transition-colors duration-500 ${
+        activeTab === "welcome" ? "bg-[#121212]" : "bg-[#F8F8F5]"
+      }`}
+    >
+      <div
+        className={`w-full max-w-md min-h-screen flex flex-col justify-between relative transition-colors duration-500 ${
+          activeTab === "welcome" ? "bg-[#121212]" : "bg-[#F8F8F5]"
+        }`}
+      >
         <div key={activeTab} className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in slide-in-from-bottom-2 duration-500">
           {renderActiveScreen()}
         </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -13,6 +13,14 @@ export const metadata: Metadata = {
   description: "Zero: Gestisci spese, abbonamenti, carte e obiettivi finanziari con chiarezza e stile.",
 };
 
+export const viewport: Viewport = {
+  themeColor: "#121212",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" className={plusJakarta.variable}>
-      <body className="font-sans antialiased bg-[#F8F8F5] text-[#121212] selection:bg-[#F5E050]/40">
+      <body className="font-sans antialiased m-0 p-0 selection:bg-[#F5E050]/40">
         {children}
       </body>
     </html>
