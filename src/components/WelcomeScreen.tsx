@@ -95,7 +95,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#EAB308]/15 blur-3xl pointer-events-none" />
 
       {/* Clean Top Header Tag (Below Dynamic Island) */}
-      <div className="pt-1 z-10 flex items-center justify-between">
+      <div className="pt-3 z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" />
           <span className="text-sm font-extrabold tracking-tight">Zero</span>
