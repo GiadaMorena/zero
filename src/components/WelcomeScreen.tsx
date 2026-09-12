@@ -72,7 +72,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       onMouseUp={handleDragEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleDragEnd}
-      className={`relative min-h-[780px] h-full flex flex-col justify-between p-7 bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
+      className={`relative min-h-screen h-full flex flex-col justify-between p-5 pt-3 pb-5 bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
         isLeaving ? "opacity-0 -translate-y-6 scale-95" : "opacity-100 translate-y-0 scale-100"
       }`}
     >
