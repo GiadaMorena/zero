@@ -25,9 +25,8 @@ export function SubscriptionToggle({
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-[18px] w-[18px] rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out transform ${
-          checked ? "translate-x-[16px]" : "translate-x-0"
-        }`}
+        style={{ transform: checked ? "translateX(16px)" : "translateX(0px)" }}
+        className="pointer-events-none inline-block h-[18px] w-[18px] rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out"
       />
     </button>
   );
@@ -115,7 +114,8 @@ export function AbbonamentiScreen() {
         {filteredSubs.map((sub) => (
           <div
             key={sub.id}
-            className={`flex items-center justify-between p-3.5 rounded-[22px] bg-white border transition-all ${
+            onClick={() => toggleSubscription(sub.id)}
+            className={`flex items-center justify-between p-3.5 rounded-[22px] bg-white border cursor-pointer transition-all ${
               sub.active
                 ? "border-[#EBEBE5] shadow-xs hover:border-[#121212]/30 opacity-100"
                 : "border-[#EBEBE5] opacity-50 bg-[#F8F8F5]"

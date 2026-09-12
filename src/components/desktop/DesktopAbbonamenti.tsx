@@ -1,23 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
-import { Plus, ToggleLeft, ToggleRight, Calendar } from "lucide-react";
-import { SUBSCRIPTIONS, money } from "./desktopData";
+import React from "react";
+import { Plus, Calendar, Film } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { SubscriptionToggle } from "../AbbonamentiScreen";
 
 export function DesktopAbbonamenti() {
-  const [subs, setSubs] = useState(SUBSCRIPTIONS);
+  const { subscriptions, toggleSubscription, totalActiveSubscriptionsCost } = useApp();
 
-  const toggle = (id: string) =>
-    setSubs(prev => prev.map(s => s.id === id ? { ...s, active: !s.active } : s));
+  const money = (val: number) =>
+    new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
-  const activeSubs   = subs.filter(s => s.active);
-  const monthlyTotal = activeSubs
-    .reduce((sum, s) => sum + (s.freq === "Annuale" ? s.amount / 12 : s.amount), 0);
-  const annualTotal  = monthlyTotal * 12;
+  const activeSubs = subscriptions.filter((s) => s.active);
+  const monthlyTotal = totalActiveSubscriptionsCost;
+  const annualTotal = monthlyTotal * 12;
 
   return (
     <div className="p-7 max-w-[1600px] mx-auto w-full flex flex-col gap-6">
-
       {/* ── Summary ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-[#141414] border border-white/[0.05] rounded-2xl p-5">
@@ -44,43 +43,42 @@ export function DesktopAbbonamenti() {
 
       {/* ── Grid ────────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
-        {subs.map(sub => (
+        {subscriptions.map((sub) => (
           <div
             key={sub.id}
-            className={`bg-[#141414] border rounded-2xl p-5 flex flex-col gap-4 transition-all hover:border-white/10 ${
-              sub.active ? "border-white/[0.05]" : "border-white/[0.03] opacity-50"
+            onClick={() => toggleSubscription(sub.id)}
+            className={`bg-[#141414] border rounded-2xl p-5 flex flex-col gap-4 transition-all cursor-pointer hover:border-white/10 ${
+              sub.active ? "border-white/[0.08]" : "border-white/[0.03] opacity-40"
             }`}
           >
             {/* Top row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className="h-10 w-10 rounded-2xl flex items-center justify-center text-xl shrink-0"
-                  style={{ backgroundColor: `${sub.color}18` }}
-                >
-                  {sub.emoji}
+                <div className="h-10 w-10 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-white shrink-0">
+                  <Film className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-[13px] font-bold text-white">{sub.name}</p>
-                  <p className="text-[10px] text-[#555550] font-medium">{sub.freq}</p>
+                  <p className="text-[10px] text-[#555550] font-medium capitalize">{sub.frequency}</p>
                 </div>
               </div>
-              <button onClick={() => toggle(sub.id)} className="text-[#555550] hover:text-white transition-colors">
-                {sub.active
-                  ? <ToggleRight className="h-6 w-6 text-[#F5E050]" />
-                  : <ToggleLeft className="h-6 w-6" />}
-              </button>
+
+              {/* Custom Sleek ZERO Subscription Toggle */}
+              <SubscriptionToggle
+                checked={sub.active}
+                onChange={() => toggleSubscription(sub.id)}
+              />
             </div>
 
             {/* Cost */}
             <div className="flex items-end justify-between pt-2 border-t border-white/[0.04]">
               <div>
-                <p className="text-[20px] font-extrabold text-white leading-tight">{money(sub.amount)}</p>
-                <p className="text-[10px] text-[#555550]">/ {sub.freq.toLowerCase()}</p>
+                <p className="text-[20px] font-extrabold text-white leading-tight">{money(sub.cost)}</p>
+                <p className="text-[10px] text-[#555550]">/ {sub.frequency}</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] text-[#555550]">Prossimo rinnovo</p>
-                <p className="text-[11px] font-semibold text-white mt-0.5">{sub.nextDate}</p>
+                <p className="text-[11px] font-semibold text-white mt-0.5">{sub.date}</p>
               </div>
             </div>
           </div>
