@@ -71,15 +71,15 @@
 /* Floating 3D Card Animation */
 @keyframes float-card {
   0%, 100% {
-    transform: translateY(0px) rotate(6deg) scale(1);
+    transform: translateY(0px) scale(1);
   }
   50% {
-    transform: translateY(-12px) rotate(4deg) scale(1.03);
+    transform: translateY(-8px) scale(1.02);
   }
 }
 
 .animate-float-card {
-  animation: float-card 5s ease-in-out infinite;
+  animation: float-card 4s ease-in-out infinite;
 }
 
 /* Sparkle twinkle animation */

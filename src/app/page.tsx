@@ -76,7 +76,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#EFEFEB] sm:py-6 flex justify-center selection:bg-[#F5E050]/50">
       <div className="w-full max-w-md min-h-screen sm:min-h-[844px] bg-[#F8F8F5] sm:rounded-[36px] sm:border sm:border-[#EBEBE5] sm:shadow-2xl overflow-hidden flex flex-col justify-between relative">
-        <div className="flex-1 overflow-y-auto no-scrollbar relative">
+        <div key={activeTab} className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in slide-in-from-bottom-2 duration-500">
           {renderActiveScreen()}
         </div>
 
