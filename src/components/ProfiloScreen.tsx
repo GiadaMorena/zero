@@ -18,7 +18,7 @@ export function ProfiloScreen({ onNavigate }: ProfiloScreenProps) {
   ];
 
   return (
-    <div className="flex flex-col gap-5 p-5 pb-20 bg-[#F8F8F5]">
+    <div className="flex flex-col gap-5 p-5 pt-safe pb-24 bg-[#F8F8F5] select-none">
       {/* Header with Logo & Tagline */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

@@ -18,7 +18,7 @@ export function BottomNavBar({ currentTab, onSelectTab }: BottomNavBarProps) {
   ];
 
   return (
-    <div className="sticky bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md border-t border-[#EBEBE5] px-3 py-2">
+    <div className="sticky bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-xl border-t border-[#EBEBE5] px-3 pt-2 pb-safe-nav select-none">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {tabs.map((t) => {
           const Icon = t.icon;
@@ -31,9 +31,9 @@ export function BottomNavBar({ currentTab, onSelectTab }: BottomNavBarProps) {
             <button
               key={t.id}
               onClick={() => onSelectTab(t.id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
                 isActive
-                  ? "bg-[#F5E050] text-[#121212] font-semibold scale-105 shadow-sm"
+                  ? "bg-[#F5E050] text-[#121212] font-bold scale-105 shadow-sm"
                   : "text-[#73736E] hover:text-[#121212]"
               }`}
             >
