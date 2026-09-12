@@ -72,7 +72,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       onMouseUp={handleDragEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleDragEnd}
-      className={`relative min-h-screen h-full flex flex-col justify-between p-5 pt-safe pb-safe bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
+      className={`relative min-h-[100dvh] h-full flex flex-col justify-between p-5 pt-3 pb-6 bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
         isLeaving ? "opacity-0 -translate-y-6 scale-95" : "opacity-100 translate-y-0 scale-100"
       }`}
     >
@@ -95,7 +95,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#EAB308]/15 blur-3xl pointer-events-none" />
 
       {/* Clean Top Header Tag (No Stars) */}
-      <div className="pt-3 z-10 flex items-center justify-between">
+      <div className="pt-2 z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" />
           <span className="text-sm font-extrabold tracking-tight">Zero</span>
@@ -106,7 +106,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       </div>
 
       {/* Center Floating Clean Minimal Card */}
-      <div className="relative my-auto py-8 z-10 flex flex-col items-center justify-center">
+      <div className="relative my-auto py-4 sm:py-6 z-10 flex flex-col items-center justify-center">
         <div
           style={{
             background:
