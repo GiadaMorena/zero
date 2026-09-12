@@ -42,14 +42,14 @@ const NAV_ITEMS: { id: DesktopSection; label: string; icon: React.ElementType }[
 ];
 
 const PAGE_TITLES: Record<DesktopSection, string> = {
-  dashboard: "Home",
-  movimenti: "Spese & Movimenti",
-  analisi: "Analisi Finanziaria",
-  obiettivi: "Obiettivi di Risparmio",
-  abbonamenti: "Abbonamenti Attivi",
-  carte: "Le tue Carte & Conti",
-  impostazioni: "Impostazioni App",
-  profilo: "Profilo Utente",
+  dashboard:     "Home",
+  movimenti:     "Spese e movimenti",
+  analisi:       "Analisi finanziaria",
+  obiettivi:     "Obiettivi di risparmio",
+  abbonamenti:   "Abbonamenti attivi",
+  carte:         "Le tue carte e conti",
+  impostazioni:  "Impostazioni",
+  profilo:       "Profilo utente",
 };
 
 interface DesktopLayoutProps {
@@ -111,7 +111,7 @@ export function DesktopLayout({
         {/* Navigation Items */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto no-scrollbar">
           <p className="text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest px-3 mb-1">
-            Menu Principale
+            Menu principale
           </p>
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const active = activeSection === id;

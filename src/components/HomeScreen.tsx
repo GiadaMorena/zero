@@ -102,7 +102,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
             <TrendingUp className="h-3.5 w-3.5 text-[#0B0B0B]" />
             <span>-12%</span>
           </div>
-          <span className="text-[9px] text-[#A7A7A7] font-medium leading-tight">
+          <span className="text-[9px] text-[#0B0B0B] font-medium leading-tight">
             rispetto al mese scorso
           </span>
         </div>

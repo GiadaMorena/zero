@@ -81,29 +81,25 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       style={{ zIndex: 50 }}
     >
 
-
       {/* Safe area spacer */}
       <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
 
-      {/* Top Header */}
-      <div className="z-10 flex items-center justify-between px-5 pt-4">
-        <div className="flex items-center gap-2.5">
+
+      {/* Center: Logo + Hero Card */}
+      <div className="relative flex-1 flex flex-col items-center justify-center z-10 py-6 gap-4">
+        {/* Logo centrato con nome */}
+        <div className="flex flex-col items-center gap-2">
           <Image
             src={Logo}
             alt="ZERO Logo"
-            width={56}
-            height={56}
+            width={96}
+            height={96}
             className="object-contain"
             priority
           />
+          <span className="text-2xl font-black tracking-tight text-white">ZERO</span>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDC909] text-[11px] font-black text-[#0B0B0B] shadow-xs">
-          Official
-        </div>
-      </div>
 
-      {/* Center: Hero Card */}
-      <div className="relative flex-1 flex flex-col items-center justify-center z-10 py-6">
         <div
           className="relative w-full max-w-[280px] h-44 rounded-2xl border border-[#FDC909] bg-[#0B0B0B] p-5 flex flex-col justify-between overflow-hidden"
         >

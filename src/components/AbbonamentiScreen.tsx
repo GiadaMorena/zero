@@ -46,6 +46,8 @@ export function AbbonamentiScreen() {
   const [cost, setCost] = useState("");
   const [frequency, setFrequency] = useState<"mese" | "anno">("mese");
   const [category, setCategory] = useState("Svago");
+  const [renewDay, setRenewDay] = useState("1");
+  const [renewMonth, setRenewMonth] = useState("gennaio");
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
@@ -60,15 +62,18 @@ export function AbbonamentiScreen() {
     e.preventDefault();
     const numCost = parseFloat(cost.replace(",", ".")) || 0;
     if (name.trim() && numCost > 0) {
+      const dateLabel = `${renewDay} ${renewMonth}`;
       addSubscription({
         name,
         cost: numCost,
         frequency,
-        date: "Rinnovo mensile",
+        date: dateLabel,
         category,
       });
       setName("");
       setCost("");
+      setRenewDay("1");
+      setRenewMonth("gennaio");
       setIsAddModalOpen(false);
     }
   };
@@ -184,7 +189,7 @@ export function AbbonamentiScreen() {
                 <X className="h-4 w-4" />
               </button>
               <h2 className="text-sm font-black text-[#0B0B0B]">
-                Nuovo Abbonamento
+                Nuovo abbonamento
               </h2>
               <div className="w-8" />
             </div>
@@ -192,7 +197,7 @@ export function AbbonamentiScreen() {
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-                  Nome Servizio
+                  Nome servizio
                 </label>
                 <input
                   type="text"
@@ -213,7 +218,7 @@ export function AbbonamentiScreen() {
                     placeholder="9,99"
                     value={cost}
                     onChange={(e) => setCost(e.target.value)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
                   />
                 </div>
 
@@ -224,7 +229,7 @@ export function AbbonamentiScreen() {
                   <select
                     value={frequency}
                     onChange={(e) => setFrequency(e.target.value as any)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none"
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none"
                   >
                     <option value="mese">Mensile</option>
                     <option value="anno">Annuale</option>
@@ -232,11 +237,40 @@ export function AbbonamentiScreen() {
                 </div>
               </div>
 
+              {/* Data di rinnovo */}
+              <div>
+                <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
+                  Data di rinnovo
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={renewDay}
+                    onChange={(e) => setRenewDay(e.target.value)}
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                  >
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={String(d)}>{d}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={renewMonth}
+                    onChange={(e) => setRenewMonth(e.target.value)}
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                  >
+                    {["gennaio","febbraio","marzo","aprile","maggio","giugno",
+                      "luglio","agosto","settembre","ottobre","novembre","dicembre"
+                    ].map((m) => (
+                      <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <button
                 onClick={handleSaveSub}
-                className="w-full py-3.5 mt-2 rounded-full bg-[#0B0B0B] text-white font-black text-sm shadow-xl hover:bg-black transition-all"
+                className="w-full py-3.5 mt-2 rounded-full bg-[#0B0B0B] text-white font-black text-sm hover:bg-black transition-all"
               >
-                Salva Abbonamento
+                Salva abbonamento
               </button>
             </div>
           </div>
