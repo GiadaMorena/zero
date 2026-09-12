@@ -1,40 +1,48 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Plane, Camera, ShieldCheck, ArrowRight } from "lucide-react";
+import { Plus, Plane, Camera, ShieldCheck, ArrowRight, Laptop, X, PlusCircle } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 export function ObiettiviScreen() {
+  const { goals, addMoneyToGoal, addGoal } = useApp();
   const [filter, setFilter] = useState<"In corso" | "Completati">("In corso");
+  const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
+  const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
 
-  const goals = [
-    {
-      id: "1",
-      title: "Fondo viaggio",
-      current: 900,
-      target: 1500,
-      percent: 60,
-      icon: Plane,
-      completed: false,
-    },
-    {
-      id: "2",
-      title: "Nuova fotocamera",
-      current: 350,
-      target: 800,
-      percent: 44,
-      icon: Camera,
-      completed: false,
-    },
-    {
-      id: "3",
-      title: "Fondo emergenza",
-      current: 1200,
-      target: 3000,
-      percent: 40,
-      icon: ShieldCheck,
-      completed: false,
-    },
-  ];
+  // Add goal form
+  const [newTitle, setNewTitle] = useState("");
+  const [newTarget, setNewTarget] = useState("");
+
+  // Add money amount
+  const [addAmount, setAddAmount] = useState("100");
+
+  const money = (val: number) =>
+    new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
+
+  const filteredGoals = goals.filter((g) => {
+    if (filter === "Completati") return g.completed;
+    return !g.completed;
+  });
+
+  const handleSaveGoal = (e: React.FormEvent) => {
+    e.preventDefault();
+    const numTarget = parseFloat(newTarget.replace(",", ".")) || 0;
+    if (newTitle.trim() && numTarget > 0) {
+      addGoal({ title: newTitle, target: numTarget });
+      setNewTitle("");
+      setNewTarget("");
+      setIsAddGoalOpen(false);
+    }
+  };
+
+  const handleExecuteAddMoney = (goalId: string) => {
+    const amt = parseFloat(addAmount.replace(",", ".")) || 0;
+    if (amt > 0) {
+      addMoneyToGoal(goalId, amt);
+    }
+    setActiveGoalId(null);
+  };
 
   return (
     <div
@@ -46,7 +54,10 @@ export function ObiettiviScreen() {
         <h1 className="text-2xl font-black tracking-tight text-[#121212]">
           Obiettivi
         </h1>
-        <button className="h-9 w-9 rounded-full bg-[#121212] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform">
+        <button
+          onClick={() => setIsAddGoalOpen(true)}
+          className="h-9 w-9 rounded-full bg-[#121212] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
+        >
           <Plus className="h-4 w-4 stroke-[2.5]" />
         </button>
       </div>
@@ -70,40 +81,80 @@ export function ObiettiviScreen() {
 
       {/* Goals Progress Cards */}
       <div className="flex flex-col gap-3">
-        {goals.map((g) => {
-          const Icon = g.icon;
-          return (
-            <div
-              key={g.id}
-              className="p-4 rounded-[22px] bg-white border border-[#EBEBE5] shadow-xs flex flex-col gap-3 hover:border-[#121212]/30 transition-all"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212]">
-                    <Icon className="h-4.5 w-4.5 stroke-[1.8]" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-extrabold text-[#121212]">{g.title}</h4>
-                    <p className="text-[11px] text-[#73736E] font-medium mt-0.5">
-                      € {g.current} / {g.target}
-                    </p>
-                  </div>
+        {filteredGoals.map((g) => (
+          <div
+            key={g.id}
+            className="p-4 rounded-[22px] bg-white border border-[#EBEBE5] shadow-xs flex flex-col gap-3 hover:border-[#121212]/30 transition-all"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212]">
+                  {g.title.toLowerCase().includes("macbook") ? (
+                    <Laptop className="h-4.5 w-4.5 stroke-[1.8]" />
+                  ) : g.title.toLowerCase().includes("viaggio") ? (
+                    <Plane className="h-4.5 w-4.5 stroke-[1.8]" />
+                  ) : g.title.toLowerCase().includes("fotocamera") ? (
+                    <Camera className="h-4.5 w-4.5 stroke-[1.8]" />
+                  ) : (
+                    <ShieldCheck className="h-4.5 w-4.5 stroke-[1.8]" />
+                  )}
                 </div>
+                <div>
+                  <h4 className="text-xs font-extrabold text-[#121212]">{g.title}</h4>
+                  <p className="text-[11px] text-[#73736E] font-medium mt-0.5">
+                    {money(g.current)} / {money(g.target)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <span className="text-xs font-black text-[#854D0E]">
                   {g.percent}%
                 </span>
-              </div>
-
-              {/* Progress Bar Container */}
-              <div className="h-2 w-full rounded-full bg-[#F8F8F5] overflow-hidden border border-[#EBEBE5]">
-                <div
-                  className="h-full rounded-full bg-[#F5E050] transition-all duration-500"
-                  style={{ width: `${g.percent}%` }}
-                />
+                <button
+                  onClick={() => setActiveGoalId(g.id)}
+                  className="px-2.5 py-1 rounded-full bg-[#FEF9C3] text-[#121212] border border-[#F5E050]/80 text-[10px] font-extrabold flex items-center gap-1 hover:bg-[#F5E050] transition-colors"
+                >
+                  <PlusCircle className="h-3 w-3" />
+                  <span>Risparmia</span>
+                </button>
               </div>
             </div>
-          );
-        })}
+
+            {/* Add Money Input Row if Active */}
+            {activeGoalId === g.id && (
+              <div className="p-3 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-between gap-2 animate-in fade-in duration-200">
+                <span className="text-[11px] font-bold text-[#73736E]">Aggiungi fondi (€):</span>
+                <input
+                  type="number"
+                  value={addAmount}
+                  onChange={(e) => setAddAmount(e.target.value)}
+                  className="w-20 p-1 text-center rounded-lg bg-white border border-[#EBEBE5] text-xs font-black text-[#121212]"
+                />
+                <button
+                  onClick={() => handleExecuteAddMoney(g.id)}
+                  className="px-3 py-1 rounded-full bg-[#121212] text-white text-[10px] font-bold"
+                >
+                  Conferma
+                </button>
+              </div>
+            )}
+
+            {/* Progress Bar Container */}
+            <div className="h-2 w-full rounded-full bg-[#F8F8F5] overflow-hidden border border-[#EBEBE5]">
+              <div
+                className="h-full rounded-full bg-[#F5E050] transition-all duration-500"
+                style={{ width: `${g.percent}%` }}
+              />
+            </div>
+          </div>
+        ))}
+
+        {filteredGoals.length === 0 && (
+          <div className="text-center py-10 text-[#73736E] text-xs font-medium">
+            Nessun obiettivo trovato.
+          </div>
+        )}
       </div>
 
       {/* Bottom Dark Motivational Card */}
@@ -123,6 +174,61 @@ export function ObiettiviScreen() {
           <ArrowRight className="h-4.5 w-4.5 stroke-[2.5]" />
         </button>
       </div>
+
+      {/* Add Goal Modal */}
+      {isAddGoalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4">
+          <div className="w-full max-w-md bg-[#F8F8F5] rounded-t-[32px] sm:rounded-[32px] border border-[#EBEBE5] p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => setIsAddGoalOpen(false)}
+                className="p-2 rounded-full bg-white border border-[#EBEBE5] text-[#121212]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <h2 className="text-sm font-black text-[#121212]">
+                Nuovo Traguardo di Risparmio
+              </h2>
+              <div className="w-8" />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#73736E] mb-1">
+                  Titolo Obiettivo
+                </label>
+                <input
+                  type="text"
+                  placeholder="Es. Vacanza in Giappone, Moto..."
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full p-3 rounded-2xl bg-white border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#73736E] mb-1">
+                  Importo Target (€)
+                </label>
+                <input
+                  type="text"
+                  placeholder="1500"
+                  value={newTarget}
+                  onChange={(e) => setNewTarget(e.target.value)}
+                  className="w-full p-3 rounded-2xl bg-white border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
+                />
+              </div>
+
+              <button
+                onClick={handleSaveGoal}
+                className="w-full py-3.5 mt-2 rounded-full bg-[#121212] text-white font-black text-sm shadow-xl hover:bg-black transition-all"
+              >
+                Salva Obiettivo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

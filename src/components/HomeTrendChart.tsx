@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ArrowDown, ArrowUp, BarChart2, ChevronDown } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 const BARS_DATA = [
   { label: "1-7", black: 45, yellow: 28 },
@@ -12,7 +13,8 @@ const BARS_DATA = [
 ];
 
 export function HomeTrendChart() {
-  const [selectedMonth, setSelectedMonth] = useState("Settembre 2026");
+  const { totalMonthlySpending, totalMonthlyIncome, totalMonthlySavings } = useApp();
+  const [selectedMonth] = useState("Settembre 2026");
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
@@ -44,7 +46,7 @@ export function HomeTrendChart() {
             <div>
               <p className="text-[10px] text-[#73736E] font-semibold">Hai speso</p>
               <p className="text-sm font-black text-[#121212] leading-tight">
-                {money(554.2)}
+                {money(totalMonthlySpending)}
               </p>
             </div>
           </div>
@@ -57,7 +59,7 @@ export function HomeTrendChart() {
             <div>
               <p className="text-[10px] text-[#73736E] font-semibold">Hai ricevuto</p>
               <p className="text-sm font-black text-[#166534] leading-tight">
-                {money(1800.0)}
+                {money(totalMonthlyIncome)}
               </p>
             </div>
           </div>
@@ -68,9 +70,9 @@ export function HomeTrendChart() {
               <BarChart2 className="h-3.5 w-3.5 stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-[10px] text-[#73736E] font-semibold">Hai messo da parte</p>
+              <p className="text-[10px] text-[#73736E] font-semibold">Messo da parte</p>
               <p className="text-sm font-black text-[#121212] leading-tight">
-                {money(1245.8)}
+                {money(totalMonthlySavings)}
               </p>
             </div>
           </div>

@@ -2,19 +2,56 @@
 
 import React, { useState } from "react";
 import { SlidersHorizontal, TrendingDown } from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 export function AnalisiScreen() {
+  const { transactions, totalMonthlySpending } = useApp();
   const [period, setPeriod] = useState<"Mese" | "Trimestre" | "Anno">("Mese");
 
-  const categories = [
-    { name: "Casa", percent: 28, color: "#F5E050", amount: 155.1 },
-    { name: "Cibo", percent: 18, color: "#EAB308", amount: 99.8 },
-    { name: "Trasporti", percent: 15, color: "#121212", amount: 83.1 },
-    { name: "Shopping", percent: 14, color: "#404040", amount: 77.6 },
-    { name: "Abbonamenti", percent: 12, color: "#73736E", amount: 66.5 },
-    { name: "Svago", percent: 9, color: "#A3A39E", amount: 49.8 },
-    { name: "Altro", percent: 4, color: "#D4D4D0", amount: 22.3 },
-  ];
+  // Dynamic Category Breakdown Calculation
+  const expenses = transactions.filter((t) => t.amount < 0);
+  const categoryMap: Record<string, number> = {};
+
+  expenses.forEach((t) => {
+    const cat = t.category || "Altro";
+    const val = Math.abs(t.amount);
+    categoryMap[cat] = (categoryMap[cat] || 0) + val;
+  });
+
+  const totalCalc = Object.values(categoryMap).reduce((a, b) => a + b, 0) || 1;
+
+  const colorPalette: Record<string, string> = {
+    Casa: "#F5E050",
+    Cibo: "#EAB308",
+    Trasporti: "#121212",
+    Shopping: "#404040",
+    Abbonamenti: "#73736E",
+    Svago: "#A3A39E",
+    Altro: "#D4D4D0",
+  };
+
+  const categories = Object.keys(categoryMap).map((catName) => {
+    const amt = categoryMap[catName];
+    const percent = Math.round((amt / totalCalc) * 100);
+    return {
+      name: catName,
+      percent,
+      amount: amt,
+      color: colorPalette[catName] || "#A3A39E",
+    };
+  });
+
+  if (categories.length === 0) {
+    categories.push(
+      { name: "Casa", percent: 35, amount: 150, color: "#F5E050" },
+      { name: "Cibo", percent: 30, amount: 120, color: "#EAB308" },
+      { name: "Trasporti", percent: 20, amount: 80, color: "#121212" },
+      { name: "Svago", percent: 15, amount: 60, color: "#A3A39E" }
+    );
+  }
+
+  const money = (val: number) =>
+    new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
   return (
     <div
@@ -24,7 +61,7 @@ export function AnalisiScreen() {
       {/* Header */}
       <div className="flex items-center justify-between pt-1 px-1">
         <h1 className="text-2xl font-black tracking-tight text-[#121212]">
-          Analisi
+          Analisi Spese
         </h1>
         <button className="h-9 w-9 rounded-full bg-white border border-[#EBEBE5] text-[#121212] flex items-center justify-center hover:bg-[#F8F8F5] shadow-xs transition-colors">
           <SlidersHorizontal className="h-4 w-4" />
@@ -53,7 +90,6 @@ export function AnalisiScreen() {
         {/* SVG Donut Chart */}
         <div className="relative w-44 h-44 flex items-center justify-center">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            {/* Base Circle */}
             <circle
               cx="50"
               cy="50"
@@ -62,7 +98,6 @@ export function AnalisiScreen() {
               strokeWidth="12"
               fill="transparent"
             />
-            {/* Segment 1: Casa (28%) */}
             <circle
               cx="50"
               cy="50"
@@ -73,7 +108,6 @@ export function AnalisiScreen() {
               strokeDashoffset="0"
               fill="transparent"
             />
-            {/* Segment 2: Cibo (18%) */}
             <circle
               cx="50"
               cy="50"
@@ -84,7 +118,6 @@ export function AnalisiScreen() {
               strokeDashoffset="-66.9"
               fill="transparent"
             />
-            {/* Segment 3: Trasporti (15%) */}
             <circle
               cx="50"
               cy="50"
@@ -95,26 +128,15 @@ export function AnalisiScreen() {
               strokeDashoffset="-109.9"
               fill="transparent"
             />
-            {/* Segment 4: Rest (39%) */}
-            <circle
-              cx="50"
-              cy="50"
-              r="38"
-              stroke="#73736E"
-              strokeWidth="12"
-              strokeDasharray="93.1 145.7"
-              strokeDashoffset="-145.7"
-              fill="transparent"
-            />
           </svg>
 
           {/* Center Info Text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-lg font-black text-[#121212]">
-              554,20 €
+            <span className="text-base font-black text-[#121212]">
+              {money(totalMonthlySpending)}
             </span>
             <span className="text-[10px] text-[#73736E] font-medium">
-              Totale spese
+              Totale Uscite
             </span>
             <div className="mt-1 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[9px] font-extrabold text-[#166534]">
               <TrendingDown className="h-3 w-3" />
@@ -135,9 +157,14 @@ export function AnalisiScreen() {
               />
               <span className="text-xs font-bold text-[#121212]">{c.name}</span>
             </div>
-            <span className="text-xs font-black text-[#121212]">
-              {c.percent}%
-            </span>
+            <div className="text-right">
+              <span className="text-xs font-black text-[#121212] block">
+                {money(c.amount)}
+              </span>
+              <span className="text-[10px] text-[#73736E] font-semibold">
+                {c.percent}%
+              </span>
+            </div>
           </div>
         ))}
       </div>

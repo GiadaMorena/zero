@@ -43,7 +43,7 @@ const CARDS: CardItem[] = [
 ];
 
 interface WalletCarouselProps {
-  onCardSelect?: (card: CardItem) => void;
+  onCardSelect?: (card: CardItem, index: number) => void;
 }
 
 export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
@@ -74,12 +74,12 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
     if (nextIndex < 0) nextIndex = CARDS.length - 1;
     if (nextIndex >= CARDS.length) nextIndex = 0;
     setActiveIndex(nextIndex);
-    onCardSelect?.(CARDS[nextIndex]);
+    onCardSelect?.(CARDS[nextIndex], nextIndex);
   };
 
   const selectCardIndex = (index: number) => {
     setActiveIndex(index);
-    onCardSelect?.(CARDS[index]);
+    onCardSelect?.(CARDS[index], index);
   };
 
   return (

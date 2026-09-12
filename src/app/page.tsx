@@ -14,6 +14,7 @@ import { AddSpesaModal } from "@/components/AddSpesaModal";
 import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DesktopApp } from "@/components/desktop/DesktopApp";
+import { AppProvider } from "@/context/AppContext";
 
 type ExtendedTab = NavTab | "welcome";
 
@@ -38,17 +39,6 @@ const TAB_BACKGROUNDS: Record<ExtendedTab, string> = {
 function MobileApp() {
   const [activeTab, setActiveTab] = useState<ExtendedTab>("welcome");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [balance, setBalance] = useState(1245.8);
-  const [income] = useState(1800.0);
-  const [spending, setSpending] = useState(554.2);
-
-  const handleSaveSpesa = (data: { amount: string }) => {
-    const numericAmount = parseFloat(data.amount.replace(",", ".")) || 0;
-    if (numericAmount > 0) {
-      setSpending((prev) => prev + numericAmount);
-      setBalance((prev) => prev - numericAmount);
-    }
-  };
 
   const renderActiveScreen = () => {
     switch (activeTab) {
@@ -57,9 +47,6 @@ function MobileApp() {
       case "home":
         return (
           <HomeScreen
-            balance={balance}
-            income={income}
-            spending={spending}
             onOpenAddModal={() => setIsAddModalOpen(true)}
             onNavigate={(tab) => setActiveTab(tab)}
           />
@@ -81,9 +68,6 @@ function MobileApp() {
       default:
         return (
           <HomeScreen
-            balance={balance}
-            income={income}
-            spending={spending}
             onOpenAddModal={() => setIsAddModalOpen(true)}
             onNavigate={(tab) => setActiveTab(tab)}
           />
@@ -95,12 +79,6 @@ function MobileApp() {
 
   return (
     <>
-      {/*
-        ThemeSync — the single global fix.
-        Syncs html background, body background, and <meta name="theme-color"> with
-        the active screen's color so the status bar area is never a different shade.
-        No individual screen needs to be touched.
-      */}
       <ThemeSync screenBackground={bgColor} />
 
       <main
@@ -130,7 +108,6 @@ function MobileApp() {
         <AddSpesaModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onSave={handleSaveSpesa}
         />
       </main>
     </>
@@ -140,7 +117,7 @@ function MobileApp() {
 // ─── Root: responsive switch ─────────────────────────────────────────────────
 export default function Home() {
   return (
-    <>
+    <AppProvider>
       {/* Mobile (< 768px): full-screen app experience */}
       <div className="md:hidden">
         <MobileApp />
@@ -150,6 +127,6 @@ export default function Home() {
       <div className="hidden md:block">
         <DesktopApp />
       </div>
-    </>
+    </AppProvider>
   );
 }
