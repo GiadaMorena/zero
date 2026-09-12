@@ -10,7 +10,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [sliderPos, setSliderPos] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   const sliderRef = useRef<HTMLDivElement>(null);
   const trackWidthRef = useRef<number>(280);
 
@@ -72,17 +72,11 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       onMouseUp={handleDragEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleDragEnd}
-      className={`relative w-full min-h-[100dvh] flex flex-col justify-between bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
+      className={`relative w-full min-h-[100dvh] flex flex-col bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
         isLeaving ? "opacity-0 -translate-y-6 scale-95" : "opacity-100 translate-y-0 scale-100"
       }`}
-      style={{
-        paddingTop: "max(env(safe-area-inset-top, 44px), 44px)",
-        paddingBottom: "max(env(safe-area-inset-bottom, 20px), 20px)",
-        paddingLeft: "env(safe-area-inset-left, 0px)",
-        paddingRight: "env(safe-area-inset-right, 0px)",
-      }}
     >
-      {/* Organic Topographic Waves Background SVG */}
+      {/* Background decorations — absolute, no padding interference */}
       <svg
         className="absolute inset-0 w-full h-full opacity-10 pointer-events-none stroke-white/40"
         xmlns="http://www.w3.org/2000/svg"
@@ -95,24 +89,25 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         <path d="M-50 350 Q 100 500 400 380 T 450 650" strokeWidth="1.5" />
         <path d="M-50 440 Q 200 620 360 480 T 450 780" strokeWidth="1.5" />
       </svg>
-
-      {/* Yellow Liquid Glow Background Blobs */}
       <div className="absolute top-10 -right-20 w-80 h-80 rounded-full bg-[#F5E050]/20 blur-3xl pointer-events-none" />
       <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#EAB308]/15 blur-3xl pointer-events-none" />
 
-      {/* Clean Top Header Tag */}
-      <div className="z-10 flex items-center justify-between px-5 mt-4">
+      {/* ── SAFE AREA SPACER — transparent, pushes content below dynamic island ── */}
+      <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
+
+      {/* Top Header */}
+      <div className="z-10 flex items-center justify-between px-5 pt-3">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" />
           <span className="text-sm font-extrabold tracking-tight">Zero</span>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-bold text-[#F5E050]">
-          Zero App
+          Beta
         </div>
       </div>
 
-      {/* Center Floating Clean Minimal Card */}
-      <div className="relative my-auto py-4 sm:py-6 z-10 flex flex-col items-center justify-center">
+      {/* Center: floating card — grows to fill middle space */}
+      <div className="relative flex-1 flex flex-col items-center justify-center z-10 py-6">
         <div
           style={{
             background:
@@ -121,19 +116,14 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           }}
           className="relative w-full max-w-[280px] h-44 rounded-2xl border border-[#F5E050]/40 p-5 shadow-[0_15px_35px_rgba(0,0,0,0.5)] flex flex-col justify-between animate-float-card overflow-hidden"
         >
-          {/* Top Row: Brand & VISA */}
           <div className="flex items-center justify-between z-10">
             <span className="font-extrabold text-xs tracking-wider text-white/90">ZERO</span>
             <span className="font-black italic text-lg text-[#F5E050]">VISA</span>
           </div>
-
-          {/* Middle Chip */}
           <div className="z-10 my-auto flex items-center gap-3">
             <div className="h-6 w-8 rounded-md bg-gradient-to-tr from-[#FEF08A] to-[#EAB308] opacity-90 shadow-sm" />
             <div className="h-1.5 w-12 rounded-full bg-white/20" />
           </div>
-
-          {/* Bottom Card Number */}
           <div className="z-10 flex items-center justify-between">
             <span className="text-xs font-mono font-bold tracking-widest text-[#FEF08A]">
               •••• •••• 3377
@@ -143,18 +133,21 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </div>
       </div>
 
-      {/* Bottom Area: Text & Ultra-Smooth Swipe Slider */}
-      <div className="px-5 pb-2 z-10 flex flex-col gap-6">
+      {/* Bottom: text + slider */}
+      <div
+        className="z-10 flex flex-col gap-6 px-5"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom, 20px), 28px)" }}
+      >
         <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-[1.15]">
+          <h1 className="text-3xl font-extrabold tracking-tight text-white leading-[1.15]">
             Gestire il tuo denaro sta per diventare molto più semplice.
           </h1>
-          <p className="text-xs sm:text-sm text-[#A3A39E] font-medium mt-2 leading-relaxed">
+          <p className="text-xs text-[#A3A39E] font-medium mt-2 leading-relaxed">
             Tieni traccia di spese, abbonamenti e obiettivi senza confusione.
           </p>
         </div>
 
-        {/* Ultra-Smooth Swipe Slider */}
+        {/* Swipe Slider */}
         <div
           ref={sliderRef}
           onClick={() => {
@@ -162,7 +155,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           }}
           className="relative w-full h-14 bg-white/10 border border-white/15 rounded-full p-1 flex items-center overflow-hidden cursor-pointer shadow-lg"
         >
-          {/* Active Yellow Track Fill */}
           <div
             className="absolute left-1 top-1 bottom-1 bg-[#F5E050] rounded-full"
             style={{
@@ -170,14 +162,10 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               transition: isDragging ? "none" : "all 0.3s ease-out",
             }}
           />
-
-          {/* Text Prompt */}
           <div className="w-full text-center text-xs font-extrabold tracking-wider uppercase text-white/90 pointer-events-none flex items-center justify-center gap-1 pl-6 z-10">
             <span>Scorri per iniziare</span>
             <ChevronRight className="h-4 w-4 text-[#F5E050] animate-pulse" />
           </div>
-
-          {/* Slider Drag Knob */}
           <div
             onMouseDown={(e) => handleStartDrag(e.clientX)}
             onTouchStart={(e) => handleStartDrag(e.touches[0].clientX)}
