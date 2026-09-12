@@ -106,7 +106,7 @@ export function AltroMenuSheet({ isOpen, onClose }: AltroMenuSheetProps) {
               className="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#EBEBE5] shadow-xs hover:border-[#121212] transition-all text-left group"
             >
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-[#F5E050]/20 text-[#121212] flex items-center justify-center font-bold">
+                <div className="h-9 w-9 rounded-xl bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center font-bold">
                   <ArrowLeftRight className="h-4.5 w-4.5" />
                 </div>
                 <div>

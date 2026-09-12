@@ -81,7 +81,7 @@ export function DesktopLayout({
   };
 
   return (
-    <div className="flex h-screen bg-[#F7F7F5] text-[#0B0B0B] overflow-hidden font-sans antialiased selection:bg-[#FDC909]/40 select-none">
+    <div className="flex h-screen bg-[#F7F7F5] text-[#0B0B0B] overflow-hidden font-sans antialiased select-none">
       {/* ── Fixed Left Sidebar ────────────────────────────────────────── */}
       <aside className="w-[240px] shrink-0 flex flex-col bg-white border-r border-[#A7A7A7]/20 h-full shadow-xs">
         {/* Official ZERO Logo Header */}
@@ -189,7 +189,7 @@ export function DesktopLayout({
             {/* Quick Action Buttons */}
             <button
               onClick={onOpenAddExpense}
-              className="px-3.5 py-2 rounded-2xl bg-[#FDC909] text-[#0B0B0B] text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-[#FDC909]/90 transition-colors"
+              className="px-3.5 py-2 rounded-2xl bg-[#FDC909] text-[#0B0B0B] text-xs font-bold flex items-center gap-1.5 hover:bg-[#0B0B0B] hover:text-[#FDC909] transition-colors"
             >
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
               <span>Aggiungi spesa</span>

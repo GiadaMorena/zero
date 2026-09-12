@@ -99,7 +99,7 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white border border-[#A7A7A7]/30 text-[#0B0B0B] hover:bg-[#A7A7A7]/10 transition-colors"
+            className="p-2 rounded-full bg-white border border-[#A7A7A7] text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -252,7 +252,7 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
           onClick={handleSave}
           className={`w-full py-3.5 rounded-full font-black text-sm shadow-xl transition-all active:scale-[0.98] ${
             type === "income"
-              ? "bg-[#FDC909] text-[#0B0B0B] hover:bg-[#FDC909]/90"
+              ? "bg-[#FDC909] text-[#0B0B0B] hover:bg-[#0B0B0B] hover:text-[#FDC909]"
               : "bg-[#0B0B0B] text-white hover:bg-black"
           }`}
         >

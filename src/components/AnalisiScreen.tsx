@@ -69,15 +69,15 @@ export function AnalisiScreen() {
       </div>
 
       {/* Time Segmented Pills */}
-      <div className="grid grid-cols-3 gap-2 bg-[#EBEBE5]/60 p-1.5 rounded-2xl">
+      <div className="grid grid-cols-3 gap-2 bg-[#A7A7A7] p-1.5 rounded-2xl">
         {(["Mese", "Trimestre", "Anno"] as const).map((p) => (
           <button
             key={p}
             onClick={() => setPeriod(p)}
             className={`py-2 rounded-xl text-xs font-bold transition-all ${
               period === p
-                ? "bg-[#F5E050] text-[#121212] shadow-xs"
-                : "text-[#73736E] hover:text-[#121212]"
+                ? "bg-[#FDC909] text-[#0B0B0B]"
+                : "text-[#F7F7F5] hover:text-white"
             }`}
           >
             {p}
@@ -86,7 +86,7 @@ export function AnalisiScreen() {
       </div>
 
       {/* Donut Chart Visual Container */}
-      <div className="rounded-[26px] bg-white border border-[#EBEBE5] p-6 flex flex-col items-center justify-center shadow-xs relative overflow-hidden">
+      <div className="rounded-[26px] bg-white border border-[#A7A7A7] p-6 flex flex-col items-center justify-center relative overflow-hidden">
         {/* SVG Donut Chart */}
         <div className="relative w-44 h-44 flex items-center justify-center">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -94,7 +94,7 @@ export function AnalisiScreen() {
               cx="50"
               cy="50"
               r="38"
-              stroke="#F8F8F5"
+              stroke="#A7A7A7"
               strokeWidth="12"
               fill="transparent"
             />
@@ -102,7 +102,7 @@ export function AnalisiScreen() {
               cx="50"
               cy="50"
               r="38"
-              stroke="#F5E050"
+              stroke="#FDC909"
               strokeWidth="12"
               strokeDasharray="66.9 171.9"
               strokeDashoffset="0"
@@ -112,7 +112,7 @@ export function AnalisiScreen() {
               cx="50"
               cy="50"
               r="38"
-              stroke="#EAB308"
+              stroke="#0B0B0B"
               strokeWidth="12"
               strokeDasharray="43.0 195.8"
               strokeDashoffset="-66.9"
@@ -122,7 +122,7 @@ export function AnalisiScreen() {
               cx="50"
               cy="50"
               r="38"
-              stroke="#121212"
+              stroke="#A7A7A7"
               strokeWidth="12"
               strokeDasharray="35.8 203.0"
               strokeDashoffset="-109.9"
@@ -132,13 +132,13 @@ export function AnalisiScreen() {
 
           {/* Center Info Text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-base font-black text-[#121212]">
+            <span className="text-base font-black text-[#0B0B0B]">
               {money(totalMonthlySpending)}
             </span>
-            <span className="text-[10px] text-[#73736E] font-medium">
+            <span className="text-[10px] text-[#A7A7A7] font-medium">
               Totale Uscite
             </span>
-            <div className="mt-1 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[9px] font-extrabold text-[#166534]">
+            <div className="mt-1 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#FDC909] text-[9px] font-extrabold text-[#0B0B0B]">
               <TrendingDown className="h-3 w-3" />
               <span>-18%</span>
             </div>
@@ -147,7 +147,7 @@ export function AnalisiScreen() {
       </div>
 
       {/* Breakdown Percentage List */}
-      <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-4 shadow-xs flex flex-col gap-2.5">
+      <div className="rounded-[24px] bg-white border border-[#A7A7A7] p-4 flex flex-col gap-2.5">
         {categories.map((c) => (
           <div key={c.name} className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -155,13 +155,13 @@ export function AnalisiScreen() {
                 className="h-2.5 w-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: c.color }}
               />
-              <span className="text-xs font-bold text-[#121212]">{c.name}</span>
+              <span className="text-xs font-bold text-[#0B0B0B]">{c.name}</span>
             </div>
             <div className="text-right">
-              <span className="text-xs font-black text-[#121212] block">
+              <span className="text-xs font-black text-[#0B0B0B] block">
                 {money(c.amount)}
               </span>
-              <span className="text-[10px] text-[#73736E] font-semibold">
+              <span className="text-[10px] text-[#A7A7A7] font-semibold">
                 {c.percent}%
               </span>
             </div>
@@ -170,9 +170,9 @@ export function AnalisiScreen() {
       </div>
 
       {/* Insight Banner */}
-      <div className="rounded-[20px] bg-[#FEF9C3]/80 border border-[#F5E050] p-3.5 flex items-center justify-between shadow-xs">
+      <div className="rounded-[20px] bg-[#FDC909] border border-[#FDC909] p-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-[#121212] text-[#F5E050] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-full bg-[#0B0B0B] text-[#FDC909] flex items-center justify-center shrink-0">
             <TrendingDown className="h-4 w-4" />
           </div>
           <div>

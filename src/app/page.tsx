@@ -88,7 +88,7 @@ function MobileApp() {
       <ThemeSync screenBackground={bgColor} />
 
       <main
-        className="w-full min-h-[100dvh] flex flex-col selection:bg-[#F5E050]/50 transition-colors duration-500"
+        className="w-full min-h-[100dvh] flex flex-col selection:bg-[#FDC909] transition-colors duration-500"
         style={{ backgroundColor: bgColor }}
       >
         <div

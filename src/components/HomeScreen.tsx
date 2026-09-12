@@ -66,7 +66,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
         </div>
         <button
           onClick={() => onNavigate("profilo")}
-          className="relative h-10 w-10 rounded-full bg-[#0B0B0B] flex items-center justify-center shadow-md hover:scale-105 transition-transform overflow-hidden p-1.5"
+          className="h-10 w-10 flex items-center justify-center hover:scale-105 transition-transform"
         >
           <Image
             src={Logo}
@@ -76,7 +76,6 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
             className="h-full w-full object-contain"
             priority
           />
-          <div className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-[#FDC909] ring-2 ring-[#F7F7F5]" />
         </button>
       </div>
 
@@ -98,7 +97,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
         </div>
 
         {/* Badge a Destra */}
-        <div className="px-3 py-1.5 rounded-2xl bg-[#FDC909]/15 border border-[#FDC909]/40 flex flex-col items-end">
+        <div className="px-3 py-1.5 rounded-2xl bg-[#FDC909] border border-[#FDC909] flex flex-col items-end">
           <div className="flex items-center gap-0.5 text-xs font-black text-[#0B0B0B]">
             <TrendingUp className="h-3.5 w-3.5 text-[#0B0B0B]" />
             <span>-12%</span>

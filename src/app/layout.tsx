@@ -38,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" className={plusJakarta.variable}>
-      <body className="font-sans antialiased m-0 p-0 selection:bg-[#F5E050]/40">
+      <body className="font-sans antialiased m-0 p-0 selection:bg-[#FDC909]">
         {children}
       </body>
     </html>

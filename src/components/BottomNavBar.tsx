@@ -22,7 +22,7 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
 
   return (
     <div className="fixed bottom-4 left-0 right-0 z-40 px-4 pointer-events-none select-none flex justify-center max-w-md mx-auto">
-      <div className="pointer-events-auto bg-white/98 backdrop-blur-2xl border border-[#A7A7A7]/30 rounded-full shadow-2xl shadow-black/15 px-3 py-2 flex items-center justify-between gap-1 w-full relative">
+      <div className="pointer-events-auto bg-white border border-[#A7A7A7] rounded-full px-3 py-2 flex items-center justify-between gap-1 w-full relative">
         {/* Tab 1: Home (Active) */}
         <button
           onClick={() => onSelectTab("home")}
@@ -60,7 +60,7 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
         <div className="relative -top-5 px-1 shrink-0">
           <button
             onClick={handleCenterAction}
-            className="h-14 w-14 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shadow-lg shadow-[#FDC909]/40 border-4 border-[#F7F7F5] active:scale-95 hover:scale-105 transition-all group"
+            className="h-14 w-14 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center border-4 border-[#F7F7F5] active:scale-95 hover:scale-105 transition-all group"
             title="Scansiona scontrino"
           >
             <Scan className="h-6 w-6 stroke-[2.5] text-[#0B0B0B]" />

@@ -80,9 +80,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       }`}
       style={{ zIndex: 50 }}
     >
-      {/* Background ambient glow in ZERO yellow */}
-      <div className="absolute top-10 -right-20 w-80 h-80 rounded-full bg-[#FDC909]/15 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#FDC909]/10 blur-3xl pointer-events-none" />
+
 
       {/* Safe area spacer */}
       <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
@@ -90,17 +88,14 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       {/* Top Header */}
       <div className="z-10 flex items-center justify-between px-5 pt-4">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-xl bg-[#0B0B0B] flex items-center justify-center p-1 border border-[#A7A7A7]/30 shadow-sm overflow-hidden">
-            <Image
-              src={Logo}
-              alt="ZERO Logo"
-              width={32}
-              height={32}
-              className="h-full w-full object-contain"
-              priority
-            />
-          </div>
-          <span className="text-base font-black tracking-tight text-white">ZERO</span>
+          <Image
+            src={Logo}
+            alt="ZERO Logo"
+            width={56}
+            height={56}
+            className="object-contain"
+            priority
+          />
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDC909] text-[11px] font-black text-[#0B0B0B] shadow-xs">
           Official
@@ -110,10 +105,10 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       {/* Center: Hero Card */}
       <div className="relative flex-1 flex flex-col items-center justify-center z-10 py-6">
         <div
-          className="relative w-full max-w-[280px] h-44 rounded-2xl border border-[#FDC909]/50 bg-[#0B0B0B] p-5 shadow-[0_15px_35px_rgba(0,0,0,0.6)] flex flex-col justify-between overflow-hidden"
+          className="relative w-full max-w-[280px] h-44 rounded-2xl border border-[#FDC909] bg-[#0B0B0B] p-5 flex flex-col justify-between overflow-hidden"
         >
           <div className="flex items-center justify-between z-10">
-            <span className="font-extrabold text-xs tracking-wider text-white/90">ZERO</span>
+            <span className="font-extrabold text-xs tracking-wider text-white">ZERO</span>
             <span className="font-black italic text-lg text-[#FDC909]">CARD</span>
           </div>
           <div className="z-10 my-auto flex items-center gap-3">
@@ -149,7 +144,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           onClick={() => {
             if (sliderPos < 50) triggerUnlock();
           }}
-          className="relative w-full h-14 bg-white/10 border border-[#A7A7A7]/30 rounded-full p-1 flex items-center overflow-hidden cursor-pointer shadow-lg"
+          className="relative w-full h-14 bg-[#A7A7A7] border border-[#A7A7A7] rounded-full p-1 flex items-center overflow-hidden cursor-pointer"
         >
           <div
             className="absolute left-1 top-1 bottom-1 bg-[#FDC909] rounded-full"
@@ -158,7 +153,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               transition: isDragging ? "none" : "all 0.3s ease-out",
             }}
           />
-          <div className="w-full text-center text-xs font-extrabold tracking-wider uppercase text-white/90 pointer-events-none flex items-center justify-center gap-1 pl-6 z-10">
+          <div className="w-full text-center text-xs font-extrabold tracking-wider uppercase text-white pointer-events-none flex items-center justify-center gap-1 pl-6 z-10">
             <span>Scorri per iniziare</span>
             <ChevronRight className="h-4 w-4 text-[#FDC909] animate-pulse" />
           </div>
