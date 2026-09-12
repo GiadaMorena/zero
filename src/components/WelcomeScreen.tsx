@@ -72,7 +72,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       onMouseUp={handleDragEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleDragEnd}
-      className={`relative min-h-[100dvh] h-full flex flex-col justify-between p-5 pt-3 pb-6 bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
+      className={`relative min-h-[100dvh] h-full flex flex-col justify-between p-5 pt-safe pb-6 bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
         isLeaving ? "opacity-0 -translate-y-6 scale-95" : "opacity-100 translate-y-0 scale-100"
       }`}
     >
@@ -94,8 +94,8 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       <div className="absolute top-10 -right-20 w-80 h-80 rounded-full bg-[#F5E050]/20 blur-3xl pointer-events-none" />
       <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#EAB308]/15 blur-3xl pointer-events-none" />
 
-      {/* Clean Top Header Tag (No Stars) */}
-      <div className="pt-2 z-10 flex items-center justify-between">
+      {/* Clean Top Header Tag (Below Dynamic Island) */}
+      <div className="pt-1 z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" />
           <span className="text-sm font-extrabold tracking-tight">Zero</span>
