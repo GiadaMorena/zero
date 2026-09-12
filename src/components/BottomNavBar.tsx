@@ -22,7 +22,7 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
 
   return (
     <div className="fixed bottom-4 left-0 right-0 z-40 px-4 pointer-events-none select-none flex justify-center max-w-md mx-auto">
-      <div className="pointer-events-auto bg-white/98 backdrop-blur-2xl border border-[#EBEBE5] rounded-full shadow-2xl shadow-black/15 px-3 py-2 flex items-center justify-between gap-1 w-full relative">
+      <div className="pointer-events-auto bg-white/98 backdrop-blur-2xl border border-[#A7A7A7]/30 rounded-full shadow-2xl shadow-black/15 px-3 py-2 flex items-center justify-between gap-1 w-full relative">
         {/* Tab 1: Home (Active) */}
         <button
           onClick={() => onSelectTab("home")}
@@ -30,12 +30,12 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
         >
           <Home
             className={`h-5 w-5 ${
-              currentTab === "home" ? "text-[#121212] stroke-[2.5]" : "text-[#A3A39E] stroke-[1.8]"
+              currentTab === "home" ? "text-[#0B0B0B] stroke-[2.5]" : "text-[#A7A7A7] stroke-[1.8]"
             }`}
           />
           <span
             className={`text-[9px] mt-0.5 tracking-tight font-extrabold ${
-              currentTab === "home" ? "text-[#121212]" : "text-[#A3A39E]"
+              currentTab === "home" ? "text-[#0B0B0B]" : "text-[#A7A7A7]"
             }`}
           >
             Home
@@ -50,20 +50,20 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
           <BarChart2
             className={`h-5 w-5 ${
               currentTab === "analisi" || currentTab === "statistiche"
-                ? "text-[#121212] stroke-[2.5]"
-                : "text-[#A3A39E] stroke-[1.8]"
+                ? "text-[#0B0B0B] stroke-[2.5]"
+                : "text-[#A7A7A7] stroke-[1.8]"
             }`}
           />
         </button>
 
-        {/* Central Floating Elevated Button: SCANSIONE */}
+        {/* Central Floating Elevated Button: SCANSIONE (#FDC909) */}
         <div className="relative -top-5 px-1 shrink-0">
           <button
             onClick={handleCenterAction}
-            className="h-14 w-14 rounded-full bg-[#F5E050] text-[#121212] flex items-center justify-center shadow-lg shadow-[#F5E050]/50 border-4 border-[#F8F8F5] active:scale-95 hover:scale-105 transition-all group"
+            className="h-14 w-14 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shadow-lg shadow-[#FDC909]/40 border-4 border-[#F7F7F5] active:scale-95 hover:scale-105 transition-all group"
             title="Scansiona scontrino"
           >
-            <Scan className="h-6 w-6 stroke-[2.5] text-[#121212]" />
+            <Scan className="h-6 w-6 stroke-[2.5] text-[#0B0B0B]" />
           </button>
         </div>
 
@@ -74,7 +74,7 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
         >
           <FileText
             className={`h-5 w-5 ${
-              currentTab === "spese" ? "text-[#121212] stroke-[2.5]" : "text-[#A3A39E] stroke-[1.8]"
+              currentTab === "spese" ? "text-[#0B0B0B] stroke-[2.5]" : "text-[#A7A7A7] stroke-[1.8]"
             }`}
           />
         </button>
@@ -86,7 +86,7 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
         >
           <User
             className={`h-5 w-5 ${
-              currentTab === "profilo" ? "text-[#121212] stroke-[2.5]" : "text-[#A3A39E] stroke-[1.8]"
+              currentTab === "profilo" ? "text-[#0B0B0B] stroke-[2.5]" : "text-[#A7A7A7] stroke-[1.8]"
             }`}
           />
         </button>

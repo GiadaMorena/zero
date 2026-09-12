@@ -59,10 +59,8 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
     const diffX = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(diffX) > 40) {
       if (diffX < 0) {
-        // Swipe Left -> Next Card
         rotateCard(1);
       } else {
-        // Swipe Right -> Prev Card
         rotateCard(-1);
       }
     }
@@ -102,7 +100,6 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
 
           if (pos === "center") {
             return (
-              /* Center Active Card (ZERO / Selected Card) */
               <div
                 key={card.id}
                 onClick={() => selectCardIndex(idx)}
@@ -110,20 +107,20 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
                 style={{
                   background:
                     card.type === "zero"
-                      ? "#121212"
+                      ? "#0B0B0B"
                       : card.type === "revolut"
-                      ? "#F4F4F0"
-                      : "#222224",
+                      ? "#F7F7F5"
+                      : "#0B0B0B",
                   border:
                     card.type === "zero"
-                      ? "1px solid #333333"
+                      ? "1px solid #FDC909"
                       : card.type === "revolut"
-                      ? "1px solid #E2E2DC"
-                      : "1px solid #3A3A3C",
-                  color: card.type === "revolut" ? "#121212" : "#FFFFFF",
+                      ? "1px solid #A7A7A7"
+                      : "1px solid #A7A7A7",
+                  color: card.type === "revolut" ? "#0B0B0B" : "#FFFFFF",
                 }}
               >
-                {/* Gold Curves for ZERO Card */}
+                {/* Yellow Curves for ZERO Card */}
                 {card.type === "zero" && (
                   <svg
                     className="absolute inset-0 w-full h-full pointer-events-none opacity-40"
@@ -132,24 +129,14 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
                   >
                     <path
                       d="M-30 110 C70 50, 160 170, 320 30"
-                      stroke="url(#goldCurve1)"
+                      stroke="#FDC909"
                       strokeWidth="1.5"
                     />
                     <path
                       d="M-10 150 C90 90, 180 190, 330 70"
-                      stroke="url(#goldCurve2)"
+                      stroke="#FDC909"
                       strokeWidth="1"
                     />
-                    <defs>
-                      <linearGradient id="goldCurve1" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#F5E050" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#B39E20" stopOpacity="0.1" />
-                      </linearGradient>
-                      <linearGradient id="goldCurve2" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#F5E050" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#EAB308" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
                   </svg>
                 )}
 
@@ -159,19 +146,14 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
                     {card.bankName}
                   </span>
                   {card.type === "zero" ? (
-                    <span className="italic font-black text-amber-300 text-base tracking-tighter">
+                    <span className="italic font-black text-[#FDC909] text-base tracking-tighter">
                       VISA
                     </span>
-                  ) : card.type === "mastercard" ? (
-                    <div className="flex items-center -space-x-1.5">
-                      <div className="w-4 h-4 rounded-full bg-[#EB001B]/80" />
-                      <div className="w-4 h-4 rounded-full bg-[#F79E1B]/80" />
-                    </div>
                   ) : null}
                 </div>
 
                 {/* Chip */}
-                <div className="relative z-10 w-9 h-6.5 rounded-md bg-gradient-to-br from-[#E6D785] to-[#99883B] p-0.5 border border-black/10 shadow-xs my-auto" />
+                <div className="relative z-10 w-9 h-6.5 rounded-md bg-[#FDC909] p-0.5 border border-black/10 shadow-xs my-auto" />
 
                 {/* Card Bottom: Number + Expiry */}
                 <div className="relative z-10 flex items-end justify-between font-mono">
@@ -188,7 +170,6 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
 
           if (pos === "left") {
             return (
-              /* Left Side Card (Peeking behind center) */
               <div
                 key={card.id}
                 onClick={() => selectCardIndex(idx)}
@@ -196,17 +177,15 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
                 style={{
                   background:
                     card.type === "zero"
-                      ? "#121212"
+                      ? "#0B0B0B"
                       : card.type === "revolut"
-                      ? "#F4F4F0"
-                      : "#222224",
+                      ? "#F7F7F5"
+                      : "#0B0B0B",
                   border:
                     card.type === "zero"
-                      ? "1px solid #333333"
-                      : card.type === "revolut"
-                      ? "1px solid #E2E2DC"
-                      : "1px solid #3A3A3C",
-                  color: card.type === "revolut" ? "#121212" : "#FFFFFF",
+                      ? "1px solid #FDC909"
+                      : "1px solid #A7A7A7",
+                  color: card.type === "revolut" ? "#0B0B0B" : "#FFFFFF",
                 }}
               >
                 <div className="flex items-center justify-between">
@@ -215,7 +194,7 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
                   </span>
                 </div>
 
-                <div className="w-7 h-5 rounded-md bg-gradient-to-br from-[#E2D58B] to-[#B3A252] p-0.5 border border-black/10 shadow-xs my-auto" />
+                <div className="w-7 h-5 rounded-md bg-[#FDC909] p-0.5 border border-black/10 shadow-xs my-auto" />
 
                 <div className="font-mono text-[10px] tracking-wider opacity-80">
                   {card.number}
@@ -224,7 +203,6 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
             );
           }
 
-          /* Right Side Card (Peeking behind center) */
           return (
             <div
               key={card.id}
@@ -233,32 +211,24 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
               style={{
                 background:
                   card.type === "zero"
-                    ? "#121212"
+                    ? "#0B0B0B"
                     : card.type === "revolut"
-                    ? "#F4F4F0"
-                    : "#222224",
+                    ? "#F7F7F5"
+                    : "#0B0B0B",
                 border:
                   card.type === "zero"
-                    ? "1px solid #333333"
-                    : card.type === "revolut"
-                    ? "1px solid #E2E2DC"
-                    : "1px solid #3A3A3C",
-                color: card.type === "revolut" ? "#121212" : "#FFFFFF",
+                    ? "1px solid #FDC909"
+                    : "1px solid #A7A7A7",
+                color: card.type === "revolut" ? "#0B0B0B" : "#FFFFFF",
               }}
             >
               <div className="flex items-center justify-between">
                 <span className="font-extrabold text-xs tracking-tight">
                   {card.bankName}
                 </span>
-                {card.type === "mastercard" && (
-                  <div className="flex items-center -space-x-1.5">
-                    <div className="w-3.5 h-3.5 rounded-full bg-[#EB001B]/80" />
-                    <div className="w-3.5 h-3.5 rounded-full bg-[#F79E1B]/80" />
-                  </div>
-                )}
               </div>
 
-              <div className="w-7 h-5 rounded-md bg-[#333336] p-0.5 border border-white/10 shadow-xs my-auto" />
+              <div className="w-7 h-5 rounded-md bg-[#A7A7A7] p-0.5 border border-white/10 shadow-xs my-auto" />
 
               <div className="font-mono text-[10px] tracking-wider opacity-80 text-right">
                 {card.number}
@@ -276,13 +246,12 @@ export function WalletCarousel({ onCardSelect }: WalletCarouselProps) {
             onClick={() => selectCardIndex(i)}
             className={`h-1.5 rounded-full transition-all duration-300 ${
               i === activeIndex
-                ? "w-4 bg-[#121212]"
-                : "w-1.5 bg-[#D4D4CE] hover:bg-[#A3A39E]"
+                ? "w-4 bg-[#0B0B0B]"
+                : "w-1.5 bg-[#A7A7A7] hover:bg-[#0B0B0B]"
             }`}
             aria-label={`Carta ${i + 1}`}
           />
         ))}
-        <button className="h-1.5 w-1.5 rounded-full bg-[#D4D4CE]" />
       </div>
     </div>
   );

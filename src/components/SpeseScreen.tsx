@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Plus, ShoppingCart, Music, Utensils, Fuel, Film, ShoppingBag, Pill, Trash2, DollarSign } from "lucide-react";
+import { Search, Plus, ShoppingCart, Utensils, Fuel, ShoppingBag, Trash2, DollarSign } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 interface SpeseScreenProps {
@@ -32,23 +32,23 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
   return (
     <div
       style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 1.25rem)" }}
-      className="flex flex-col gap-4 px-4 pb-32 bg-[#F8F8F5] select-none min-h-screen max-w-md mx-auto"
+      className="flex flex-col gap-4 px-4 pb-32 bg-[#F7F7F5] select-none min-h-screen max-w-md mx-auto"
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-1 px-1">
-        <h1 className="text-2xl font-black tracking-tight text-[#121212]">
+        <h1 className="text-2xl font-black tracking-tight text-[#0B0B0B]">
           Spese & Movimenti
         </h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className="h-9 w-9 rounded-full bg-white border border-[#EBEBE5] text-[#121212] flex items-center justify-center hover:bg-[#F8F8F5] shadow-xs transition-colors"
+            className="h-9 w-9 rounded-full bg-white border border-[#A7A7A7]/20 text-[#0B0B0B] flex items-center justify-center hover:bg-[#F7F7F5] shadow-xs transition-colors"
           >
             <Search className="h-4 w-4" />
           </button>
           <button
             onClick={() => onOpenAddModal("expense")}
-            className="h-9 w-9 rounded-full bg-[#121212] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
+            className="h-9 w-9 rounded-full bg-[#0B0B0B] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
           </button>
@@ -58,13 +58,13 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
       {/* Search Input Bar */}
       {showSearch && (
         <div className="relative animate-in fade-in duration-200">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#73736E]" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#A7A7A7]" />
           <input
             type="text"
             placeholder="Cerca spesa..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-[20px] bg-white border border-[#EBEBE5] text-xs focus:outline-none focus:border-[#F5E050]"
+            className="w-full pl-10 pr-4 py-2.5 rounded-[20px] bg-white border border-[#A7A7A7]/30 text-xs focus:outline-none focus:border-[#FDC909]"
           />
         </div>
       )}
@@ -79,8 +79,8 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
               onClick={() => setActiveCategory(cat)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
                 isActive
-                  ? "bg-[#F5E050] text-[#121212] shadow-xs"
-                  : "bg-white text-[#73736E] border border-[#EBEBE5] hover:text-[#121212]"
+                  ? "bg-[#FDC909] text-[#0B0B0B] shadow-xs"
+                  : "bg-white text-[#A7A7A7] border border-[#A7A7A7]/20 hover:text-[#0B0B0B]"
               }`}
             >
               {cat}
@@ -91,55 +91,51 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
 
       {/* Total Month Card Header */}
       <div className="flex items-center justify-between px-1 pt-0.5">
-        <span className="text-xs font-semibold text-[#73736E]">Settembre 2026</span>
-        <span className="text-xs font-extrabold text-[#121212]">
+        <span className="text-xs font-semibold text-[#A7A7A7]">Settembre 2026</span>
+        <span className="text-xs font-extrabold text-[#0B0B0B]">
           - {money(totalSpending)}
         </span>
       </div>
 
       {/* Transaction List */}
       <div className="flex flex-col gap-2.5">
-        {filtered.map((t) => {
-          const isIncome = t.amount > 0;
+        {filtered.map((item) => {
+          const isIncome = item.amount > 0;
           return (
             <div
-              key={t.id}
-              className="flex items-center justify-between p-3.5 rounded-[22px] bg-white border border-[#EBEBE5] shadow-xs hover:border-[#121212]/30 transition-all group"
+              key={item.id}
+              className="flex items-center justify-between p-3.5 rounded-[22px] bg-white border border-[#A7A7A7]/20 shadow-xs group"
             >
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212] shrink-0">
-                  {t.category === "Cibo" ? (
-                    <ShoppingCart className="h-4.5 w-4.5 stroke-[1.8]" />
-                  ) : t.category === "Trasporti" ? (
-                    <Fuel className="h-4.5 w-4.5 stroke-[1.8]" />
+                <div className="h-9 w-9 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B] shrink-0">
+                  {item.category === "Cibo" ? (
+                    <ShoppingCart className="h-4 w-4" />
+                  ) : item.category === "Trasporti" ? (
+                    <Fuel className="h-4 w-4" />
                   ) : isIncome ? (
-                    <DollarSign className="h-4.5 w-4.5 stroke-[1.8]" />
+                    <DollarSign className="h-4 w-4" />
                   ) : (
-                    <ShoppingBag className="h-4.5 w-4.5 stroke-[1.8]" />
+                    <ShoppingBag className="h-4 w-4" />
                   )}
                 </div>
                 <div>
-                  <h4 className="text-xs font-extrabold text-[#121212] leading-tight">
-                    {t.title}
+                  <h4 className="text-xs font-bold text-[#0B0B0B] leading-tight">
+                    {item.title}
                   </h4>
-                  <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
-                    {t.category} · {t.date}
+                  <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
+                    {item.category} · {item.date}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span
-                  className={`text-xs font-black ${
-                    isIncome ? "text-[#166534]" : "text-[#121212]"
-                  }`}
-                >
-                  {isIncome ? "+" : "-"} {money(Math.abs(t.amount))}
+                <span className="text-xs font-black text-[#0B0B0B]">
+                  {isIncome ? "+ " : "- "} {money(Math.abs(item.amount))}
                 </span>
                 <button
-                  onClick={() => deleteTransaction(t.id)}
-                  className="p-1 text-[#A3A39E] hover:text-[#991B1B] transition-colors"
-                  title="Elimina transazione"
+                  onClick={() => deleteTransaction(item.id)}
+                  className="p-1 text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors"
+                  title="Elimina"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -149,8 +145,8 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
         })}
 
         {filtered.length === 0 && (
-          <div className="text-center py-10 text-[#73736E] text-xs font-medium">
-            Nessuna spesa trovata.
+          <div className="text-center py-10 text-[#A7A7A7] text-xs font-medium">
+            Nessun movimento trovato.
           </div>
         )}
       </div>

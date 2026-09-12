@@ -21,7 +21,7 @@ export function SubscriptionToggle({
         onChange();
       }}
       className={`relative inline-block h-6 w-10 shrink-0 cursor-pointer rounded-full border-0 p-0 m-0 outline-none transition-colors duration-200 ease-in-out select-none ${
-        checked ? "bg-[#F5E050]" : "bg-[#E5E5E0]"
+        checked ? "bg-[#FDC909]" : "bg-[#A7A7A7]/40"
       }`}
     >
       <span
@@ -76,36 +76,36 @@ export function AbbonamentiScreen() {
   return (
     <div
       style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 1.25rem)" }}
-      className="flex flex-col gap-4 px-4 pb-32 bg-[#F8F8F5] select-none min-h-screen max-w-md mx-auto"
+      className="flex flex-col gap-4 px-4 pb-32 bg-[#F7F7F5] select-none min-h-screen max-w-md mx-auto"
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-1 px-1">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#121212]">
+          <h1 className="text-2xl font-black tracking-tight text-[#0B0B0B]">
             Abbonamenti
           </h1>
-          <p className="text-xs text-[#73736E] font-medium mt-0.5">
-            Totale attivo: <span className="font-extrabold text-[#121212]">{money(totalActiveSubscriptionsCost)} / mese</span>
+          <p className="text-xs text-[#A7A7A7] font-medium mt-0.5">
+            Totale attivo: <span className="font-extrabold text-[#0B0B0B]">{money(totalActiveSubscriptionsCost)} / mese</span>
           </p>
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="h-9 w-9 rounded-full bg-[#121212] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
+          className="h-9 w-9 rounded-full bg-[#0B0B0B] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
         >
           <Plus className="h-4 w-4 stroke-[2.5]" />
         </button>
       </div>
 
       {/* Filter Segment Pills */}
-      <div className="grid grid-cols-3 gap-2 bg-[#EBEBE5]/60 p-1.5 rounded-2xl">
+      <div className="grid grid-cols-3 gap-2 bg-white border border-[#A7A7A7]/20 p-1.5 rounded-2xl">
         {(["Tutti", "Attivi", "In scadenza"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`py-2 rounded-xl text-xs font-bold transition-all ${
               filter === f
-                ? "bg-[#F5E050] text-[#121212] shadow-xs"
-                : "text-[#73736E] hover:text-[#121212]"
+                ? "bg-[#FDC909] text-[#0B0B0B] shadow-xs"
+                : "text-[#A7A7A7] hover:text-[#0B0B0B]"
             }`}
           >
             {f}
@@ -121,20 +121,20 @@ export function AbbonamentiScreen() {
             onClick={() => toggleSubscription(sub.id)}
             className={`flex items-center justify-between p-3.5 rounded-[22px] bg-white border cursor-pointer transition-all ${
               sub.active
-                ? "border-[#EBEBE5] shadow-xs hover:border-[#121212]/30 opacity-100"
-                : "border-[#EBEBE5] opacity-50 bg-[#F8F8F5]"
+                ? "border-[#A7A7A7]/30 shadow-xs opacity-100"
+                : "border-[#A7A7A7]/20 opacity-50 bg-[#F7F7F5]"
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center font-bold text-sm shrink-0 text-[#121212]">
+              <div className="h-9 w-9 rounded-xl bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center font-bold text-sm shrink-0 text-[#0B0B0B]">
                 <Film className="h-4.5 w-4.5" />
               </div>
               <div>
-                <h4 className="text-xs font-extrabold text-[#121212] leading-tight">
+                <h4 className="text-xs font-extrabold text-[#0B0B0B] leading-tight">
                   {sub.name}
                 </h4>
-                <p className="text-[11px] text-[#73736E] font-medium mt-0.5">
-                  {money(sub.cost)} / {sub.frequency} · <span className="text-[#A3A39E]">{sub.date}</span>
+                <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5">
+                  {money(sub.cost)} / {sub.frequency} · <span className="text-[#A7A7A7]">{sub.date}</span>
                 </p>
               </div>
             </div>
@@ -148,42 +148,42 @@ export function AbbonamentiScreen() {
         ))}
 
         {filteredSubs.length === 0 && (
-          <div className="text-center py-10 text-[#73736E] text-xs font-medium">
+          <div className="text-center py-10 text-[#A7A7A7] text-xs font-medium">
             Nessun abbonamento trovato.
           </div>
         )}
       </div>
 
       {/* Reminder Banner */}
-      <div className="rounded-[20px] bg-white border border-[#EBEBE5] p-3.5 flex items-center justify-between shadow-xs">
+      <div className="rounded-[20px] bg-white border border-[#A7A7A7]/20 p-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-[#121212] text-[#F5E050] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-full bg-[#0B0B0B] text-[#FDC909] flex items-center justify-center shrink-0">
             <Bell className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-xs font-bold text-[#121212] leading-tight">
+            <p className="text-xs font-bold text-[#0B0B0B] leading-tight">
               Tieni tutto sotto controllo.
             </p>
-            <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
+            <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
               Niente sorprese in estratto conto.
             </p>
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-[#A3A39E]" />
+        <ChevronRight className="h-4 w-4 text-[#A7A7A7]" />
       </div>
 
       {/* Add Subscription Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4">
-          <div className="w-full max-w-md bg-[#F8F8F5] rounded-t-[32px] sm:rounded-[32px] border border-[#EBEBE5] p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-md p-0 sm:p-4">
+          <div className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-2 rounded-full bg-white border border-[#EBEBE5] text-[#121212]"
+                className="p-2 rounded-full bg-white border border-[#A7A7A7]/30 text-[#0B0B0B]"
               >
                 <X className="h-4 w-4" />
               </button>
-              <h2 className="text-sm font-black text-[#121212]">
+              <h2 className="text-sm font-black text-[#0B0B0B]">
                 Nuovo Abbonamento
               </h2>
               <div className="w-8" />
@@ -191,7 +191,7 @@ export function AbbonamentiScreen() {
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-xs font-bold text-[#73736E] mb-1">
+                <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
                   Nome Servizio
                 </label>
                 <input
@@ -199,13 +199,13 @@ export function AbbonamentiScreen() {
                   placeholder="Es. Disney+, ChatGPT, Gym..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-white border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
+                  className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-[#73736E] mb-1">
+                  <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
                     Costo (€)
                   </label>
                   <input
@@ -213,18 +213,18 @@ export function AbbonamentiScreen() {
                     placeholder="9,99"
                     value={cost}
                     onChange={(e) => setCost(e.target.value)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#73736E] mb-1">
+                  <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
                     Frequenza
                   </label>
                   <select
                     value={frequency}
                     onChange={(e) => setFrequency(e.target.value as any)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none"
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none"
                   >
                     <option value="mese">Mensile</option>
                     <option value="anno">Annuale</option>
@@ -234,7 +234,7 @@ export function AbbonamentiScreen() {
 
               <button
                 onClick={handleSaveSub}
-                className="w-full py-3.5 mt-2 rounded-full bg-[#121212] text-white font-black text-sm shadow-xl hover:bg-black transition-all"
+                className="w-full py-3.5 mt-2 rounded-full bg-[#0B0B0B] text-white font-black text-sm shadow-xl hover:bg-black transition-all"
               >
                 Salva Abbonamento
               </button>

@@ -1,6 +1,9 @@
+"use client";
+
 import React, { useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import { BrandLogo } from "./BrandLogo";
+import ZeroLogo from "@/assets/Zero-logo.png";
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -72,64 +75,56 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       onMouseUp={handleDragEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleDragEnd}
-      className={`fixed inset-0 flex flex-col bg-[#121212] text-white overflow-y-auto overflow-x-hidden select-none transition-all duration-500 ease-in-out ${
+      className={`fixed inset-0 flex flex-col bg-[#0B0B0B] text-white overflow-y-auto overflow-x-hidden select-none transition-all duration-500 ease-in-out ${
         isLeaving ? "opacity-0 -translate-y-6 scale-95" : "opacity-100 translate-y-0 scale-100"
       }`}
       style={{ zIndex: 50 }}
     >
-      {/* Background decorations — absolute, no padding interference */}
-      <svg
-        className="absolute inset-0 w-full h-full opacity-10 pointer-events-none stroke-white/40"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 400 800"
-        fill="none"
-      >
-        <path d="M-50 100 Q 150 200 350 50 T 450 300" strokeWidth="1.5" />
-        <path d="M-50 180 Q 120 320 380 180 T 450 420" strokeWidth="1.5" />
-        <path d="M-50 260 Q 180 400 320 280 T 450 540" strokeWidth="1.5" />
-        <path d="M-50 350 Q 100 500 400 380 T 450 650" strokeWidth="1.5" />
-        <path d="M-50 440 Q 200 620 360 480 T 450 780" strokeWidth="1.5" />
-      </svg>
-      <div className="absolute top-10 -right-20 w-80 h-80 rounded-full bg-[#F5E050]/20 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#EAB308]/15 blur-3xl pointer-events-none" />
+      {/* Background ambient glow in ZERO yellow */}
+      <div className="absolute top-10 -right-20 w-80 h-80 rounded-full bg-[#FDC909]/15 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#FDC909]/10 blur-3xl pointer-events-none" />
 
-      {/* ── SAFE AREA SPACER — transparent, pushes content below dynamic island ── */}
+      {/* Safe area spacer */}
       <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
 
       {/* Top Header */}
-      <div className="z-10 flex items-center justify-between px-5 pt-3">
-        <div className="flex items-center gap-2">
-          <BrandLogo size="sm" />
-          <span className="text-sm font-extrabold tracking-tight">Zero</span>
+      <div className="z-10 flex items-center justify-between px-5 pt-4">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-xl bg-[#0B0B0B] flex items-center justify-center p-1 border border-[#A7A7A7]/30 shadow-sm overflow-hidden">
+            <Image
+              src={ZeroLogo}
+              alt="ZERO Logo"
+              width={32}
+              height={32}
+              className="h-full w-full object-contain"
+              priority
+            />
+          </div>
+          <span className="text-base font-black tracking-tight text-white">ZERO</span>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-bold text-[#F5E050]">
-          Beta
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDC909] text-[11px] font-black text-[#0B0B0B] shadow-xs">
+          Official
         </div>
       </div>
 
-      {/* Center: floating card — grows to fill middle space */}
+      {/* Center: Hero Card */}
       <div className="relative flex-1 flex flex-col items-center justify-center z-10 py-6">
         <div
-          style={{
-            background:
-              "radial-gradient(circle at 85% 15%, rgba(245, 224, 80, 0.35) 0%, rgba(0,0,0,0) 60%), linear-gradient(135deg, #1C1C1C 0%, #2A261B 50%, #3D3712 100%)",
-            WebkitMaskImage: "-webkit-radial-gradient(white, black)",
-          }}
-          className="relative w-full max-w-[280px] h-44 rounded-2xl border border-[#F5E050]/40 p-5 shadow-[0_15px_35px_rgba(0,0,0,0.5)] flex flex-col justify-between animate-float-card overflow-hidden"
+          className="relative w-full max-w-[280px] h-44 rounded-2xl border border-[#FDC909]/50 bg-[#0B0B0B] p-5 shadow-[0_15px_35px_rgba(0,0,0,0.6)] flex flex-col justify-between overflow-hidden"
         >
           <div className="flex items-center justify-between z-10">
             <span className="font-extrabold text-xs tracking-wider text-white/90">ZERO</span>
-            <span className="font-black italic text-lg text-[#F5E050]">VISA</span>
+            <span className="font-black italic text-lg text-[#FDC909]">CARD</span>
           </div>
           <div className="z-10 my-auto flex items-center gap-3">
-            <div className="h-6 w-8 rounded-md bg-gradient-to-tr from-[#FEF08A] to-[#EAB308] opacity-90 shadow-sm" />
-            <div className="h-1.5 w-12 rounded-full bg-white/20" />
+            <div className="h-6 w-8 rounded-md bg-[#FDC909] shadow-sm" />
+            <div className="h-1.5 w-12 rounded-full bg-[#A7A7A7]/30" />
           </div>
           <div className="z-10 flex items-center justify-between">
-            <span className="text-xs font-mono font-bold tracking-widest text-[#FEF08A]">
+            <span className="text-xs font-mono font-bold tracking-widest text-[#FDC909]">
               •••• •••• 3377
             </span>
-            <span className="text-[10px] font-mono text-white/50">09/29</span>
+            <span className="text-[10px] font-mono text-[#A7A7A7]">09/29</span>
           </div>
         </div>
       </div>
@@ -143,7 +138,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           <h1 className="text-3xl font-extrabold tracking-tight text-white leading-[1.15]">
             Gestire il tuo denaro sta per diventare molto più semplice.
           </h1>
-          <p className="text-xs text-[#A3A39E] font-medium mt-2 leading-relaxed">
+          <p className="text-xs text-[#A7A7A7] font-medium mt-2 leading-relaxed">
             Tieni traccia di spese, abbonamenti e obiettivi senza confusione.
           </p>
         </div>
@@ -154,10 +149,10 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           onClick={() => {
             if (sliderPos < 50) triggerUnlock();
           }}
-          className="relative w-full h-14 bg-white/10 border border-white/15 rounded-full p-1 flex items-center overflow-hidden cursor-pointer shadow-lg"
+          className="relative w-full h-14 bg-white/10 border border-[#A7A7A7]/30 rounded-full p-1 flex items-center overflow-hidden cursor-pointer shadow-lg"
         >
           <div
-            className="absolute left-1 top-1 bottom-1 bg-[#F5E050] rounded-full"
+            className="absolute left-1 top-1 bottom-1 bg-[#FDC909] rounded-full"
             style={{
               width: `${sliderPos}%`,
               transition: isDragging ? "none" : "all 0.3s ease-out",
@@ -165,7 +160,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           />
           <div className="w-full text-center text-xs font-extrabold tracking-wider uppercase text-white/90 pointer-events-none flex items-center justify-center gap-1 pl-6 z-10">
             <span>Scorri per iniziare</span>
-            <ChevronRight className="h-4 w-4 text-[#F5E050] animate-pulse" />
+            <ChevronRight className="h-4 w-4 text-[#FDC909] animate-pulse" />
           </div>
           <div
             onMouseDown={(e) => handleStartDrag(e.clientX)}
@@ -175,9 +170,9 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               transition: isDragging ? "none" : "transform 0.3s ease-out",
               willChange: "transform",
             }}
-            className="absolute left-1 h-12 w-12 rounded-full bg-white text-[#121212] flex items-center justify-center shadow-xl z-20 touch-none"
+            className="absolute left-1 h-12 w-12 rounded-full bg-white text-[#0B0B0B] flex items-center justify-center shadow-xl z-20 touch-none"
           >
-            <ArrowRight className="h-5 w-5 stroke-[2.5] text-[#121212]" />
+            <ArrowRight className="h-5 w-5 stroke-[2.5] text-[#0B0B0B]" />
           </div>
         </div>
       </div>

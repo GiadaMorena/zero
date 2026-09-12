@@ -24,15 +24,15 @@ type ExtendedTab = NavTab | "welcome";
  * so the status bar area is always the same color as the active screen.
  */
 const TAB_BACKGROUNDS: Record<ExtendedTab, string> = {
-  welcome:      "#121212",
-  home:         "#F8F8F5",
-  spese:        "#F8F8F5",
-  analisi:      "#F8F8F5",
-  carte:        "#F8F8F5",
-  obiettivi:    "#F8F8F5",
-  abbonamenti:  "#F8F8F5",
-  statistiche:  "#F8F8F5",
-  profilo:      "#F8F8F5",
+  welcome:      "#0B0B0B",
+  home:         "#F7F7F5",
+  spese:        "#F7F7F5",
+  analisi:      "#F7F7F5",
+  carte:        "#F7F7F5",
+  obiettivi:    "#F7F7F5",
+  abbonamenti:  "#F7F7F5",
+  statistiche:  "#F7F7F5",
+  profilo:      "#F7F7F5",
 };
 
 // ─── Mobile App Shell ────────────────────────────────────────────────────────
