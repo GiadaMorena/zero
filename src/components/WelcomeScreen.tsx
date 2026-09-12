@@ -72,12 +72,15 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       onMouseUp={handleDragEnd}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleDragEnd}
-      style={{
-        paddingTop: "calc(env(safe-area-inset-top, 44px) + 2.75rem)",
-      }}
-      className={`relative min-h-[100dvh] h-full flex flex-col justify-between px-5 pb-6 bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
+      className={`relative w-full min-h-[100dvh] flex flex-col justify-between bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ease-in-out ${
         isLeaving ? "opacity-0 -translate-y-6 scale-95" : "opacity-100 translate-y-0 scale-100"
       }`}
+      style={{
+        paddingTop: "max(env(safe-area-inset-top, 44px), 44px)",
+        paddingBottom: "max(env(safe-area-inset-bottom, 20px), 20px)",
+        paddingLeft: "env(safe-area-inset-left, 0px)",
+        paddingRight: "env(safe-area-inset-right, 0px)",
+      }}
     >
       {/* Organic Topographic Waves Background SVG */}
       <svg
@@ -97,8 +100,8 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       <div className="absolute top-10 -right-20 w-80 h-80 rounded-full bg-[#F5E050]/20 blur-3xl pointer-events-none" />
       <div className="absolute bottom-20 -left-20 w-72 h-72 rounded-full bg-[#EAB308]/15 blur-3xl pointer-events-none" />
 
-      {/* Clean Top Header Tag (Below Dynamic Island) */}
-      <div className="z-10 flex items-center justify-between">
+      {/* Clean Top Header Tag */}
+      <div className="z-10 flex items-center justify-between px-5 mt-4">
         <div className="flex items-center gap-2">
           <BrandLogo size="sm" />
           <span className="text-sm font-extrabold tracking-tight">Zero</span>
@@ -141,7 +144,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       </div>
 
       {/* Bottom Area: Text & Ultra-Smooth Swipe Slider */}
-      <div className="pb-4 z-10 flex flex-col gap-6">
+      <div className="px-5 pb-2 z-10 flex flex-col gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-[1.15]">
             Gestire il tuo denaro sta per diventare molto più semplice.

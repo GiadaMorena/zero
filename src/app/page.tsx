@@ -75,16 +75,23 @@ export default function Home() {
 
   return (
     <main
-      className={`min-h-screen w-full flex justify-center selection:bg-[#F5E050]/50 transition-colors duration-500 ${
+      className={`w-full min-h-[100dvh] flex flex-col selection:bg-[#F5E050]/50 transition-colors duration-500 ${
         activeTab === "welcome" ? "bg-[#121212]" : "bg-[#F8F8F5]"
       }`}
+      style={{
+        backgroundColor: activeTab === "welcome" ? "#121212" : "#F8F8F5",
+      }}
     >
+      {/* App content — full width on mobile, centered card on wide screens */}
       <div
-        className={`w-full max-w-md min-h-screen flex flex-col justify-between relative transition-colors duration-500 ${
+        className={`flex-1 flex flex-col w-full md:max-w-md md:mx-auto md:my-8 md:rounded-[48px] md:overflow-hidden md:shadow-2xl transition-colors duration-500 ${
           activeTab === "welcome" ? "bg-[#121212]" : "bg-[#F8F8F5]"
         }`}
       >
-        <div key={activeTab} className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div
+          key={activeTab}
+          className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in slide-in-from-bottom-2 duration-500"
+        >
           {renderActiveScreen()}
         </div>
 

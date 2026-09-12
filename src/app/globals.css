@@ -25,6 +25,8 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: none;
+    /* Prevent white bars on iOS overscroll */
+    background-attachment: fixed;
   }
 
   body {
@@ -39,6 +41,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     touch-action: manipulation;
+    overscroll-behavior: none;
   }
 }
 
