@@ -19,7 +19,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import ZeroLogo from "@/assets/Zero-logo.png";
+import Logo from "@/assets/logo.png";
 
 export type DesktopSection =
   | "dashboard"
@@ -89,7 +89,7 @@ export function DesktopLayout({
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-2xl bg-[#0B0B0B] flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-md">
               <Image
-                src={ZeroLogo}
+                src={Logo}
                 alt="ZERO Logo"
                 width={36}
                 height={36}

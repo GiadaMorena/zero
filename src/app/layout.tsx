@@ -11,6 +11,10 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Zero — Le tue finanze, senza caos",
   description: "Zero: Gestisci spese, abbonamenti, carte e obiettivi finanziari con chiarezza e stile.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent", // transparent: the app bg shows through

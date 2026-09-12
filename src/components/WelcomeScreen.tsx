@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import ZeroLogo from "@/assets/Zero-logo.png";
+import Logo from "@/assets/logo.png";
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -92,7 +92,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-xl bg-[#0B0B0B] flex items-center justify-center p-1 border border-[#A7A7A7]/30 shadow-sm overflow-hidden">
             <Image
-              src={ZeroLogo}
+              src={Logo}
               alt="ZERO Logo"
               width={32}
               height={32}
