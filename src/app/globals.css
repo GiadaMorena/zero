@@ -35,17 +35,17 @@
   }
 }
 
-/* Mobile Safe Area Inset Helpers */
+/* Mobile Safe Area Inset Helpers for iPhone 17 Pro & Modern Display Curved Corners */
 .pt-safe {
-  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-top: max(1.25rem, env(safe-area-inset-top, 48px));
 }
 
 .pb-safe {
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 34px));
 }
 
 .pb-safe-nav {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 34px));
 }
 
 /* Custom Utilities */
