@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { ArrowRight, Sparkles, ChevronRight } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
 
 interface WelcomeScreenProps {
@@ -8,17 +8,63 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const [isLeaving, setIsLeaving] = useState(false);
+  const [sliderPos, setSliderPos] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
-  const handleStartClick = () => {
+  const triggerUnlock = () => {
+    setSliderPos(100);
     setIsLeaving(true);
     setTimeout(() => {
       onStart();
-    }, 400);
+    }, 450);
+  };
+
+  // Mouse / Touch drag handlers for the Slider
+  const handleDrag = (clientX: number) => {
+    if (!sliderRef.current) return;
+    const rect = sliderRef.current.getBoundingClientRect();
+    const handleWidth = 52;
+    const maxDrag = rect.width - handleWidth;
+    const currentOffset = clientX - rect.left - handleWidth / 2;
+    
+    let percentage = (currentOffset / maxDrag) * 100;
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
+
+    setSliderPos(percentage);
+
+    if (percentage >= 85) {
+      setIsDragging(false);
+      triggerUnlock();
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    handleDrag(e.touches[0].clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    handleDrag(e.clientX);
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (sliderPos < 85) {
+      setSliderPos(0); // Snap back if not reached threshold
+    }
   };
 
   return (
     <div
-      className={`relative min-h-[780px] h-full flex flex-col justify-between p-7 bg-[#121212] text-white overflow-hidden transition-opacity duration-500 ${
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleDragEnd}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleDragEnd}
+      className={`relative min-h-[780px] h-full flex flex-col justify-between p-7 bg-[#121212] text-white overflow-hidden select-none transition-all duration-500 ${
         isLeaving ? "opacity-0 scale-95" : "opacity-100 scale-100"
       }`}
     >
@@ -52,66 +98,89 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </div>
       </div>
 
-      {/* Center Animated Floating 3D Credit Card Area */}
-      <div className="relative my-auto py-10 z-10 flex flex-col items-center justify-center">
+      {/* Center Animated Floating Clean Card Area (No Name, No Balance) */}
+      <div className="relative my-auto py-8 z-10 flex flex-col items-center justify-center">
         {/* Floating Sparkle Stars around Card */}
-        <div className="absolute top-4 left-8 text-[#F5E050] animate-sparkle">
+        <div className="absolute top-2 left-6 text-[#F5E050] animate-sparkle">
           ✦
         </div>
-        <div className="absolute bottom-6 right-10 text-[#FEF08A] text-lg animate-sparkle delay-300">
+        <div className="absolute bottom-4 right-8 text-[#FEF08A] text-lg animate-sparkle delay-300">
           ★
         </div>
 
-        {/* Floating Glassmorphic 3D Card */}
-        <div className="relative w-full max-w-[290px] h-44 rounded-[26px] bg-gradient-to-tr from-[#1E1E1E] via-[#2D2B1C] to-[#453E17] border border-[#F5E050]/40 p-5 shadow-[0_20px_50px_rgba(245,224,80,0.15)] flex flex-col justify-between animate-float-card overflow-hidden">
+        {/* Floating Minimal Glassmorphic Card */}
+        <div className="relative w-full max-w-[280px] h-44 rounded-[26px] bg-gradient-to-tr from-[#1E1E1E] via-[#2D2B1C] to-[#453E17] border border-[#F5E050]/40 p-5 shadow-[0_20px_50px_rgba(245,224,80,0.15)] flex flex-col justify-between animate-float-card overflow-hidden">
           {/* Card internal gradient glow */}
           <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-[#F5E050]/30 blur-xl pointer-events-none" />
-          
+
+          {/* Top Row: Brand & VISA */}
           <div className="flex items-center justify-between z-10">
-            <span className="font-extrabold text-xs tracking-wider text-white/90">ZERO CARD</span>
+            <span className="font-extrabold text-xs tracking-wider text-white/90">ZERO</span>
             <span className="font-black italic text-lg text-[#F5E050]">VISA</span>
           </div>
 
-          <div className="z-10 my-auto">
-            <p className="text-[10px] text-white/60 uppercase font-mono">Giada Morena</p>
-            <p className="text-xs font-mono font-bold tracking-widest text-[#FEF08A] mt-0.5">
-              •••• •••• 3377
-            </p>
+          {/* Middle Chip */}
+          <div className="z-10 my-auto flex items-center gap-3">
+            <div className="h-6 w-8 rounded-md bg-gradient-to-tr from-[#FEF08A] to-[#EAB308] opacity-90 shadow-sm" />
+            <div className="h-1.5 w-12 rounded-full bg-white/20" />
           </div>
 
-          <div className="flex items-center justify-between text-[9px] text-white/70 z-10">
-            <span>DISPONIBILITÀ ATTUALE</span>
-            <span className="font-extrabold text-[#F5E050] text-xs">€ 1.245,80</span>
+          {/* Bottom Card Number (Clean & Minimal) */}
+          <div className="z-10 flex items-center justify-between">
+            <span className="text-xs font-mono font-bold tracking-widest text-[#FEF08A]">
+              •••• •••• 3377
+            </span>
+            <span className="text-[10px] font-mono text-white/50">09/29</span>
           </div>
         </div>
       </div>
 
-      {/* Bottom Area: Animated Heading & Action Button */}
-      <div className="pb-6 z-10 flex flex-col gap-6">
+      {/* Bottom Area: Animated Heading & Interactive Swipe Slider */}
+      <div className="pb-4 z-10 flex flex-col gap-6">
         <div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-[1.15]">
             Gestire il tuo denaro sta per diventare molto più semplice.
           </h1>
-          <p className="text-xs sm:text-sm text-[#A3A39E] font-medium mt-3 leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#A3A39E] font-medium mt-2 leading-relaxed">
             Tieni traccia di spese, abbonamenti e obiettivi senza confusione.
           </p>
         </div>
 
-        {/* Action Button */}
-        <div className="flex items-center justify-between pt-2">
-          <button
-            onClick={handleStartClick}
-            className="group relative flex items-center justify-between w-full max-w-[200px] pl-6 pr-3 py-3.5 bg-white text-[#121212] rounded-full font-bold shadow-2xl hover:bg-[#F5E050] transition-all duration-300"
+        {/* Interactive Slider Button to Open App */}
+        <div
+          ref={sliderRef}
+          onClick={() => {
+            // Also allow click to unlock for accessibility
+            if (sliderPos < 50) triggerUnlock();
+          }}
+          className="relative w-full h-14 bg-white/10 backdrop-blur-lg border border-white/20 rounded-full p-1 flex items-center overflow-hidden cursor-pointer shadow-xl group"
+        >
+          {/* Active Fill Track */}
+          <div
+            className="absolute left-1 top-1 bottom-1 bg-[#F5E050] rounded-full transition-all duration-75"
+            style={{ width: `calc(${sliderPos}% + 48px - ${(sliderPos / 100) * 48}px)` }}
+          />
+
+          {/* Text Prompt */}
+          <div className="w-full text-center text-xs font-extrabold tracking-wider uppercase text-white/80 pointer-events-none flex items-center justify-center gap-1.5 pl-6">
+            <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
+              Scorri per iniziare
+            </span>
+            <ChevronRight className="h-4 w-4 text-[#F5E050] animate-pulse" />
+            <ChevronRight className="h-4 w-4 text-white/40 -ml-2" />
+          </div>
+
+          {/* Sliding Knob Handle */}
+          <div
+            onMouseDown={() => setIsDragging(true)}
+            onTouchStart={() => setIsDragging(true)}
+            style={{
+              transform: `translateX(calc(${(sliderPos / 100) * (sliderRef.current ? sliderRef.current.getBoundingClientRect().width - 52 : 240)}px))`,
+            }}
+            className="absolute left-1 h-12 w-12 rounded-full bg-white text-[#121212] flex items-center justify-center shadow-lg transition-transform duration-75 group-hover:scale-105 active:scale-95"
           >
-            <span className="text-sm font-extrabold">Inizia ora</span>
-            <div className="relative flex items-center justify-center">
-              {/* Pulse Ring */}
-              <div className="absolute inset-0 rounded-full bg-[#121212]/20 animate-ping" />
-              <div className="relative h-9 w-9 rounded-full bg-[#121212] text-white flex items-center justify-center group-hover:scale-105 transition-transform">
-                <ArrowRight className="h-4 w-4 stroke-[2.5]" />
-              </div>
-            </div>
-          </button>
+            <ArrowRight className="h-5 w-5 stroke-[2.5] text-[#121212]" />
+          </div>
         </div>
       </div>
     </div>
