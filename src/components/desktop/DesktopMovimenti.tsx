@@ -1,199 +1,264 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Search, Plus, ChevronDown, ChevronUp, Filter, X, ArrowUpRight, ArrowDownLeft } from "lucide-react";
-import { TRANSACTIONS, money } from "./desktopData";
-
-const CATEGORIES = ["Tutte", "Cibo", "Trasporti", "Shopping", "Abbonamenti", "Casa", "Sport", "Salute", "Entrate"];
-const PERIODS    = ["Tutto", "Questo mese", "Ultimo mese", "3 mesi", "6 mesi"];
-
-type SortKey = "date" | "desc" | "cat" | "amount";
-type SortDir = "asc" | "desc";
+import React, { useState } from "react";
+import {
+  Search,
+  Plus,
+  ArrowUpRight,
+  Filter,
+  ArrowUpDown,
+  Trash2,
+  CreditCard,
+  ShoppingCart,
+  Car,
+  DollarSign,
+  ShoppingBag,
+  Home,
+  Utensils,
+  Fuel,
+  Smile,
+  Heart,
+  RefreshCw,
+  MoreHorizontal,
+} from "lucide-react";
+import { useApp } from "@/context/AppContext";
 
 interface DesktopMovimentiProps {
-  onAddExpense: () => void;
+  onOpenAddExpense: () => void;
+  onOpenAddIncome: () => void;
   searchQuery?: string;
 }
 
-export function DesktopMovimenti({ onAddExpense, searchQuery = "" }: DesktopMovimentiProps) {
+export function DesktopMovimenti({
+  onOpenAddExpense,
+  onOpenAddIncome,
+  searchQuery = "",
+}: DesktopMovimentiProps) {
+  const { transactions, deleteTransaction, cards } = useApp();
   const [localSearch, setLocalSearch] = useState(searchQuery);
-  const [activeCat, setActiveCat]     = useState("Tutte");
-  const [period, setPeriod]           = useState("Questo mese");
-  const [sortKey, setSortKey]         = useState<SortKey>("date");
-  const [sortDir, setSortDir]         = useState<SortDir>("desc");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Tutte");
+  const [selectedCardId, setSelectedCardId] = useState<string>("Tutte");
+  const [sortField, setSortField] = useState<"date" | "amount">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("desc"); }
+  const categories = [
+    "Tutte",
+    "Casa",
+    "Cibo",
+    "Trasporti",
+    "Shopping",
+    "Svago",
+    "Salute",
+    "Abbonamenti",
+    "Entrata",
+    "Altro",
+  ];
+
+  const money = (val: number) =>
+    new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
+
+  // Filtering
+  const filtered = transactions.filter((t) => {
+    const q = (localSearch || searchQuery).toLowerCase();
+    const matchesSearch = t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
+    const matchesCategory = selectedCategory === "Tutte" || t.category === selectedCategory;
+    const matchesCard = selectedCardId === "Tutte" || t.cardId === selectedCardId;
+    return matchesSearch && matchesCategory && matchesCard;
+  });
+
+  // Sorting
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortField === "amount") {
+      return sortOrder === "desc" ? Math.abs(b.amount) - Math.abs(a.amount) : Math.abs(a.amount) - Math.abs(b.amount);
+    }
+    return sortOrder === "desc" ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id);
+  });
+
+  const getCardName = (cardId: string) => {
+    const card = cards.find((c) => c.id === cardId);
+    return card ? card.bankName : "ZERO";
   };
 
-  const filtered = useMemo(() => {
-    let rows = [...TRANSACTIONS];
-    const q = (localSearch || searchQuery).toLowerCase();
-    if (q) rows = rows.filter(r => r.desc.toLowerCase().includes(q) || r.cat.toLowerCase().includes(q));
-    if (activeCat !== "Tutte") rows = rows.filter(r => r.cat === activeCat);
-    rows.sort((a, b) => {
-      let va: string | number = a[sortKey as keyof typeof a] as string | number;
-      let vb: string | number = b[sortKey as keyof typeof b] as string | number;
-      if (sortKey === "amount") { va = Math.abs(a.amount); vb = Math.abs(b.amount); }
-      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return rows;
-  }, [localSearch, searchQuery, activeCat, sortKey, sortDir]);
-
-  const totalIncome  = filtered.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-  const totalExpense = filtered.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-
-  const SortIcon = ({ k }: { k: SortKey }) =>
-    sortKey === k ? (sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : null;
-
   return (
-    <div className="p-7 max-w-[1600px] mx-auto w-full flex flex-col gap-5">
-
-      {/* ── Summary pills ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 text-emerald-400">
-          <ArrowUpRight className="h-3.5 w-3.5" />
-          <span className="text-[12px] font-bold">{money(totalIncome)}</span>
-          <span className="text-[11px] text-emerald-500/60">entrate</span>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/[0.06] border border-red-500/20 text-red-400/80">
-          <ArrowDownLeft className="h-3.5 w-3.5" />
-          <span className="text-[12px] font-bold">{money(totalExpense)}</span>
-          <span className="text-[11px] text-red-500/60">uscite</span>
-        </div>
-        <div className="text-[11px] text-[#555550] ml-1">
-          {filtered.length} moviment{filtered.length === 1 ? "o" : "i"}
+    <div className="p-8 max-w-[1500px] mx-auto w-full flex flex-col gap-6 select-none">
+      {/* Header & Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-black text-[#121212] tracking-tight">
+            Tutte le Spese & Movimenti
+          </h2>
+          <p className="text-xs text-[#73736E] font-medium mt-0.5">
+            Trovate {sorted.length} transazioni registrate
+          </p>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[12px] font-medium transition-all ${
-              showFilters
-                ? "bg-[#F5E050]/[0.08] border-[#F5E050]/30 text-[#F5E050]"
-                : "bg-white/[0.03] border-white/[0.07] text-[#777772] hover:text-white hover:bg-white/[0.05]"
-            }`}
+            onClick={onOpenAddExpense}
+            className="px-4 py-2.5 rounded-2xl bg-[#FEF9C3] border border-[#F5E050]/80 text-[#121212] text-xs font-bold shadow-xs hover:bg-[#F5E050] transition-colors flex items-center gap-1.5"
           >
-            <Filter className="h-3 w-3" /> Filtri
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            <span>Aggiungi spesa</span>
           </button>
           <button
-            onClick={onAddExpense}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#F5E050] text-[#0A0A0A] text-[12px] font-bold hover:bg-[#EAD900] transition-all hover:scale-[1.02] active:scale-100 shadow-md shadow-[#F5E050]/10"
+            onClick={onOpenAddIncome}
+            className="px-4 py-2.5 rounded-2xl bg-white border border-[#EBEBE5] text-[#121212] text-xs font-bold shadow-xs hover:border-[#121212] transition-colors flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5 stroke-[2.5]" /> Aggiungi
+            <ArrowUpRight className="h-4 w-4 text-[#166534]" />
+            <span>Nuova entrata</span>
           </button>
         </div>
       </div>
 
-      {/* ── Filter bar ─────────────────────────────────────────────────────── */}
-      {showFilters && (
-        <div className="flex items-center gap-3 p-4 bg-[#141414] border border-white/[0.05] rounded-xl animate-in fade-in duration-150">
-          {/* Period */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555550] font-medium uppercase tracking-wider">Periodo</label>
-            <div className="flex gap-1.5">
-              {PERIODS.map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-all ${
-                    period === p
-                      ? "bg-white/10 text-white"
-                      : "text-[#555550] hover:text-white"
-                  }`}
-                >{p}</button>
-              ))}
-            </div>
-          </div>
-
-          <div className="w-px h-8 bg-white/[0.06] mx-2" />
-
-          {/* Search */}
-          <div className="flex flex-col gap-1 flex-1">
-            <label className="text-[10px] text-[#555550] font-medium uppercase tracking-wider">Cerca</label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-[#555550]" />
-              <input
-                type="text"
-                placeholder="Descrizione..."
-                value={localSearch}
-                onChange={e => setLocalSearch(e.target.value)}
-                className="pl-7 pr-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.07] text-[12px] text-white placeholder:text-[#555550] focus:outline-none focus:border-[#F5E050]/25 w-full"
-              />
-              {localSearch && (
-                <button onClick={() => setLocalSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                  <X className="h-3 w-3 text-[#555550]" />
-                </button>
-              )}
-            </div>
-          </div>
+      {/* Filters Bar */}
+      <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        {/* Search */}
+        <div className="relative min-w-[240px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#73736E]" />
+          <input
+            type="text"
+            placeholder="Filtra per descrizione o nota..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
+          />
         </div>
-      )}
 
-      {/* ── Category pills ──────────────────────────────────────────────────── */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
-        {CATEGORIES.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setActiveCat(cat)}
-            className={`px-3 py-1.5 rounded-xl text-[11px] font-medium whitespace-nowrap transition-all ${
-              activeCat === cat
-                ? "bg-[#F5E050]/[0.12] text-[#F5E050] border border-[#F5E050]/30"
-                : "bg-white/[0.03] border border-white/[0.05] text-[#777772] hover:text-white hover:bg-white/[0.06]"
-            }`}
-          >{cat}</button>
-        ))}
-      </div>
-
-      {/* ── Table ──────────────────────────────────────────────────────────── */}
-      <div className="bg-[#141414] border border-white/[0.05] rounded-2xl overflow-hidden">
-        {/* Header */}
-        <div className="grid grid-cols-[1.2fr_2.5fr_1.5fr_1.5fr_1fr] gap-4 px-5 py-3 border-b border-white/[0.05] text-[10px] font-semibold text-[#555550] uppercase tracking-wider">
-          {(["date","desc","cat","method","amount"] as const).map(k => (
+        {/* Category Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          {categories.map((cat) => (
             <button
-              key={k}
-              onClick={() => handleSort(k === "method" ? "cat" : k as SortKey)}
-              className={`flex items-center gap-1 hover:text-white transition-colors ${k === "amount" ? "justify-end" : ""}`}
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                selectedCategory === cat
+                  ? "bg-[#121212] text-white shadow-xs"
+                  : "bg-[#F8F8F5] text-[#73736E] border border-[#EBEBE5] hover:text-[#121212]"
+              }`}
             >
-              {{ date:"Data", desc:"Descrizione", cat:"Categoria", method:"Metodo", amount:"Importo" }[k]}
-              <SortIcon k={k === "method" ? "cat" : k as SortKey} />
+              {cat}
             </button>
           ))}
         </div>
 
-        {/* Rows */}
-        <div className="flex flex-col">
-          {filtered.length === 0 && (
-            <div className="py-16 text-center text-[#555550] text-[12px]">Nessun movimento trovato.</div>
-          )}
-          {filtered.map((t, i) => (
-            <div
-              key={t.id}
-              onClick={() => setSelectedRow(selectedRow === t.id ? null : t.id)}
-              className={`grid grid-cols-[1.2fr_2.5fr_1.5fr_1.5fr_1fr] gap-4 px-5 py-3.5 items-center cursor-pointer transition-all ${
-                selectedRow === t.id
-                  ? "bg-[#F5E050]/[0.04] border-l-2 border-l-[#F5E050]"
-                  : "hover:bg-white/[0.025]"
-              } ${i < filtered.length - 1 ? "border-b border-white/[0.03]" : ""}`}
-            >
-              <span className="text-[11px] text-[#555550]">{t.date}</span>
-              <span className="text-[12px] font-medium text-white">{t.desc}</span>
-              <span>
-                <span className="px-2 py-0.5 rounded-md bg-white/[0.05] text-[10px] font-medium text-[#A3A39E]">
-                  {t.cat}
-                </span>
-              </span>
-              <span className="text-[11px] text-[#555550]">{t.method}</span>
-              <span className={`text-[13px] font-extrabold text-right ${t.amount > 0 ? "text-emerald-400" : "text-white"}`}>
-                {t.amount > 0 ? "+" : ""}{money(t.amount)}
-              </span>
-            </div>
-          ))}
+        {/* Card Selector Filter */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-[#73736E]">Carta:</span>
+          <select
+            value={selectedCardId}
+            onChange={(e) => setSelectedCardId(e.target.value)}
+            className="px-3 py-1.5 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none"
+          >
+            <option value="Tutte">Tutte le carte</option>
+            {cards.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.bankName}
+              </option>
+            ))}
+          </select>
         </div>
+      </div>
+
+      {/* Transactions Table */}
+      <div className="rounded-[28px] bg-white border border-[#EBEBE5] overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[#EBEBE5] bg-[#F8F8F5]/80 text-[11px] font-black text-[#73736E] uppercase tracking-wider">
+                <th className="py-4 px-6">Movimento / Descrizione</th>
+                <th className="py-4 px-6">Categoria</th>
+                <th className="py-4 px-6">Carta / Conto</th>
+                <th className="py-4 px-6">Data</th>
+                <th
+                  className="py-4 px-6 cursor-pointer hover:text-[#121212] text-right"
+                  onClick={() => {
+                    setSortField("amount");
+                    setSortOrder(sortOrder === "desc" ? "asc" : "desc");
+                  }}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Importo</span>
+                    <ArrowUpDown className="h-3 w-3" />
+                  </div>
+                </th>
+                <th className="py-4 px-6 text-center">Azioni</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-[#F4F4F0] text-xs font-semibold text-[#121212]">
+              {sorted.map((tx) => {
+                const isIncome = tx.amount > 0;
+                return (
+                  <tr key={tx.id} className="hover:bg-[#F8F8F5]/50 transition-colors group">
+                    {/* Descrizione */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center shrink-0">
+                          {tx.category === "Cibo" ? (
+                            <Utensils className="h-4 w-4 text-[#555]" />
+                          ) : tx.category === "Trasporti" ? (
+                            <Fuel className="h-4 w-4 text-[#555]" />
+                          ) : isIncome ? (
+                            <DollarSign className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <ShoppingBag className="h-4 w-4 text-[#555]" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-extrabold text-[#121212]">{tx.title}</p>
+                          {tx.note && <p className="text-[10px] text-[#73736E] font-medium">{tx.note}</p>}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Categoria */}
+                    <td className="py-4 px-6">
+                      <span className="px-2.5 py-1 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] text-[11px] font-bold text-[#73736E]">
+                        {tx.category}
+                      </span>
+                    </td>
+
+                    {/* Carta */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#121212]">
+                        <CreditCard className="h-3.5 w-3.5 text-[#73736E]" />
+                        <span>{getCardName(tx.cardId)}</span>
+                      </div>
+                    </td>
+
+                    {/* Data */}
+                    <td className="py-4 px-6 text-[#73736E] font-medium">{tx.date}</td>
+
+                    {/* Importo */}
+                    <td className="py-4 px-6 text-right">
+                      <span className={`text-sm font-black ${isIncome ? "text-[#166534]" : "text-[#121212]"}`}>
+                        {isIncome ? "+" : "-"} {money(Math.abs(tx.amount))}
+                      </span>
+                    </td>
+
+                    {/* Azioni */}
+                    <td className="py-4 px-6 text-center">
+                      <button
+                        onClick={() => deleteTransaction(tx.id)}
+                        className="p-2 rounded-xl text-[#A3A39E] hover:text-rose-600 hover:bg-rose-50 transition-all"
+                        title="Elimina movimento"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {sorted.length === 0 && (
+          <div className="p-12 text-center text-[#73736E]">
+            <p className="text-sm font-bold">Nessun movimento trovato</p>
+            <p className="text-xs mt-1">Prova a cambiare i filtri o la ricerca.</p>
+          </div>
+        )}
       </div>
     </div>
   );

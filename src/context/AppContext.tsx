@@ -47,6 +47,9 @@ export interface UserProfile {
   name: string;
   email: string;
   avatarText: string;
+  currency: string;
+  notificationsEnabled: boolean;
+  theme: "light" | "dark";
 }
 
 interface AppContextType {
@@ -76,8 +79,15 @@ interface AppContextType {
     date: string;
     category: string;
   }) => void;
+  deleteSubscription: (id: string) => void;
   addMoneyToGoal: (id: string, amount: number) => void;
   addGoal: (data: { title: string; target: number }) => void;
+  deleteGoal: (id: string) => void;
+  addCard: (data: { bankName: string; name: string; number: string; expiry: string; balance: number; type?: "zero" | "revolut" | "mastercard" }) => void;
+  deleteCard: (id: string) => void;
+  updateProfile: (data: Partial<UserProfile>) => void;
+  resetAllData: () => void;
+  exportCSV: () => void;
   totalMonthlySpending: number;
   totalMonthlyIncome: number;
   totalMonthlySavings: number;
@@ -172,16 +182,19 @@ const DEFAULT_SUBSCRIPTIONS: SubscriptionItem[] = [
 ];
 
 const DEFAULT_GOALS: GoalItem[] = [
-  { id: "g-1", title: "MacBook", current: 1240, target: 2000, percent: 62, completed: false },
-  { id: "g-2", title: "Fondo viaggio", current: 900, target: 1500, percent: 60, completed: false },
-  { id: "g-3", title: "Nuova fotocamera", current: 350, target: 800, percent: 44, completed: false },
-  { id: "g-4", title: "Fondo emergenza", current: 1200, target: 3000, percent: 40, completed: false },
+  { id: "g-1", title: "MacBook Pro M3", current: 1240, target: 2000, percent: 62, completed: false },
+  { id: "g-2", title: "Fondo Viaggio Giappone", current: 900, target: 1500, percent: 60, completed: false },
+  { id: "g-3", title: "Nuova Fotocamera", current: 350, target: 800, percent: 44, completed: false },
+  { id: "g-4", title: "Fondo Emergenza", current: 1200, target: 3000, percent: 40, completed: false },
 ];
 
 const DEFAULT_PROFILE: UserProfile = {
   name: "Giada Morena",
   email: "giada@zero.app",
   avatarText: "G",
+  currency: "EUR (€)",
+  notificationsEnabled: true,
+  theme: "light",
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -192,12 +205,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<TransactionItem[]>(DEFAULT_TRANSACTIONS);
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>(DEFAULT_SUBSCRIPTIONS);
   const [goals, setGoals] = useState<GoalItem[]>(DEFAULT_GOALS);
-  const [profile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
 
   // Load from localStorage on initial mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("zero_app_state_v2");
+      const saved = localStorage.getItem("zero_app_state_v3");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.cards) setCards(parsed.cards);
@@ -205,6 +218,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (parsed.transactions) setTransactions(parsed.transactions);
         if (parsed.subscriptions) setSubscriptions(parsed.subscriptions);
         if (parsed.goals) setGoals(parsed.goals);
+        if (parsed.profile) setProfile(parsed.profile);
       }
     } catch (e) {
       console.error("Failed to load state from localStorage:", e);
@@ -215,21 +229,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(
-        "zero_app_state_v2",
+        "zero_app_state_v3",
         JSON.stringify({
           cards,
           activeCardIndex,
           transactions,
           subscriptions,
           goals,
+          profile,
         })
       );
     } catch (e) {
       console.error("Failed to save state to localStorage:", e);
     }
-  }, [cards, activeCardIndex, transactions, subscriptions, goals]);
+  }, [cards, activeCardIndex, transactions, subscriptions, goals, profile]);
 
-  const activeCard = cards[activeCardIndex] || cards[0];
+  const activeCard = cards[activeCardIndex] || cards[0] || DEFAULT_CARDS[0];
 
   // Add Transaction
   const addTransaction = (data: {
@@ -275,7 +290,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Revert card balance
     setCards((prevCards) =>
       prevCards.map((c) =>
-        c.id === targetTx.cardId ? { ...c, balance: c.balance - targetTx.amount } : c
+        c.id === targetTx.cardId ? { ...c, balance: Math.max(0, c.balance - targetTx.amount) } : c
       )
     );
   };
@@ -308,6 +323,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSubscriptions((prev) => [...prev, newSub]);
   };
 
+  // Delete Subscription
+  const deleteSubscription = (id: string) => {
+    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+  };
+
   // Add Money to Goal
   const addMoneyToGoal = (id: string, amount: number) => {
     setGoals((prev) =>
@@ -336,6 +356,83 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completed: false,
     };
     setGoals((prev) => [...prev, newGoal]);
+  };
+
+  // Delete Goal
+  const deleteGoal = (id: string) => {
+    setGoals((prev) => prev.filter((g) => g.id !== id));
+  };
+
+  // Add Card
+  const addCard = (data: {
+    bankName: string;
+    name: string;
+    number: string;
+    expiry: string;
+    balance: number;
+    type?: "zero" | "revolut" | "mastercard";
+  }) => {
+    const newCard: CardItem = {
+      id: "card-" + Date.now(),
+      bankName: data.bankName,
+      name: data.name || profile.name,
+      number: data.number.startsWith("••••") ? data.number : `•••• ${data.number.slice(-4)}`,
+      expiry: data.expiry || "12/28",
+      type: data.type || "zero",
+      balance: data.balance || 0,
+    };
+    setCards((prev) => [...prev, newCard]);
+  };
+
+  // Delete Card
+  const deleteCard = (id: string) => {
+    if (cards.length <= 1) return; // Keep at least one card
+    setCards((prev) => prev.filter((c) => c.id !== id));
+    setActiveCardIndex(0);
+  };
+
+  // Update Profile
+  const updateProfile = (data: Partial<UserProfile>) => {
+    setProfile((prev) => {
+      const updated = { ...prev, ...data };
+      if (data.name) {
+        updated.avatarText = data.name.charAt(0).toUpperCase();
+      }
+      return updated;
+    });
+  };
+
+  // Reset All Data
+  const resetAllData = () => {
+    setCards(DEFAULT_CARDS);
+    setActiveCardIndex(1);
+    setTransactions(DEFAULT_TRANSACTIONS);
+    setSubscriptions(DEFAULT_SUBSCRIPTIONS);
+    setGoals(DEFAULT_GOALS);
+    setProfile(DEFAULT_PROFILE);
+    localStorage.removeItem("zero_app_state_v3");
+  };
+
+  // Export CSV
+  const exportCSV = () => {
+    const headers = ["ID", "Titolo", "Categoria", "Importo", "Tipo", "Data", "ID Carta"];
+    const rows = transactions.map((t) => [
+      t.id,
+      `"${t.title}"`,
+      `"${t.category}"`,
+      t.amount,
+      t.type,
+      `"${t.date}"`,
+      t.cardId,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ZERO_Movimenti_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Computed Totals
@@ -368,8 +465,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteTransaction,
         toggleSubscription,
         addSubscription,
+        deleteSubscription,
         addMoneyToGoal,
         addGoal,
+        deleteGoal,
+        addCard,
+        deleteCard,
+        updateProfile,
+        resetAllData,
+        exportCSV,
         totalMonthlySpending,
         totalMonthlyIncome,
         totalMonthlySavings,

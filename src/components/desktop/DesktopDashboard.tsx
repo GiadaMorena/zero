@@ -1,248 +1,327 @@
 "use client";
 
-import React, { useState } from "react";
-import { TrendingUp, TrendingDown, ArrowUpRight, Plus, Eye, EyeOff } from "lucide-react";
-import { AreaChart, MultiLineChart, DonutChart, Sparkline } from "./DesktopCharts";
+import React from "react";
 import {
-  BALANCE, INCOME, SPENDING, SAVINGS,
-  MONTHLY_TREND, TRANSACTIONS, CATEGORIES_ANALYSIS, money,
-} from "./desktopData";
-
-const SPARKLINE_DATA = [480, 540, 620, 710, 480, 590, 554];
+  Plus,
+  ArrowUpRight,
+  ChevronRight,
+  TrendingUp,
+  CreditCard,
+  Laptop,
+  Layers,
+  Lightbulb,
+  ShoppingCart,
+  Car,
+  DollarSign,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { HomeTrendChart } from "../HomeTrendChart";
+import { SubscriptionToggle } from "../AbbonamentiScreen";
 
 interface DesktopDashboardProps {
-  onNavigate: (s: string) => void;
-  onAddExpense: () => void;
+  onNavigate: (section: string) => void;
+  onOpenAddExpense: () => void;
+  onOpenAddIncome: () => void;
 }
 
-export function DesktopDashboard({ onNavigate, onAddExpense }: DesktopDashboardProps) {
-  const [showBalance, setShowBalance] = useState(true);
+export function DesktopDashboard({
+  onNavigate,
+  onOpenAddExpense,
+  onOpenAddIncome,
+}: DesktopDashboardProps) {
+  const {
+    cards,
+    activeCard,
+    setActiveCardIndex,
+    transactions,
+    deleteTransaction,
+    subscriptions,
+    toggleSubscription,
+    totalActiveSubscriptionsCost,
+    goals,
+    totalMonthlySpending,
+    totalMonthlyIncome,
+  } = useApp();
 
-  const statCards = [
-    {
-      label:   "Saldo disponibile",
-      value:   showBalance ? money(BALANCE) : "••••••",
-      change:  "-12% vs mese scorso",
-      trend:   "down",
-      spark:   [1280, 1310, 1260, 1290, 1245],
-      accent:  true,
-      toggle:  true,
-    },
-    {
-      label:   "Entrate",
-      value:   money(INCOME),
-      change:  "+0% vs mese scorso",
-      trend:   "flat",
-      spark:   [1800, 1800, 1900, 1800, 1800],
-      accent:  false,
-    },
-    {
-      label:   "Uscite",
-      value:   money(SPENDING),
-      change:  "-8% vs mese scorso",
-      trend:   "up-good",
-      spark:   SPARKLINE_DATA,
-      accent:  false,
-    },
-    {
-      label:   "Risparmio",
-      value:   money(SAVINGS),
-      change:  "+3% vs mese scorso",
-      trend:   "up",
-      spark:   [1180, 1260, 1190, 1320, 1210, 1246],
-      accent:  false,
-    },
-  ];
+  const money = (val: number) =>
+    new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
-  const recent = TRANSACTIONS.slice(0, 5);
+  const nextGoal = goals[0] || { title: "MacBook Pro", current: 1240, target: 2000, percent: 62 };
+  const activeSubsCount = subscriptions.filter((s) => s.active).length;
 
   return (
-    <div className="p-7 max-w-[1600px] mx-auto w-full flex flex-col gap-6">
+    <div className="p-8 max-w-[1500px] mx-auto w-full flex flex-col gap-6 select-none">
+      {/* ── 1. Top Summary Banner ── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Card 1: Total Balance */}
+        <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#73736E]">
+            <span className="text-xs font-bold">Disponibile su {activeCard.bankName}</span>
+            <CreditCard className="h-4 w-4 text-[#121212]" />
+          </div>
+          <div className="my-2">
+            <span className="text-3xl font-black tracking-tight text-[#121212]">
+              {money(activeCard.balance)}
+            </span>
+          </div>
+          <p className="text-[10px] text-[#73736E] font-medium">Carta attiva nel wallet</p>
+        </div>
 
-      {/* ── Stat Cards ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-4">
-        {statCards.map((card, i) => (
-          <div
-            key={i}
-            className={`relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between gap-4 border transition-all duration-200 group cursor-default ${
-              card.accent
-                ? "bg-[#F5E050]/[0.04] border-[#F5E050]/20 hover:border-[#F5E050]/40"
-                : "bg-[#141414] border-white/[0.05] hover:border-white/10"
-            }`}
+        {/* Card 2: Uscite Mese */}
+        <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#73736E]">
+            <span className="text-xs font-bold">Uscite Mese</span>
+            <div className="h-2 w-2 rounded-full bg-rose-500" />
+          </div>
+          <div className="my-2">
+            <span className="text-3xl font-black tracking-tight text-[#121212]">
+              - {money(totalMonthlySpending)}
+            </span>
+          </div>
+          <p className="text-[10px] text-rose-600 font-semibold">
+            Calcolato su {transactions.filter((t) => t.amount < 0).length} uscite
+          </p>
+        </div>
+
+        {/* Card 3: Entrate Mese */}
+        <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[#73736E]">
+            <span className="text-xs font-bold">Entrate Mese</span>
+            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+          </div>
+          <div className="my-2">
+            <span className="text-3xl font-black tracking-tight text-[#166534]">
+              + {money(totalMonthlyIncome)}
+            </span>
+          </div>
+          <p className="text-[10px] text-emerald-600 font-semibold">
+            Accrediti registrati
+          </p>
+        </div>
+
+        {/* Card 4: Quick Actions */}
+        <div className="rounded-[24px] bg-[#FEF9C3] border border-[#F5E050]/80 p-5 shadow-xs flex flex-col justify-between">
+          <span className="text-xs font-bold text-[#121212]">Azioni Rapide</span>
+          <div className="flex gap-2 my-2">
+            <button
+              onClick={onOpenAddExpense}
+              className="flex-1 py-2.5 rounded-2xl bg-[#121212] text-white text-xs font-bold hover:bg-black transition-all flex items-center justify-center gap-1 shadow-md"
+            >
+              <Plus className="h-3.5 w-3.5" /> Spesa
+            </button>
+            <button
+              onClick={onOpenAddIncome}
+              className="flex-1 py-2.5 rounded-2xl bg-white border border-[#EBEBE5] text-[#121212] text-xs font-bold hover:border-[#121212] transition-all flex items-center justify-center gap-1 shadow-xs"
+            >
+              <ArrowUpRight className="h-3.5 w-3.5 text-[#166534]" /> Entrata
+            </button>
+          </div>
+          <p className="text-[10px] text-[#73736E] font-medium text-center">Registrazione istantanea</p>
+        </div>
+      </div>
+
+      {/* ── 2. Wallet Cards Grid ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="text-base font-black text-[#121212]">Le tue Carte & Wallet</h2>
+          <button
+            onClick={() => onNavigate("carte")}
+            className="flex items-center gap-1 text-xs font-bold text-[#73736E] hover:text-[#121212]"
           >
-            <div className="flex items-start justify-between">
+            <span>Gestisci carte</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {cards.map((card, idx) => {
+            const isSelected = activeCard.id === card.id;
+            return (
+              <div
+                key={card.id}
+                onClick={() => setActiveCardIndex(idx)}
+                className={`p-5 rounded-[28px] cursor-pointer transition-all duration-300 border relative overflow-hidden flex flex-col justify-between min-h-[160px] ${
+                  card.type === "zero"
+                    ? "bg-[#121212] text-white border-[#121212] shadow-xl"
+                    : card.type === "revolut"
+                    ? "bg-white text-[#121212] border-[#EBEBE5] shadow-xs"
+                    : "bg-[#1E1E1E] text-white border-[#1E1E1E] shadow-md"
+                } ${isSelected ? "ring-4 ring-[#F5E050]/50 scale-[1.01]" : "opacity-80 hover:opacity-100"}`}
+              >
+                {/* Header card */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold tracking-wider opacity-80">{card.bankName}</span>
+                  {isSelected && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-[#F5E050] text-[#121212]">
+                      Principale
+                    </span>
+                  )}
+                </div>
+
+                {/* Balance */}
+                <div className="my-2">
+                  <p className="text-[10px] opacity-70 font-semibold">Disponibilità</p>
+                  <p className="text-2xl font-black tracking-tight">{money(card.balance)}</p>
+                </div>
+
+                {/* Footer card */}
+                <div className="flex items-center justify-between text-xs font-mono opacity-80 pt-2 border-t border-white/10">
+                  <span>{card.number}</span>
+                  <span>{card.expiry}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── 3. Panoramica Finanziaria & Movimenti Recenti (Side by Side) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Trend Chart (7 columns) */}
+        <div className="lg:col-span-7 flex flex-col">
+          <HomeTrendChart />
+        </div>
+
+        {/* Recent Transactions Table (5 columns) */}
+        <div className="lg:col-span-5 rounded-[24px] bg-white border border-[#EBEBE5] p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-black text-[#121212]">Ultimi Movimenti</h3>
+              <button
+                onClick={() => onNavigate("movimenti")}
+                className="text-xs text-[#73736E] font-bold hover:text-[#121212] flex items-center gap-0.5"
+              >
+                Vedi tutti <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col divide-y divide-[#F4F4F0]">
+              {transactions.slice(0, 5).map((tx) => {
+                const isIncome = tx.amount > 0;
+                return (
+                  <div
+                    key={tx.id}
+                    className="py-3 flex items-center justify-between first:pt-0 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center shrink-0">
+                        {tx.category === "Cibo" ? (
+                          <ShoppingCart className="h-4 w-4 text-[#555]" />
+                        ) : tx.category === "Trasporti" ? (
+                          <Car className="h-4 w-4 text-[#555]" />
+                        ) : isIncome ? (
+                          <DollarSign className="h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <ShoppingBag className="h-4 w-4 text-[#555]" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-[#121212] leading-tight">{tx.title}</p>
+                        <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
+                          {tx.category} · {tx.date}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-black ${isIncome ? "text-[#166534]" : "text-[#121212]"}`}>
+                        {isIncome ? "+" : "-"} {money(Math.abs(tx.amount))}
+                      </span>
+                      <button
+                        onClick={() => deleteTransaction(tx.id)}
+                        className="p-1 text-[#A3A39E] hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Elimina"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. Obiettivi & Abbonamenti (2 Equal Columns) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Obiettivo Card */}
+        <div
+          onClick={() => onNavigate("obiettivi")}
+          className="rounded-[28px] bg-white border border-[#EBEBE5] p-5 shadow-xs cursor-pointer hover:border-[#121212] transition-colors flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-[#73736E]">Obiettivo Principale</span>
+              <ChevronRight className="h-4 w-4 text-[#A3A39E]" />
+            </div>
+
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center shrink-0">
+                <Laptop className="h-5 w-5 text-[#121212]" />
+              </div>
               <div>
-                <p className="text-[11px] font-medium text-[#777772] mb-1.5">{card.label}</p>
-                <p className={`text-2xl font-extrabold tracking-tight ${card.accent ? "text-[#F5E050]" : "text-white"}`}>
-                  {card.value}
+                <h4 className="text-sm font-extrabold text-[#121212]">{nextGoal.title}</h4>
+                <p className="text-xs text-[#73736E] font-semibold">
+                  {money(nextGoal.current)} / {money(nextGoal.target)}
                 </p>
               </div>
-              {card.toggle && (
-                <button
-                  onClick={() => setShowBalance(!showBalance)}
-                  className="p-1.5 rounded-lg hover:bg-white/[0.06] text-[#555550] hover:text-white transition-colors"
-                >
-                  {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                </button>
-              )}
             </div>
+          </div>
 
-            <div className="flex items-end justify-between">
-              <span className={`text-[11px] font-medium flex items-center gap-1 ${
-                card.trend === "up"      ? "text-[#F5E050]" :
-                card.trend === "up-good" ? "text-emerald-400" :
-                card.trend === "down"    ? "text-red-400/80" :
-                "text-[#555550]"
-              }`}>
-                {card.trend === "up" && <TrendingUp className="h-3 w-3" />}
-                {card.trend === "down" && <TrendingDown className="h-3 w-3" />}
-                {card.change}
-              </span>
-              <Sparkline
-                data={card.spark}
-                color={card.accent ? "#F5E050" : card.trend === "up-good" ? "#4ade80" : "#ffffff"}
-                w={64}
-                h={28}
+          <div>
+            <div className="w-full h-2.5 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] overflow-hidden mb-1.5">
+              <div
+                className="h-full bg-[#F5E050] rounded-full transition-all duration-500"
+                style={{ width: `${nextGoal.percent}%` }}
               />
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Main Charts Row ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-4">
-
-        {/* Spending Trend — 2/3 width */}
-        <div className="col-span-2 bg-[#141414] border border-white/[0.05] rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-[13px] font-bold text-white">Andamento spese</h2>
-              <p className="text-[11px] text-[#555550] mt-0.5">Entrate vs uscite — ultimi 6 mesi</p>
-            </div>
-            <div className="flex items-center gap-3 text-[11px] font-medium">
-              <span className="flex items-center gap-1.5 text-[#F5E050]">
-                <div className="h-1.5 w-4 rounded-full bg-[#F5E050]" /> Entrate
-              </span>
-              <span className="flex items-center gap-1.5 text-[#777772]">
-                <div className="h-1.5 w-4 rounded-full bg-white/25" /> Uscite
-              </span>
-            </div>
-          </div>
-          <MultiLineChart data={MONTHLY_TREND} height={180} />
-        </div>
-
-        {/* Donut Category — 1/3 width */}
-        <div className="bg-[#141414] border border-white/[0.05] rounded-2xl p-5">
-          <div className="mb-4">
-            <h2 className="text-[13px] font-bold text-white">Per categoria</h2>
-            <p className="text-[11px] text-[#555550] mt-0.5">Settembre 2026</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <DonutChart
-              segments={CATEGORIES_ANALYSIS}
-              centerLabel="€554"
-              centerSub="totale uscite"
-              size={120}
-            />
-            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-              {CATEGORIES_ANALYSIS.slice(0, 5).map((c) => (
-                <div key={c.name} className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                    <span className="text-[11px] text-[#A3A39E] truncate">{c.name}</span>
-                  </div>
-                  <span className="text-[11px] font-bold text-white shrink-0">{c.percent}%</span>
-                </div>
-              ))}
+            <div className="flex justify-between items-center text-xs font-bold text-[#73736E]">
+              <span>Progresso</span>
+              <span className="text-[#121212]">{nextGoal.percent}%</span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Bottom Row ───────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-4">
+        {/* Abbonamenti Card */}
+        <div
+          onClick={() => onNavigate("abbonamenti")}
+          className="rounded-[28px] bg-white border border-[#EBEBE5] p-5 shadow-xs cursor-pointer hover:border-[#121212] transition-colors flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-[#73736E]">Abbonamenti Attivi</span>
+              <ChevronRight className="h-4 w-4 text-[#A3A39E]" />
+            </div>
 
-        {/* Recent Transactions — 2/3 */}
-        <div className="col-span-2 bg-[#141414] border border-white/[0.05] rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[13px] font-bold text-white">Movimenti recenti</h2>
-            <button
-              onClick={() => onNavigate("movimenti")}
-              className="text-[11px] font-medium text-[#F5E050] hover:text-[#EAD900] flex items-center gap-1 transition-colors"
-            >
-              Vedi tutti <ArrowUpRight className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="flex flex-col">
-            {recent.map((t, i) => (
-              <div
-                key={t.id}
-                className={`flex items-center justify-between py-2.5 ${i < recent.length - 1 ? "border-b border-white/[0.04]" : ""} hover:bg-white/[0.02] rounded-lg px-2 -mx-2 transition-colors cursor-default`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-white/[0.04] flex items-center justify-center text-[13px]">
-                    {t.amount > 0 ? "↑" : "↓"}
-                  </div>
-                  <div>
-                    <p className="text-[12px] font-semibold text-white">{t.desc}</p>
-                    <p className="text-[10px] text-[#555550]">{t.cat} · {t.date}</p>
-                  </div>
-                </div>
-                <span className={`text-[13px] font-extrabold ${t.amount > 0 ? "text-emerald-400" : "text-white"}`}>
-                  {t.amount > 0 ? "+" : ""}{money(t.amount)}
-                </span>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="text-sm font-extrabold text-[#121212]">
+                  {activeSubsCount} attivi su ZERO
+                </h4>
+                <p className="text-xs text-[#73736E] font-semibold">
+                  Totale: <span className="text-[#121212] font-black">{money(totalActiveSubscriptionsCost)} / mese</span>
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Quick Actions — 1/3 */}
-        <div className="flex flex-col gap-4">
-          {/* Quick add */}
-          <div className="bg-[#F5E050]/[0.04] border border-[#F5E050]/20 rounded-2xl p-5 flex flex-col gap-4">
-            <h2 className="text-[13px] font-bold text-white">Azione rapida</h2>
-            <button
-              onClick={onAddExpense}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#F5E050] text-[#0A0A0A] font-bold text-[13px] hover:bg-[#EAD900] transition-all hover:scale-[1.02] active:scale-100 shadow-lg shadow-[#F5E050]/10"
-            >
-              <Plus className="h-4 w-4 stroke-[2.5]" />
-              Aggiungi spesa
-            </button>
-            <div className="grid grid-cols-2 gap-2">
-              {["Entrata", "Abbonamento", "Obiettivo", "Carta"].map((label) => (
-                <button
-                  key={label}
-                  className="py-2 px-3 rounded-xl bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-[#777772] hover:text-white hover:bg-white/[0.07] hover:border-white/10 transition-all text-left"
-                >
-                  + {label}
-                </button>
-              ))}
+              {/* Subscriptions list preview toggle */}
+              <div className="flex items-center gap-1">
+                {subscriptions.slice(0, 3).map((sub) => (
+                  <SubscriptionToggle
+                    key={sub.id}
+                    checked={sub.active}
+                    onChange={() => toggleSubscription(sub.id)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Monthly summary card */}
-          <div className="bg-[#141414] border border-white/[0.05] rounded-2xl p-5 flex-1">
-            <h2 className="text-[13px] font-bold text-white mb-3">Riepilogo mese</h2>
-            <div className="flex flex-col gap-2.5">
-              {[
-                { label: "Entrate", v: INCOME,   color: "bg-[#F5E050]" },
-                { label: "Uscite",  v: SPENDING, color: "bg-white/20"  },
-                { label: "Saldo",   v: BALANCE,  color: "bg-emerald-500/60" },
-              ].map(({ label, v, color }) => (
-                <div key={label}>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-[#777772]">{label}</span>
-                    <span className="font-bold text-white">{money(v)}</span>
-                  </div>
-                  <div className="h-1 w-full bg-white/[0.05] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${color}`}
-                      style={{ width: `${(v / INCOME) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="pt-2 border-t border-[#F4F4F0] text-xs text-[#73736E] font-medium flex justify-between">
+            <span>Controllo abbonamenti e scadenze</span>
+            <span className="font-bold text-[#121212]">Gestisci →</span>
           </div>
         </div>
       </div>
