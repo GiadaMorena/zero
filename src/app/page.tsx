@@ -16,7 +16,7 @@ import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
 type ExtendedTab = NavTab | "welcome";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<ExtendedTab>("home");
+  const [activeTab, setActiveTab] = useState<ExtendedTab>("welcome");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Financial state

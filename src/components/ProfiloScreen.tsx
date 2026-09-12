@@ -1,5 +1,5 @@
 import React from "react";
-import { User, CreditCard, Download, Bell, Shield, HelpCircle, ChevronRight, Settings } from "lucide-react";
+import { User, CreditCard, Download, Bell, Shield, HelpCircle, ChevronRight, Settings, Sparkles } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
 
 interface ProfiloScreenProps {
@@ -9,6 +9,7 @@ interface ProfiloScreenProps {
 export function ProfiloScreen({ onNavigate }: ProfiloScreenProps) {
   const menuItems = [
     { title: "Profilo", icon: User },
+    { title: "Rivedi schermata iniziale", icon: Sparkles, action: () => onNavigate("welcome") },
     { title: "Metodi di pagamento", icon: CreditCard, action: () => onNavigate("carte") },
     { title: "Esporta dati", icon: Download },
     { title: "Notifiche", icon: Bell },

@@ -68,3 +68,28 @@
   animation: subtle-pulse 3s infinite ease-in-out;
 }
 
+/* Floating 3D Card Animation */
+@keyframes float-card {
+  0%, 100% {
+    transform: translateY(0px) rotate(6deg) scale(1);
+  }
+  50% {
+    transform: translateY(-12px) rotate(4deg) scale(1.03);
+  }
+}
+
+.animate-float-card {
+  animation: float-card 5s ease-in-out infinite;
+}
+
+/* Sparkle twinkle animation */
+@keyframes sparkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.animate-sparkle {
+  animation: sparkle 2.5s ease-in-out infinite;
+}
+
+
