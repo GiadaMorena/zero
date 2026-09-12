@@ -6,16 +6,15 @@ import {
   ArrowUpRight,
   Scan,
   MoreHorizontal,
-  Eye,
-  EyeOff,
+  Info,
   ChevronRight,
-  ShoppingBag,
+  ShoppingCart,
   Car,
-  DollarSign,
+  Briefcase,
   Laptop,
-  Tv,
-  Sparkles,
-  ArrowDownLeft,
+  Layers,
+  Lightbulb,
+  TrendingUp,
 } from "lucide-react";
 import { WalletCarousel, CardItem } from "./WalletCarousel";
 import { HomeTrendChart } from "./HomeTrendChart";
@@ -28,43 +27,11 @@ interface HomeScreenProps {
   onNavigate: (tab: any) => void;
 }
 
-const RECENT_TRANSACTIONS = [
-  {
-    id: "tx-1",
-    title: "Esselunga",
-    category: "Alimentari",
-    date: "Oggi, 14:32",
-    amount: -42.8,
-    icon: ShoppingBag,
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "tx-2",
-    title: "Benzina Eni",
-    category: "Trasporti",
-    date: "Ieri, 18:11",
-    amount: -55.0,
-    icon: Car,
-    color: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: "tx-3",
-    title: "Stipendio Mensile",
-    category: "Entrata",
-    date: "2 settembre",
-    amount: 1800.0,
-    icon: DollarSign,
-    color: "bg-emerald-100 text-emerald-700",
-  },
-];
-
 export function HomeScreen({
   balance = 1245.8,
-  spending = 554.2,
   onOpenAddModal,
   onNavigate,
 }: HomeScreenProps) {
-  const [showBalance, setShowBalance] = useState(true);
   const [activeCard, setActiveCard] = useState<CardItem | null>(null);
 
   const currentCardBalance = activeCard ? activeCard.balance : balance;
@@ -75,13 +42,13 @@ export function HomeScreen({
   return (
     <div
       style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 1.25rem)" }}
-      className="flex flex-col gap-6 px-4 pb-32 bg-[#F8F8F5] select-none min-h-screen"
+      className="flex flex-col gap-4 px-4 pb-32 bg-[#F8F8F5] select-none min-h-screen max-w-md mx-auto"
     >
-      {/* ── 2. HEADER ── */}
-      <div className="flex items-center justify-between pt-1">
+      {/* ── 1. HEADER ── */}
+      <div className="flex items-center justify-between pt-1 px-1">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[#121212] flex items-center gap-2">
-            Ciao Giada <span className="animate-bounce inline-block text-xl">👋</span>
+            Ciao Giada <span className="inline-block text-xl">👋</span>
           </h1>
           <p className="text-xs text-[#73736E] font-medium mt-0.5">
             Un passo alla volta, grandi obiettivi.
@@ -89,48 +56,50 @@ export function HomeScreen({
         </div>
         <button
           onClick={() => onNavigate("profilo")}
-          className="relative h-10 w-10 rounded-full bg-[#121212] border-2 border-[#F5E050] flex items-center justify-center text-white font-bold text-sm shadow-md hover:scale-105 transition-transform"
+          className="relative h-10 w-10 rounded-full bg-[#121212] flex items-center justify-center text-white font-extrabold text-sm shadow-md hover:scale-105 transition-transform"
         >
           G
-          <div className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-[#F5E050] ring-2 ring-white" />
+          <div className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-[#F5E050] ring-2 ring-[#F8F8F5]" />
         </button>
       </div>
 
-      {/* ── 3. WALLET CAROUSEL (PROTAGONISTA) ── */}
-      <div className="w-full">
+      {/* ── 2. WALLET / CARTE ── */}
+      <div className="-mx-4">
         <WalletCarousel onCardSelect={(card) => setActiveCard(card)} />
       </div>
 
-      {/* ── 4. SALDO PULITO SU QUESTA CARTA ── */}
-      <div className="flex flex-col items-center justify-center text-center -mt-1 px-4">
-        <div className="flex items-center gap-1.5 text-xs text-[#73736E] font-semibold tracking-wide">
-          <span>Disponibili su questa carta</span>
-          <button
-            onClick={() => setShowBalance(!showBalance)}
-            className="p-1 text-[#73736E] hover:text-[#121212] transition-colors"
-            title={showBalance ? "Nascondi saldo" : "Mostra saldo"}
-          >
-            {showBalance ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-          </button>
+      {/* ── 3. DISPONIBILITÀ (Card Bianca Compatta) ── */}
+      <div className="rounded-[22px] bg-white border border-[#EBEBE5] p-4 shadow-xs flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-1 text-[11px] text-[#73736E] font-semibold mb-0.5">
+            <span>Disponibili su questa carta</span>
+            <Info className="h-3 w-3 text-[#A3A39E]" />
+          </div>
+          <div className="text-2xl font-black text-[#121212] tracking-tight">
+            {money(currentCardBalance)}
+          </div>
         </div>
 
-        <div className="text-3xl font-black text-[#121212] tracking-tight mt-1">
-          {showBalance ? money(currentCardBalance) : "••••••••"}
-        </div>
-
-        <div className="inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full bg-[#EBEBE5] text-[11px] font-semibold text-[#73736E]">
-          <span className="text-[#991B1B] font-bold">−12%</span>
-          <span>rispetto al mese scorso</span>
+        {/* Badge a Destra */}
+        <div className="px-3 py-1.5 rounded-2xl bg-[#FEF9C3] border border-[#F5E050]/60 flex flex-col items-end">
+          <div className="flex items-center gap-0.5 text-xs font-black text-[#121212]">
+            <TrendingUp className="h-3.5 w-3.5 text-[#121212]" />
+            <span>-12%</span>
+          </div>
+          <span className="text-[9px] text-[#73736E] font-medium leading-tight">
+            rispetto al mese scorso
+          </span>
         </div>
       </div>
 
-      {/* ── 5. AZIONI RAPIDE ── */}
+      {/* ── 4. AZIONI RAPIDE (4 Card Grid) ── */}
       <div className="grid grid-cols-4 gap-2.5">
+        {/* Card 1: Highlight Giallo Chiaro */}
         <button
           onClick={onOpenAddModal}
-          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#F5E050] text-[#121212] shadow-sm hover:bg-[#EAD900] active:scale-95 transition-all group border border-[#F5E050]"
+          className="flex flex-col items-center justify-center p-3 rounded-[20px] bg-[#FEF9C3] border border-[#F5E050]/80 shadow-xs hover:scale-105 active:scale-95 transition-all group"
         >
-          <div className="h-9 w-9 rounded-full bg-[#121212] text-[#F5E050] flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition-transform">
+          <div className="h-9 w-9 rounded-full bg-[#F5E050] text-[#121212] flex items-center justify-center mb-1.5 shadow-xs">
             <Plus className="h-5 w-5 stroke-[2.5]" />
           </div>
           <span className="text-[11px] font-bold text-[#121212] text-center leading-tight">
@@ -138,36 +107,39 @@ export function HomeScreen({
           </span>
         </button>
 
+        {/* Card 2: Bianca */}
         <button
           onClick={onOpenAddModal}
-          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-[#EBEBE5] shadow-sm hover:border-[#121212] active:scale-95 transition-all group"
+          className="flex flex-col items-center justify-center p-3 rounded-[20px] bg-white border border-[#EBEBE5] shadow-xs hover:border-[#121212] active:scale-95 transition-all group"
         >
-          <div className="h-9 w-9 rounded-full bg-[#F8F8F5] text-[#121212] flex items-center justify-center mb-1.5 border border-[#EBEBE5] group-hover:scale-105 transition-transform">
-            <ArrowUpRight className="h-4 w-4" />
+          <div className="h-9 w-9 rounded-full bg-[#F8F8F5] text-[#121212] flex items-center justify-center mb-1.5 border border-[#EBEBE5]">
+            <ArrowUpRight className="h-4.5 w-4.5" />
           </div>
           <span className="text-[11px] font-bold text-[#121212] text-center leading-tight">
             Nuova entrata
           </span>
         </button>
 
+        {/* Card 3: Bianca (Scan) */}
         <button
           onClick={onOpenAddModal}
-          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-[#EBEBE5] shadow-sm hover:border-[#121212] active:scale-95 transition-all group"
+          className="flex flex-col items-center justify-center p-3 rounded-[20px] bg-white border border-[#EBEBE5] shadow-xs hover:border-[#121212] active:scale-95 transition-all group"
         >
-          <div className="h-9 w-9 rounded-full bg-[#F8F8F5] text-[#121212] flex items-center justify-center mb-1.5 border border-[#EBEBE5] group-hover:scale-105 transition-transform">
-            <Scan className="h-4 w-4" />
+          <div className="h-9 w-9 rounded-full bg-[#F8F8F5] text-[#121212] flex items-center justify-center mb-1.5 border border-[#EBEBE5]">
+            <Scan className="h-4.5 w-4.5" />
           </div>
           <span className="text-[11px] font-bold text-[#121212] text-center leading-tight">
-            Scansiona
+            Scansiona scontrino
           </span>
         </button>
 
+        {/* Card 4: Bianca (Altro) */}
         <button
           onClick={() => onNavigate("profilo")}
-          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-[#EBEBE5] shadow-sm hover:border-[#121212] active:scale-95 transition-all group"
+          className="flex flex-col items-center justify-center p-3 rounded-[20px] bg-white border border-[#EBEBE5] shadow-xs hover:border-[#121212] active:scale-95 transition-all group"
         >
-          <div className="h-9 w-9 rounded-full bg-[#F8F8F5] text-[#121212] flex items-center justify-center mb-1.5 border border-[#EBEBE5] group-hover:scale-105 transition-transform">
-            <MoreHorizontal className="h-4 w-4" />
+          <div className="h-9 w-9 rounded-full bg-[#F8F8F5] text-[#121212] flex items-center justify-center mb-1.5 border border-[#EBEBE5]">
+            <MoreHorizontal className="h-4.5 w-4.5" />
           </div>
           <span className="text-[11px] font-bold text-[#121212] text-center leading-tight">
             Altro
@@ -175,146 +147,207 @@ export function HomeScreen({
         </button>
       </div>
 
-      {/* ── 6. ULTIMI MOVIMENTI ── */}
-      <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-extrabold text-[#121212]">I tuoi ultimi movimenti</h3>
+      {/* ── 5. ULTIMI MOVIMENTI ── */}
+      <div>
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h3 className="text-sm font-extrabold text-[#121212]">I tuoi ultimi movimenti</h3>
           <button
             onClick={() => onNavigate("spese")}
-            className="flex items-center gap-1 text-xs text-[#73736E] font-bold hover:text-[#121212] transition-colors"
+            className="flex items-center gap-0.5 text-xs text-[#73736E] font-semibold hover:text-[#121212]"
           >
             <span>Vedi tutti</span>
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {RECENT_TRANSACTIONS.map((tx) => {
-            const Icon = tx.icon;
-            const isIncome = tx.amount > 0;
-
-            return (
-              <div
-                key={tx.id}
-                onClick={() => onNavigate("spese")}
-                className="flex items-center justify-between p-3 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] hover:border-[#121212]/20 transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`h-10 w-10 rounded-2xl ${tx.color} flex items-center justify-center shrink-0 font-bold`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#121212] leading-tight">
-                      {tx.title}
-                    </h4>
-                    <p className="text-[11px] text-[#73736E] mt-0.5 font-medium">
-                      {tx.category} · {tx.date}
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  className={`text-sm font-extrabold flex items-center gap-0.5 ${
-                    isIncome ? "text-[#166534]" : "text-[#121212]"
-                  }`}
-                >
-                  {isIncome ? (
-                    <ArrowDownLeft className="h-3.5 w-3.5 stroke-[2.5]" />
-                  ) : null}
-                  <span>{money(tx.amount)}</span>
-                </div>
+        {/* Single White Card containing 3 rows */}
+        <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-3.5 shadow-xs flex flex-col divide-y divide-[#F4F4F0]">
+          {/* Row 1: Esselunga */}
+          <div
+            onClick={() => onNavigate("spese")}
+            className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212] shrink-0">
+                <ShoppingCart className="h-4 w-4 text-[#555]" />
               </div>
-            );
-          })}
+              <div>
+                <h4 className="text-xs font-bold text-[#121212] leading-tight">
+                  Esselunga
+                </h4>
+                <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
+                  Alimentari · Oggi, 14:32
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-black text-[#121212]">- 42,80 €</span>
+              <ChevronRight className="h-3.5 w-3.5 text-[#C4C4BE]" />
+            </div>
+          </div>
+
+          {/* Row 2: Benzina */}
+          <div
+            onClick={() => onNavigate("spese")}
+            className="flex items-center justify-between py-2.5 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212] shrink-0">
+                <Car className="h-4 w-4 text-[#555]" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#121212] leading-tight">
+                  Benzina
+                </h4>
+                <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
+                  Trasporti · Ieri, 18:11
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-black text-[#121212]">- 55,00 €</span>
+              <ChevronRight className="h-3.5 w-3.5 text-[#C4C4BE]" />
+            </div>
+          </div>
+
+          {/* Row 3: Stipendio */}
+          <div
+            onClick={() => onNavigate("spese")}
+            className="flex items-center justify-between py-2.5 last:pb-0 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212] shrink-0">
+                <Briefcase className="h-4 w-4 text-[#555]" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[#121212] leading-tight">
+                  Stipendio
+                </h4>
+                <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
+                  Entrata · 2 Settembre
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-black text-[#166534]">+ 1.800,00 €</span>
+              <ChevronRight className="h-3.5 w-3.5 text-[#C4C4BE]" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── 7. RIEPILOGO FINANZIARIO ("COME STANNO ANDANDO LE COSE?") ── */}
+      {/* ── 6. PANORAMICA FINANZIARIA ── */}
       <HomeTrendChart />
 
-      {/* ── 8. OBIETTIVI & 9. ABBONAMENTI ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Card Obiettivo */}
+      {/* ── 7. OBIETTIVO + ABBONAMENTI (2 Card Affiancate) ── */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Card Sinistra: Obiettivo */}
         <div
           onClick={() => onNavigate("obiettivi")}
-          className="rounded-[28px] bg-white border border-[#EBEBE5] p-5 shadow-sm hover:border-[#F5E050] transition-all cursor-pointer flex flex-col justify-between group"
+          className="rounded-[24px] bg-white border border-[#EBEBE5] p-3.5 shadow-xs flex flex-col justify-between cursor-pointer hover:border-[#121212] transition-colors"
         >
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-[#73736E] uppercase tracking-wider">
-                Prossimo obiettivo
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-[#73736E]">
+                Il tuo prossimo obiettivo
               </span>
-              <div className="h-7 w-7 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center group-hover:scale-110 transition-transform">
-                <ChevronRight className="h-4 w-4 text-[#121212]" />
-              </div>
+              <ChevronRight className="h-3.5 w-3.5 text-[#A3A39E]" />
             </div>
 
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-2xl bg-[#F5E050]/20 text-[#121212] flex items-center justify-center font-bold">
-                <Laptop className="h-5 w-5" />
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212] shrink-0">
+                <Laptop className="h-4 w-4 text-[#555]" />
               </div>
               <div>
-                <h4 className="text-base font-extrabold text-[#121212]">MacBook Pro</h4>
-                <p className="text-xs text-[#73736E] font-medium">1.240 € / 2.000 €</p>
+                <h4 className="text-xs font-extrabold text-[#121212] leading-tight">
+                  MacBook
+                </h4>
+                <p className="text-[10px] text-[#73736E] font-medium">
+                  1.240 € / 2.000 €
+                </p>
               </div>
             </div>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center text-xs font-bold text-[#121212] mb-1.5">
-              <span>Avanzamento</span>
-              <span className="text-[#854D0E] font-black">62%</span>
+          <div className="mt-2">
+            <div className="w-full h-2 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] overflow-hidden mb-1">
+              <div className="h-full bg-[#F5E050] rounded-full w-[62%]" />
             </div>
-            <div className="w-full h-2.5 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] overflow-hidden">
-              <div className="h-full bg-[#F5E050] rounded-full w-[62%] transition-all duration-500" />
+            <div className="text-right text-[10px] font-black text-[#73736E]">
+              62%
             </div>
           </div>
         </div>
 
-        {/* Card Abbonamenti */}
+        {/* Card Destra: Abbonamenti */}
         <div
           onClick={() => onNavigate("abbonamenti")}
-          className="rounded-[28px] bg-white border border-[#EBEBE5] p-5 shadow-sm hover:border-[#121212] transition-all cursor-pointer flex flex-col justify-between group"
+          className="rounded-[24px] bg-white border border-[#EBEBE5] p-3.5 shadow-xs flex flex-col justify-between cursor-pointer hover:border-[#121212] transition-colors"
         >
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-[#73736E] uppercase tracking-wider">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-[#73736E]">
                 I tuoi abbonamenti
               </span>
-              <div className="h-7 w-7 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center group-hover:scale-110 transition-transform">
-                <ChevronRight className="h-4 w-4 text-[#121212]" />
+              <ChevronRight className="h-3.5 w-3.5 text-[#A3A39E]" />
+            </div>
+
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center text-[#121212] shrink-0">
+                <Layers className="h-4 w-4 text-[#555]" />
+              </div>
+              <div>
+                <h4 className="text-xs font-extrabold text-[#121212] leading-tight">
+                  6 attivi
+                </h4>
+                <p className="text-[10px] text-[#73736E] font-medium">
+                  74,42 € / mese
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 rounded-2xl bg-[#121212] text-[#F5E050] flex items-center justify-center font-bold">
-                <Tv className="h-5 w-5" />
+            {/* App Icons (Spotify, Netflix, iCloud, +3) */}
+            <div className="flex items-center -space-x-1.5 my-1.5">
+              <div className="h-5 w-5 rounded-full bg-[#1DB954] text-white text-[8px] font-black flex items-center justify-center ring-2 ring-white">
+                S
               </div>
-              <div>
-                <h4 className="text-base font-extrabold text-[#121212]">6 Attivi</h4>
-                <p className="text-xs text-[#73736E] font-medium">74,42 € / mese</p>
+              <div className="h-5 w-5 rounded-full bg-[#E50914] text-white text-[8px] font-black flex items-center justify-center ring-2 ring-white">
+                N
+              </div>
+              <div className="h-5 w-5 rounded-full bg-[#38BDF8] text-white text-[8px] font-black flex items-center justify-center ring-2 ring-white">
+                ☁
+              </div>
+              <div className="h-5 w-5 rounded-full bg-[#EBEBE5] text-[#73736E] text-[8px] font-extrabold flex items-center justify-center ring-2 ring-white">
+                +3
               </div>
             </div>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-[#EBEBE5] flex items-center justify-between text-xs">
-            <span className="text-[#73736E] font-medium">Prossimo rinnovo:</span>
-            <span className="font-bold text-[#121212]">Spotify · 15 set</span>
+          <div className="text-[9px] text-[#73736E] font-medium pt-1 border-t border-[#F4F4F0] truncate">
+            Prossimo: <span className="font-bold text-[#121212]">Spotify · 15 Set</span>
           </div>
         </div>
       </div>
 
-      {/* ── 10. ELEMENTO MOTIVAZIONALE DISCRETO ── */}
-      <div className="rounded-[24px] bg-[#121212] text-white p-4 flex items-center gap-3 shadow-md border border-[#262626]">
-        <div className="h-8 w-8 rounded-full bg-[#F5E050] text-[#121212] flex items-center justify-center shrink-0">
-          <Sparkles className="h-4 w-4 fill-current" />
+      {/* ── 8. BANNER MOTIVAZIONALE DISCRETO ── */}
+      <div className="rounded-[20px] bg-white border border-[#EBEBE5] p-3 shadow-xs flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-[#FEF9C3] text-[#854D0E] flex items-center justify-center shrink-0 border border-[#F5E050]/50">
+            <Lightbulb className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-[#121212] leading-tight">
+              Piccoli passi, grandi risultati.
+            </p>
+            <p className="text-[10px] text-[#73736E] font-medium mt-0.5">
+              Sei sulla strada giusta!
+            </p>
+          </div>
         </div>
-        <div className="text-xs">
-          <span className="font-bold text-white block">Piccoli passi, grandi risultati.</span>
-          <span className="text-[#A3A39E]">Sei sulla strada giusta per raggiungere i tuoi traguardi.</span>
-        </div>
+        <ChevronRight className="h-4 w-4 text-[#A3A39E] shrink-0" />
       </div>
     </div>
   );
