@@ -20,13 +20,17 @@ export function SubscriptionToggle({
         e.stopPropagation();
         onChange();
       }}
-      className={`relative inline-flex h-[22px] w-[38px] shrink-0 cursor-pointer rounded-full p-[2px] border border-transparent transition-colors duration-200 ease-in-out focus:outline-none select-none ${
+      className={`relative inline-block h-6 w-10 shrink-0 cursor-pointer rounded-full border-0 p-0 m-0 outline-none transition-colors duration-200 ease-in-out select-none ${
         checked ? "bg-[#F5E050]" : "bg-[#E5E5E0]"
       }`}
     >
       <span
-        style={{ transform: checked ? "translateX(16px)" : "translateX(0px)" }}
-        className="pointer-events-none inline-block h-[18px] w-[18px] rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out"
+        style={{
+          top: "50%",
+          left: checked ? "19px" : "3px",
+          transform: "translateY(-50%)",
+        }}
+        className="pointer-events-none absolute h-[18px] w-[18px] rounded-full bg-white shadow-xs transition-all duration-200 ease-in-out"
       />
     </button>
   );
