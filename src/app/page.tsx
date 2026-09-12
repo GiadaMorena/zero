@@ -122,6 +122,7 @@ function MobileApp() {
             <BottomNavBar
               currentTab={activeTab as NavTab}
               onSelectTab={(tab) => setActiveTab(tab)}
+              onOpenScan={() => setIsAddModalOpen(true)}
             />
           )}
         </div>
