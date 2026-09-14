@@ -1,14 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { User, Palette, Shield, Download, Trash2, Check, LogOut } from "lucide-react";
+import { User, Bell, Palette, Shield, CreditCard, Download, Trash2, Check, RefreshCw } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
-interface DesktopImpostazioniProps {
-  onLogout?: () => void;
-}
-
-export function DesktopImpostazioni({ onLogout }: DesktopImpostazioniProps) {
+export function DesktopImpostazioni() {
   const { profile, updateProfile, exportCSV, resetAllData } = useApp();
   const [nameInput, setNameInput] = useState(profile.name);
   const [emailInput, setEmailInput] = useState(profile.email);
@@ -140,7 +136,7 @@ export function DesktopImpostazioni({ onLogout }: DesktopImpostazioniProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={exportCSV}
             className="p-4 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] hover:border-[#121212] transition-all flex items-center justify-between text-left group"
@@ -155,31 +151,18 @@ export function DesktopImpostazioni({ onLogout }: DesktopImpostazioniProps) {
           </button>
 
           <button
-            onClick={onLogout}
-            className="p-4 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] hover:border-[#0B0B0B] transition-all flex items-center justify-between text-left group"
-          >
-            <div className="flex items-center gap-3">
-              <LogOut className="h-5 w-5 text-[#0B0B0B]" />
-              <div>
-                <p className="text-xs font-extrabold text-[#0B0B0B]">Disconnettiti dall'Account</p>
-                <p className="text-[10px] text-[#73736E] font-medium">Torna alla schermata di Login</p>
-              </div>
-            </div>
-          </button>
-
-          <button
             onClick={() => {
               if (confirm("Vuoi ripristinare i dati di default dell'app ZERO?")) {
                 resetAllData();
               }
             }}
-            className="p-4 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] hover:border-[#0B0B0B] transition-all flex items-center justify-between text-left group"
+            className="p-4 rounded-2xl bg-rose-50 border border-rose-200 hover:bg-rose-100 transition-all flex items-center justify-between text-left group"
           >
             <div className="flex items-center gap-3">
-              <Trash2 className="h-5 w-5 text-[#0B0B0B]" />
+              <Trash2 className="h-5 w-5 text-rose-600" />
               <div>
-                <p className="text-xs font-extrabold text-[#0B0B0B]">Ripristina Dati Iniziali</p>
-                <p className="text-[10px] text-[#73736E] font-medium">Cancella modifiche locali</p>
+                <p className="text-xs font-extrabold text-rose-700">Ripristina Dati Iniziali</p>
+                <p className="text-[10px] text-rose-500 font-medium">Cancella modifiche locali</p>
               </div>
             </div>
           </button>

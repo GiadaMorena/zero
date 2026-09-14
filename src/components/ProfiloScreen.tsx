@@ -18,7 +18,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
     { title: "Notifiche", icon: Bell },
     { title: "Sicurezza", icon: Shield },
     { title: "Aiuto e supporto", icon: HelpCircle },
-    { title: "Esci", icon: LogOut, action: onLogout },
+    { title: "Disconnetti (Logout)", icon: LogOut, action: onLogout },
   ];
 
   return (
