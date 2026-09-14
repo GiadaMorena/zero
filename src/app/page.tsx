@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { AuthScreen } from "@/components/AuthScreen";
 import { HomeScreen } from "@/components/HomeScreen";
 import { SpeseScreen } from "@/components/SpeseScreen";
 import { AnalisiScreen } from "@/components/AnalisiScreen";
@@ -16,7 +17,7 @@ import { ThemeSync } from "@/components/ThemeSync";
 import { DesktopApp } from "@/components/desktop/DesktopApp";
 import { AppProvider } from "@/context/AppContext";
 
-type ExtendedTab = NavTab | "welcome";
+type ExtendedTab = NavTab | "welcome" | "auth";
 
 /**
  * Global background map.
@@ -25,6 +26,7 @@ type ExtendedTab = NavTab | "welcome";
  */
 const TAB_BACKGROUNDS: Record<ExtendedTab, string> = {
   welcome:      "#0B0B0B",
+  auth:         "#F7F7F5",
   home:         "#F7F7F5",
   spese:        "#F7F7F5",
   analisi:      "#F7F7F5",
@@ -49,7 +51,9 @@ function MobileApp() {
   const renderActiveScreen = () => {
     switch (activeTab) {
       case "welcome":
-        return <WelcomeScreen onStart={() => setActiveTab("home")} />;
+        return <WelcomeScreen onStart={() => setActiveTab("auth")} />;
+      case "auth":
+        return <AuthScreen onAuth={() => setActiveTab("home")} />;
       case "home":
         return (
           <HomeScreen
@@ -102,7 +106,7 @@ function MobileApp() {
             {renderActiveScreen()}
           </div>
 
-          {activeTab !== "welcome" && (
+          {activeTab !== "welcome" && activeTab !== "auth" && (
             <BottomNavBar
               currentTab={activeTab as NavTab}
               onSelectTab={(tab) => setActiveTab(tab)}
@@ -121,6 +125,16 @@ function MobileApp() {
   );
 }
 
+function DesktopWithAuth() {
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  if (!isAuthed) {
+    return <AuthScreen onAuth={() => setIsAuthed(true)} />;
+  }
+
+  return <DesktopApp />;
+}
+
 // ─── Root: responsive switch ─────────────────────────────────────────────────
 export default function Home() {
   return (
@@ -132,7 +146,7 @@ export default function Home() {
 
       {/* Desktop (≥ 768px): native desktop app with sidebar */}
       <div className="hidden md:block">
-        <DesktopApp />
+        <DesktopWithAuth />
       </div>
     </AppProvider>
   );
