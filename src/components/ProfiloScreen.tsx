@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
-import { User, CreditCard, Download, Bell, Shield, HelpCircle, ChevronRight, Settings, Sparkles } from "lucide-react";
+import { User, CreditCard, Download, Bell, Shield, HelpCircle, ChevronRight, Settings, Sparkles, LogOut } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
 
 interface ProfiloScreenProps {
   onNavigate: (tab: any) => void;
+  onLogout?: () => void;
 }
 
-export function ProfiloScreen({ onNavigate }: ProfiloScreenProps) {
+export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
   const menuItems = [
     { title: "Profilo personale", icon: User },
     { title: "Metodi di pagamento", icon: CreditCard, action: () => onNavigate("carte") },
@@ -17,6 +18,7 @@ export function ProfiloScreen({ onNavigate }: ProfiloScreenProps) {
     { title: "Notifiche", icon: Bell },
     { title: "Sicurezza", icon: Shield },
     { title: "Aiuto e supporto", icon: HelpCircle },
+    { title: "Esci", icon: LogOut, action: onLogout },
   ];
 
   return (

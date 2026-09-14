@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { AuthScreen } from "@/components/AuthScreen";
+import { PinLockScreen } from "@/components/PinLockScreen";
 import { HomeScreen } from "@/components/HomeScreen";
 import { SpeseScreen } from "@/components/SpeseScreen";
 import { AnalisiScreen } from "@/components/AnalisiScreen";
@@ -15,7 +16,7 @@ import { AddSpesaModal } from "@/components/AddSpesaModal";
 import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DesktopApp } from "@/components/desktop/DesktopApp";
-import { AppProvider } from "@/context/AppContext";
+import { AppProvider, useApp } from "@/context/AppContext";
 
 type ExtendedTab = NavTab | "welcome" | "auth";
 
@@ -39,9 +40,22 @@ const TAB_BACKGROUNDS: Record<ExtendedTab, string> = {
 
 // ─── Mobile App Shell ────────────────────────────────────────────────────────
 function MobileApp() {
+  const { isLocked, hasPin, lockApp, unlockApp } = useApp();
   const [activeTab, setActiveTab] = useState<ExtendedTab>("welcome");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalType, setAddModalType] = useState<"expense" | "income">("expense");
+  const [isResetPinFlow, setIsResetPinFlow] = useState(false);
+
+  // Background lock listener
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && hasPin) {
+        lockApp();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [hasPin, lockApp]);
 
   const handleOpenAddModal = (type: "expense" | "income" = "expense") => {
     setAddModalType(type);
@@ -49,11 +63,33 @@ function MobileApp() {
   };
 
   const renderActiveScreen = () => {
+    // If app is locked and user has registered a PIN, show PIN lock screen
+    if (activeTab !== "welcome" && activeTab !== "auth" && isLocked && hasPin) {
+      return (
+        <PinLockScreen
+          onUnlock={unlockApp}
+          onForgotPin={() => {
+            setIsResetPinFlow(true);
+            setActiveTab("auth");
+          }}
+        />
+      );
+    }
+
     switch (activeTab) {
       case "welcome":
         return <WelcomeScreen onStart={() => setActiveTab("auth")} />;
       case "auth":
-        return <AuthScreen onAuth={() => setActiveTab("home")} />;
+        return (
+          <AuthScreen
+            isResetPinFlow={isResetPinFlow}
+            onAuth={() => {
+              setIsResetPinFlow(false);
+              unlockApp();
+              setActiveTab("home");
+            }}
+          />
+        );
       case "home":
         return (
           <HomeScreen
@@ -74,7 +110,15 @@ function MobileApp() {
       case "statistiche":
         return <StatisticheScreen />;
       case "profilo":
-        return <ProfiloScreen onNavigate={(tab) => setActiveTab(tab)} />;
+        return (
+          <ProfiloScreen
+            onNavigate={(tab) => setActiveTab(tab)}
+            onLogout={() => {
+              lockApp();
+              setActiveTab("auth");
+            }}
+          />
+        );
       default:
         return (
           <HomeScreen
@@ -85,7 +129,8 @@ function MobileApp() {
     }
   };
 
-  const bgColor = TAB_BACKGROUNDS[activeTab];
+  const isLockScreenActive = activeTab !== "welcome" && activeTab !== "auth" && isLocked && hasPin;
+  const bgColor = isLockScreenActive ? "#F7F7F5" : TAB_BACKGROUNDS[activeTab];
 
   return (
     <>
@@ -100,13 +145,13 @@ function MobileApp() {
           style={{ backgroundColor: bgColor }}
         >
           <div
-            key={activeTab}
+            key={activeTab + (isLockScreenActive ? "-locked" : "")}
             className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in slide-in-from-bottom-2 duration-500"
           >
             {renderActiveScreen()}
           </div>
 
-          {activeTab !== "welcome" && activeTab !== "auth" && (
+          {activeTab !== "welcome" && activeTab !== "auth" && !isLockScreenActive && (
             <BottomNavBar
               currentTab={activeTab as NavTab}
               onSelectTab={(tab) => setActiveTab(tab)}
@@ -125,14 +170,56 @@ function MobileApp() {
   );
 }
 
+// ─── Desktop App Shell with Lock Screen ─────────────────────────────────────
 function DesktopWithAuth() {
-  const [isAuthed, setIsAuthed] = useState(false);
+  const { isLocked, hasPin, lockApp, unlockApp } = useApp();
+  const [isAuthed, setIsAuthed] = useState(true);
+  const [isResetPinFlow, setIsResetPinFlow] = useState(false);
+
+  // Background lock listener
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && hasPin) {
+        lockApp();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [hasPin, lockApp]);
 
   if (!isAuthed) {
-    return <AuthScreen onAuth={() => setIsAuthed(true)} />;
+    return (
+      <AuthScreen
+        isResetPinFlow={isResetPinFlow}
+        onAuth={() => {
+          setIsAuthed(true);
+          setIsResetPinFlow(false);
+          unlockApp();
+        }}
+      />
+    );
   }
 
-  return <DesktopApp />;
+  if (isLocked && hasPin) {
+    return (
+      <PinLockScreen
+        onUnlock={unlockApp}
+        onForgotPin={() => {
+          setIsResetPinFlow(true);
+          setIsAuthed(false);
+        }}
+      />
+    );
+  }
+
+  return (
+    <DesktopApp
+      onLogout={() => {
+        lockApp();
+        setIsAuthed(false);
+      }}
+    />
+  );
 }
 
 // ─── Root: responsive switch ─────────────────────────────────────────────────

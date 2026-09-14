@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { hashPin } from "@/utils/security";
 
 export interface CardItem {
   id: string;
@@ -50,6 +51,7 @@ export interface UserProfile {
   currency: string;
   notificationsEnabled: boolean;
   theme: "light" | "dark";
+  pinHash?: string | null;
 }
 
 interface AppContextType {
@@ -61,6 +63,12 @@ interface AppContextType {
   subscriptions: SubscriptionItem[];
   goals: GoalItem[];
   profile: UserProfile;
+  isLocked: boolean;
+  hasPin: boolean;
+  lockApp: () => void;
+  unlockApp: () => void;
+  setPin: (pin: string) => Promise<void>;
+  verifyPin: (pin: string) => Promise<boolean>;
   addTransaction: (data: {
     title: string;
     category: string;
@@ -195,6 +203,7 @@ const DEFAULT_PROFILE: UserProfile = {
   currency: "EUR (€)",
   notificationsEnabled: true,
   theme: "light",
+  pinHash: null,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -206,6 +215,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>(DEFAULT_SUBSCRIPTIONS);
   const [goals, setGoals] = useState<GoalItem[]>(DEFAULT_GOALS);
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
 
   // Load from localStorage on initial mount
   useEffect(() => {
@@ -218,7 +228,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (parsed.transactions) setTransactions(parsed.transactions);
         if (parsed.subscriptions) setSubscriptions(parsed.subscriptions);
         if (parsed.goals) setGoals(parsed.goals);
-        if (parsed.profile) setProfile(parsed.profile);
+        if (parsed.profile) {
+          setProfile(parsed.profile);
+          if (parsed.profile.pinHash) {
+            setIsLocked(true);
+          }
+        }
       }
     } catch (e) {
       console.error("Failed to load state from localStorage:", e);
@@ -243,6 +258,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error("Failed to save state to localStorage:", e);
     }
   }, [cards, activeCardIndex, transactions, subscriptions, goals, profile]);
+
+  const hasPin = Boolean(profile.pinHash);
+
+  const lockApp = () => setIsLocked(true);
+  const unlockApp = () => setIsLocked(false);
+
+  const setPin = async (pin: string) => {
+    const hash = await hashPin(pin);
+    setProfile((prev) => ({ ...prev, pinHash: hash }));
+    setIsLocked(false);
+  };
+
+  const verifyPin = async (pin: string): Promise<boolean> => {
+    if (!profile.pinHash) return true;
+    const hash = await hashPin(pin);
+    return hash === profile.pinHash;
+  };
 
   const activeCard = cards[activeCardIndex] || cards[0] || DEFAULT_CARDS[0];
 
@@ -461,6 +493,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         subscriptions,
         goals,
         profile,
+        isLocked,
+        hasPin,
+        lockApp,
+        unlockApp,
+        setPin,
+        verifyPin,
         addTransaction,
         deleteTransaction,
         toggleSubscription,

@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import Logo from "@/assets/logo.png";
+import { PinSetupScreen } from "./PinSetupScreen";
+import { useApp } from "@/context/AppContext";
 
 type AuthView = "login" | "register";
 
 interface AuthScreenProps {
   onAuth: () => void;
+  isResetPinFlow?: boolean;
 }
 
 /* ─── Reusable input field ─────────────────────────────── */
@@ -66,10 +69,12 @@ function AuthInput({
 }
 
 /* ─── Main AuthScreen ──────────────────────────────────── */
-export function AuthScreen({ onAuth }: AuthScreenProps) {
+export function AuthScreen({ onAuth, isResetPinFlow = false }: AuthScreenProps) {
+  const { updateProfile, setPin, hasPin } = useApp();
   const [view, setView] = useState<AuthView>("login");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSettingPin, setIsSettingPin] = useState(false);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -97,8 +102,12 @@ export function AuthScreen({ onAuth }: AuthScreenProps) {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      onAuth();
-    }, 800);
+      if (isResetPinFlow || !hasPin) {
+        setIsSettingPin(true);
+      } else {
+        onAuth();
+      }
+    }, 600);
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -108,9 +117,27 @@ export function AuthScreen({ onAuth }: AuthScreenProps) {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      onAuth();
-    }, 800);
+      updateProfile({ name: regName, email: regEmail });
+      setIsSettingPin(true);
+    }, 600);
   };
+
+  if (isSettingPin) {
+    return (
+      <PinSetupScreen
+        onComplete={async (pin) => {
+          await setPin(pin);
+          onAuth();
+        }}
+        title={isResetPinFlow ? "Imposta un nuovo codice." : "Proteggiamo il tuo ZERO."}
+        subtitle={
+          isResetPinFlow
+            ? "Scegli il tuo nuovo codice a 6 cifre per sbloccare l'app."
+            : "Scegli un codice di 6 cifre per proteggere l'accesso all'app."
+        }
+      />
+    );
+  }
 
   /* ═══════════════════════════════════════════════════════ */
   /* ─── Login form ─────────────────────────────────────── */

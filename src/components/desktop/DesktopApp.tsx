@@ -12,7 +12,11 @@ import { DesktopImpostazioni } from "./DesktopImpostazioni";
 import { AddSpesaModal } from "../AddSpesaModal";
 import { ReceiptScanModal } from "../ReceiptScanModal";
 
-export function DesktopApp() {
+interface DesktopAppProps {
+  onLogout?: () => void;
+}
+
+export function DesktopApp({ onLogout }: DesktopAppProps) {
   const [activeSection, setActiveSection] = useState<DesktopSection>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -52,7 +56,7 @@ export function DesktopApp() {
         return <DesktopAnalisi />;
       case "impostazioni":
       case "profilo":
-        return <DesktopImpostazioni />;
+        return <DesktopImpostazioni onLogout={onLogout} />;
       default:
         return (
           <DesktopDashboard
