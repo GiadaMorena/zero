@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Eye, Calendar, Target, Plus, Settings } from "lucide-react";
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -10,34 +11,31 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const [activeDot, setActiveDot] = useState(0);
 
   return (
-    <div className="w-full min-h-[100dvh] flex justify-center items-center bg-[#F7F7F5] overflow-hidden select-none">
+    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F7F7F5] flex justify-center items-center overflow-hidden select-none z-50">
       
       {/* 430 x 932 Art-Directed Viewport Container */}
-      <main className="relative w-full max-w-[430px] h-[100dvh] max-h-[932px] min-h-[720px] overflow-hidden bg-[#F7F7F5] flex-shrink-0">
+      <main className="relative w-full max-w-[430px] h-[100dvh] max-h-[932px] overflow-hidden bg-[#F7F7F5] flex-shrink-0">
         
-        {/* Background Ambient Radial Glow */}
+        {/* Warm Ambient Yellow Radial Glow */}
         <div
-          className="absolute inset-0 pointer-events-none z-0"
-          style={{
-            background: "radial-gradient(circle at 35% 50%, rgba(253, 201, 9, 0.12), transparent 25%)",
-          }}
+          className="absolute top-[140px] right-[10px] w-[280px] h-[280px] rounded-full bg-[#FDC909]/20 blur-3xl pointer-events-none z-0"
         />
 
-        {/* ── 1. LOGO SUPERIORE (ZERO.) ───────────────────────────────────────── */}
+        {/* ── 1. LOGO SUPERIORE (ZERO. at top: 45px, left: 45px) ──────────────── */}
         <div className="absolute top-[45px] left-[45px] z-[20] text-[50px] font-light tracking-[-4px] text-[#0B0B0B] leading-none">
           ZERO<span className="text-[#FDC909] text-[22px] relative -left-[4px] -top-[1px]">.</span>
         </div>
 
         {/* ── 2. CARTA ZERO (315 x 198 px, left: 25px, top: 175px, -10deg) ────── */}
         <div
-          className="absolute w-[315px] h-[198px] left-[25px] top-[175px] z-[10] rounded-[22px] border-2 border-[#FDC909] overflow-hidden shadow-[0_30px_45px_rgba(0,0,0,0.20),0_8px_15px_rgba(0,0,0,0.10)]"
+          className="absolute w-[315px] h-[198px] left-[25px] top-[175px] z-[10] rounded-[22px] border-2 border-[#FDC909] overflow-hidden shadow-[0_30px_45px_rgba(0,0,0,0.22),0_10px_20px_rgba(0,0,0,0.12)]"
           style={{
             background: "linear-gradient(135deg, #171717 0%, #080808 65%, #111 100%)",
             transform: "rotate(-10deg)",
           }}
         >
           {/* Watermark "0" */}
-          <div className="absolute right-[13px] -top-[25px] text-[240px] leading-none font-bold text-white/[0.08] select-none pointer-events-none">
+          <div className="absolute right-[10px] -top-[30px] text-[250px] leading-none font-bold text-white/[0.08] select-none pointer-events-none">
             0
           </div>
 
@@ -82,66 +80,76 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
             {/* Phone Content (counter rotated -9deg) */}
             <div
-              className="pt-[60px] px-[23px] pb-[20px] w-[112%] -ml-[6%] flex flex-col gap-3"
+              className="pt-[54px] px-[20px] pb-[20px] w-[112%] -ml-[6%] flex flex-col gap-3"
               style={{ transform: "rotate(-9deg)" }}
             >
               {/* Header inside Phone */}
-              <div className="text-[27px] tracking-[-2px] mb-2 font-light text-[#0B0B0B]">
-                ZERO<span className="text-[#FDC909]">.</span>
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-[24px] tracking-[-2px] font-light text-[#0B0B0B]">
+                  ZERO<span className="text-[#FDC909]">.</span>
+                </div>
+                <Settings className="w-4 h-4 text-[#0B0B0B]" />
               </div>
 
               {/* Saldo Disponibile Card */}
-              <div className="bg-white rounded-[19px] p-[22px_20px] shadow-[0_5px_18px_rgba(0,0,0,0.05)]">
-                <div className="text-[12px] text-[#777] mb-2 font-medium">
-                  Saldo disponibile
-                </div>
-                <div className="text-[30px] font-bold tracking-[-1.5px] mb-6 text-[#0B0B0B]">
-                  € 1.245,80
+              <div className="bg-white rounded-[19px] p-[18px_16px] shadow-[0_5px_18px_rgba(0,0,0,0.05)] relative">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[26px] font-bold tracking-[-1.5px] text-[#0B0B0B]">
+                    € 1.245,80
+                  </span>
+                  <Eye className="w-4 h-4 text-[#777]" />
                 </div>
 
                 {/* Chart */}
-                <div className="flex items-end justify-between h-[55px] gap-1">
-                  <div className="w-[16px] rounded-[8px_8px_4px_4px] bg-[#ededeb] h-[25px]" />
-                  <div className="w-[16px] rounded-[8px_8px_4px_4px] bg-[#ededeb] h-[34px]" />
-                  <div className="w-[16px] rounded-[8px_8px_4px_4px] bg-[#ededeb] h-[43px]" />
-                  <div className="w-[16px] rounded-[8px_8px_4px_4px] bg-[#ededeb] h-[30px]" />
-                  <div className="w-[16px] rounded-[8px_8px_4px_4px] bg-[#FDC909] h-[52px]" />
-                  <div className="w-[16px] rounded-[8px_8px_4px_4px] bg-[#ededeb] h-[38px]" />
+                <div className="flex items-end justify-between h-[45px] gap-1 pt-2">
+                  <div className="w-[14px] rounded-[6px_6px_3px_3px] bg-[#ededeb] h-[22px]" />
+                  <div className="w-[14px] rounded-[6px_6px_3px_3px] bg-[#ededeb] h-[30px]" />
+                  <div className="w-[14px] rounded-[6px_6px_3px_3px] bg-[#ededeb] h-[38px]" />
+                  <div className="w-[14px] rounded-[6px_6px_3px_3px] bg-[#ededeb] h-[26px]" />
+                  <div className="w-[14px] rounded-[6px_6px_3px_3px] bg-[#FDC909] h-[45px]" />
+                  <div className="w-[14px] rounded-[6px_6px_3px_3px] bg-[#ededeb] h-[32px]" />
                 </div>
               </div>
 
               {/* Shortcuts Row */}
-              <div className="grid grid-cols-3 gap-[10px] mt-1">
-                <div className="bg-white rounded-[15px] p-[16px_5px] text-center text-[10px] font-bold text-[#0B0B0B] shadow-[0_4px_14px_rgba(0,0,0,0.04)]">
-                  <div className="w-[38px] h-[38px] mx-auto mb-2 rounded-[12px] bg-[#0B0B0B] text-white flex items-center justify-center text-[20px]">
+              <div className="grid grid-cols-3 gap-[8px] mt-0.5">
+                <div className="bg-white rounded-[15px] p-[14px_4px] text-center text-[10px] font-bold text-[#0B0B0B] shadow-[0_4px_14px_rgba(0,0,0,0.04)]">
+                  <div className="w-[34px] h-[34px] mx-auto mb-1.5 rounded-[12px] bg-[#0B0B0B] text-white flex items-center justify-center text-[18px]">
                     →
                   </div>
                   Spese
                 </div>
 
-                <div className="bg-white rounded-[15px] p-[16px_5px] text-center text-[10px] font-bold text-[#0B0B0B] shadow-[0_4px_14px_rgba(0,0,0,0.04)]">
-                  <div className="w-[38px] h-[38px] mx-auto mb-2 rounded-[12px] bg-[#f4f4f2] text-[#0B0B0B] flex items-center justify-center text-[20px]">
-                    ▣
+                <div className="bg-white rounded-[15px] p-[14px_4px] text-center text-[10px] font-bold text-[#0B0B0B] shadow-[0_4px_14px_rgba(0,0,0,0.04)]">
+                  <div className="w-[34px] h-[34px] mx-auto mb-1.5 rounded-[12px] bg-[#f4f4f2] text-[#0B0B0B] flex items-center justify-center text-[18px]">
+                    <Calendar className="w-4 h-4" />
                   </div>
                   Abbonamenti
                 </div>
 
-                <div className="bg-white rounded-[15px] p-[16px_5px] text-center text-[10px] font-bold text-[#0B0B0B] shadow-[0_4px_14px_rgba(0,0,0,0.04)]">
-                  <div className="w-[38px] h-[38px] mx-auto mb-2 rounded-[12px] bg-[#f4f4f2] text-[#0B0B0B] flex items-center justify-center text-[20px]">
-                    ◎
+                <div className="bg-white rounded-[15px] p-[14px_4px] text-center text-[10px] font-bold text-[#0B0B0B] shadow-[0_4px_14px_rgba(0,0,0,0.04)]">
+                  <div className="w-[34px] h-[34px] mx-auto mb-1.5 rounded-[12px] bg-[#f4f4f2] text-[#0B0B0B] flex items-center justify-center text-[18px]">
+                    <Target className="w-4 h-4" />
                   </div>
                   Obiettivi
                 </div>
               </div>
 
+              {/* Floating Yellow Plus Button */}
+              <div className="flex justify-center -mt-2">
+                <div className="w-[32px] h-[32px] rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shadow-md">
+                  <Plus className="w-5 h-5 stroke-[3]" />
+                </div>
+              </div>
+
               {/* Recent Transactions */}
-              <div className="mt-1 bg-white rounded-[18px] p-[17px] shadow-[0_4px_15px_rgba(0,0,0,0.04)]">
-                <div className="text-[13px] font-bold mb-3 text-[#0B0B0B]">
+              <div className="bg-white rounded-[18px] p-[14px] shadow-[0_4px_15px_rgba(0,0,0,0.04)]">
+                <div className="text-[12px] font-bold mb-2 text-[#0B0B0B]">
                   Spese recenti
                 </div>
 
-                <div className="flex items-center py-[9px] border-b border-[#eee]">
-                  <div className="w-[28px] h-[28px] rounded-full bg-[#f1f1ef] flex items-center justify-center mr-[9px] text-[11px] text-[#0B0B0B]">
+                <div className="flex items-center py-[7px] border-b border-[#eee]">
+                  <div className="w-[24px] h-[24px] rounded-full bg-[#f1f1ef] flex items-center justify-center mr-[8px] text-[10px] text-[#0B0B0B]">
                     ●
                   </div>
                   <div className="flex-1">
@@ -151,8 +159,8 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
                   <div className="text-[10px] font-semibold text-[#0B0B0B]">- € 3,49</div>
                 </div>
 
-                <div className="flex items-center py-[9px]">
-                  <div className="w-[28px] h-[28px] rounded-full bg-[#f1f1ef] flex items-center justify-center mr-[9px] text-[11px] text-[#0B0B0B]">
+                <div className="flex items-center py-[7px]">
+                  <div className="w-[24px] h-[24px] rounded-full bg-[#f1f1ef] flex items-center justify-center mr-[8px] text-[10px] text-[#0B0B0B]">
                     🛍
                   </div>
                   <div className="flex-1">
@@ -165,6 +173,9 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
             </div>
           </div>
+
+          {/* Smooth Fade-to-White Mask on Bottom of Smartphone */}
+          <div className="absolute inset-x-0 bottom-0 h-[240px] bg-gradient-to-b from-transparent via-[#F7F7F5]/90 to-[#F7F7F5] pointer-events-none z-[15]" />
         </div>
 
         {/* ── 4. LOGO INFERIORE (left: 40px, bottom: 195px) ──────────────────── */}
