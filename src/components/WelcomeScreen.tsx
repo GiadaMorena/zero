@@ -22,15 +22,16 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         />
 
         {/* LOGO ALTO */}
-        <div className="absolute top-[46px] left-[43px] z-20 text-[50px] font-light tracking-[-4px] text-[#0B0B0B] leading-none">
+        <div className="absolute top-[46px] left-[43px] z-[20] text-[50px] font-light tracking-[-4px] text-[#0B0B0B] leading-none">
           ZERO<span className="text-[#FDC909] text-[22px] relative -left-[4px] -top-[1px]">.</span>
         </div>
 
         {/* CARTA ZERO */}
         <div
-          className="absolute w-[315px] h-[198px] left-[22px] top-[170px] z-10 rounded-[22px] border-2 border-[#FDC909] transform -rotate-10 overflow-hidden"
+          className="absolute w-[315px] h-[198px] left-[22px] top-[170px] z-[10] rounded-[22px] border-2 border-[#FDC909] overflow-hidden"
           style={{
             background: "linear-gradient(135deg, #171717 0%, #080808 65%, #111 100%)",
+            transform: "rotate(-10deg)",
             boxShadow: "0 30px 45px rgba(0, 0, 0, 0.20), 0 8px 15px rgba(0, 0, 0, 0.10)",
           }}
         >
@@ -39,13 +40,13 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             0
           </div>
 
-          <div className="absolute top-[22px] left-[25px] text-[#FDC909] text-[22px] font-normal z-10 tracking-wider">
+          <div className="absolute top-[22px] left-[25px] text-[#FDC909] text-[22px] font-normal z-[2] tracking-wider">
             ZERO
           </div>
 
           {/* Chip */}
           <div
-            className="absolute left-[27px] bottom-[58px] w-[42px] h-[31px] rounded-[7px] z-10 overflow-hidden"
+            className="absolute left-[27px] bottom-[58px] w-[42px] h-[31px] rounded-[7px] z-[2] overflow-hidden"
             style={{
               background: "linear-gradient(90deg, #ddd, #aaa)",
               boxShadow: "inset 0 0 0 1px #777",
@@ -55,30 +56,33 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             <div className="absolute w-[10px] h-full top-0 left-[15px] border-l border-r border-[#777]" />
           </div>
 
-          <div className="absolute left-[28px] bottom-[23px] text-[#ddd] tracking-[4px] text-[13px] z-10 font-mono">
+          <div className="absolute left-[28px] bottom-[23px] text-[#ddd] tracking-[4px] text-[13px] z-[2] font-mono">
             •••• •••• <strong className="text-white text-[17px] tracking-[2px] font-mono font-bold">3377</strong>
           </div>
 
-          <div className="absolute right-[25px] bottom-[23px] text-[#bbb] text-[13px] z-10 font-mono">
+          <div className="absolute right-[25px] bottom-[23px] text-[#bbb] text-[13px] z-[2] font-mono">
             09/29
           </div>
         </div>
 
         {/* SMARTPHONE ZERO */}
         <div
-          className="absolute w-[285px] h-[560px] -right-[35px] top-[270px] z-5 rounded-[43px] bg-[#0a0a0a] transform rotate-9 p-[7px]"
+          className="absolute w-[285px] h-[560px] -right-[35px] top-[270px] z-[5] rounded-[43px] bg-[#0a0a0a] p-[7px]"
           style={{
+            transform: "rotate(9deg)",
             boxShadow: "-15px 25px 40px rgba(0,0,0,0.18)",
           }}
         >
           <div className="w-full h-full rounded-[37px] bg-[#fafaf8] overflow-hidden relative">
             
             {/* Dynamic Island */}
-            <div className="absolute w-[92px] h-[25px] top-[13px] left-1/2 -translate-x-1/2 rounded-[20px] bg-[#050505] z-10" />
+            <div className="absolute w-[92px] h-[25px] top-[13px] left-1/2 -translate-x-1/2 rounded-[20px] bg-[#050505] z-[5]" />
 
             {/* Phone Content (counter rotated -9deg) */}
-            <div className="pt-[60px] px-[23px] pb-[20px] transform -rotate-9 w-[112%] -ml-[6%] flex flex-col gap-3">
-              
+            <div
+              className="pt-[60px] px-[23px] pb-[20px] w-[112%] -ml-[6%] flex flex-col gap-3"
+              style={{ transform: "rotate(-9deg)" }}
+            >
               <div className="text-[27px] tracking-[-2px] mb-2 font-light text-[#0B0B0B]">
                 ZERO<span className="text-[#FDC909]">.</span>
               </div>
@@ -161,7 +165,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </div>
 
         {/* LOGO ZERO BASSO */}
-        <div className="absolute left-[38px] bottom-[195px] z-20">
+        <div className="absolute left-[38px] bottom-[195px] z-[20]">
           <div className="w-[33px] h-[6px] rounded-[10px] bg-[#FDC909] mb-[32px]" />
           <div className="text-[57px] font-light tracking-[-5px] text-[#0B0B0B] leading-none">
             ZERO<span className="text-[#FDC909] text-[25px] relative -left-[4px] -top-[2px]">.</span>
@@ -171,7 +175,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         {/* CTA "Inizia ora" */}
         <button
           onClick={onStart}
-          className="absolute left-[26px] right-[26px] bottom-[105px] h-[72px] rounded-[38px] bg-[#0B0B0B] text-white flex items-center justify-center text-[19px] font-semibold z-30 shadow-[0_10px_30px_rgba(0,0,0,0.15)] cursor-pointer hover:bg-black active:scale-[0.98] transition-all group"
+          className="absolute left-[26px] right-[26px] bottom-[105px] h-[72px] rounded-[38px] bg-[#0B0B0B] text-white flex items-center justify-center text-[19px] font-semibold z-[30] shadow-[0_10px_30px_rgba(0,0,0,0.15)] cursor-pointer hover:bg-black active:scale-[0.98] transition-all group"
         >
           <div className="absolute left-[7px] w-[58px] h-[58px] rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center text-[27px] group-hover:scale-105 transition-transform">
             →
@@ -180,7 +184,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </button>
 
         {/* PAGINATION */}
-        <div className="absolute bottom-[73px] left-1/2 -translate-x-1/2 flex gap-[9px] z-30">
+        <div className="absolute bottom-[73px] left-1/2 -translate-x-1/2 flex gap-[9px] z-[30]">
           {[0, 1, 2].map((idx) => (
             <button
               key={idx}
@@ -195,7 +199,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </div>
 
         {/* HOME INDICATOR */}
-        <div className="absolute bottom-[17px] left-1/2 -translate-x-1/2 w-[135px] h-[5px] rounded-[10px] bg-[#0B0B0B] z-40" />
+        <div className="absolute bottom-[17px] left-1/2 -translate-x-1/2 w-[135px] h-[5px] rounded-[10px] bg-[#0B0B0B] z-[40]" />
 
       </main>
     </div>
