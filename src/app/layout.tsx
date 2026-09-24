@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent", // transparent: the app bg shows through
     title: "Zero",
   },
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {

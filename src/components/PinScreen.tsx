@@ -19,7 +19,7 @@ interface PinScreenProps {
 
 export function PinScreen({
   mode: initialMode,
-  userName = "Giada",
+  userName = "",
   expectedPin = "",
   onPinSet,
   onSuccess,
@@ -113,7 +113,7 @@ export function PinScreen({
       case "lock":
       default:
         return {
-          title: `Bentornata, ${userName}.`,
+          title: userName ? `Bentornato, ${userName.split(" ")[0]}.` : "Bentornato.",
           subtitle: "Inserisci il tuo codice per continuare.",
         };
     }

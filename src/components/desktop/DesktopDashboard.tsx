@@ -48,7 +48,7 @@ export function DesktopDashboard({
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
-  const nextGoal = goals[0] || { title: "MacBook Pro", current: 1240, target: 2000, percent: 62 };
+  const nextGoal = goals[0] || null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
 
   return (
@@ -58,12 +58,12 @@ export function DesktopDashboard({
         {/* Card 1: Total Balance */}
         <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-5 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-[#73736E]">
-            <span className="text-xs font-bold">Disponibile su {activeCard.bankName}</span>
+            <span className="text-xs font-bold">Disponibile{activeCard ? ` su ${activeCard.bankName}` : ""}</span>
             <CreditCard className="h-4 w-4 text-[#121212]" />
           </div>
           <div className="my-2">
             <span className="text-3xl font-black tracking-tight text-[#121212]">
-              {money(activeCard.balance)}
+              {money(activeCard?.balance ?? 0)}
             </span>
           </div>
           <p className="text-[10px] text-[#73736E] font-medium">Carta attiva nel wallet</p>
@@ -136,9 +136,20 @@ export function DesktopDashboard({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {cards.map((card, idx) => {
-            const isSelected = activeCard.id === card.id;
-            return (
+          {cards.length === 0 ? (
+            <div className="col-span-full p-6 rounded-[28px] bg-white border border-[#EBEBE5] text-center">
+              <p className="text-xs font-bold text-[#73736E]">Nessuna carta collegata</p>
+              <button
+                onClick={() => onNavigate("carte")}
+                className="mt-2 text-xs font-black text-[#121212] underline"
+              >
+                Aggiungi una carta
+              </button>
+            </div>
+          ) : (
+            cards.map((card, idx) => {
+              const isSelected = activeCard?.id === card.id;
+              return (
               <div
                 key={card.id}
                 onClick={() => setActiveCardIndex(idx)}
@@ -173,8 +184,9 @@ export function DesktopDashboard({
                 </div>
               </div>
             );
-          })}
-        </div>
+          })
+        )}
+      </div>
       </div>
 
       {/* ── 3. Panoramica Finanziaria & Movimenti Recenti (Side by Side) ── */}

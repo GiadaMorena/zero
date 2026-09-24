@@ -78,8 +78,8 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
   const [loginPassword, setLoginPassword] = useState("");
 
   // Register state
-  const [regName, setRegName] = useState("Giada Morena");
-  const [regEmail, setRegEmail] = useState("giada@zero.app");
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirm, setRegConfirm] = useState("");
 
@@ -103,7 +103,7 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      onAuth({ name: "Giada Morena", email: loginEmail });
+      onAuth({ name: loginEmail.split("@")[0], email: loginEmail });
     }, 600);
   };
 

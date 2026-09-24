@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { AuthScreen } from "@/components/AuthScreen";
 import { PinScreen } from "@/components/PinScreen";
+import { AddCardScreen } from "@/components/AddCardScreen";
 import { HomeScreen } from "@/components/HomeScreen";
 import { SpeseScreen } from "@/components/SpeseScreen";
 import { AnalisiScreen } from "@/components/AnalisiScreen";
@@ -22,6 +23,7 @@ export type FlowStep =
   | "welcome"
   | "register"
   | "login"
+  | "add_card"
   | "create_pin"
   | "confirm_pin"
   | "lock"
@@ -35,14 +37,14 @@ export interface AuthState {
   userEmail: string;
 }
 
-const STORAGE_KEY = "zero_auth_state_v5";
+const STORAGE_KEY = "zero_auth_state_v6";
 
 const DEFAULT_AUTH_STATE: AuthState = {
   isRegistered: false,
   hasPin: false,
   pinCode: "",
-  userName: "Giada Morena",
-  userEmail: "giada@zero.app",
+  userName: "",
+  userEmail: "",
 };
 
 export default function Home() {
@@ -56,6 +58,9 @@ export default function Home() {
   // 1. Initial Load & Persistence
   useEffect(() => {
     try {
+      // Migrate old auth key
+      localStorage.removeItem("zero_auth_state_v5");
+
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed: AuthState = JSON.parse(saved);
@@ -66,7 +71,6 @@ export default function Home() {
         } else if (!parsed.hasPin) {
           setFlowStep("create_pin");
         } else {
-          // Returning registered user with PIN -> MUST SHOW LOCK SCREEN!
           setFlowStep("lock");
         }
       }
@@ -84,37 +88,31 @@ export default function Home() {
     }
   };
 
-  // 2. Background Re-Lock Handler (visibilitychange)
+  // 2. Background Re-Lock Handler
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // App passed to background
-        if (authState.isRegistered && authState.hasPin) {
-          setFlowStep("lock");
-        }
+      if (document.hidden && authState.isRegistered && authState.hasPin) {
+        setFlowStep("lock");
       }
     };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [authState.isRegistered, authState.hasPin]);
 
-  // Handle registration success -> move to PIN creation
+  // Registration success → add_card step
   const handleRegisterSuccess = (data?: { name: string; email: string }) => {
-    const updated = {
+    const updated: AuthState = {
       ...authState,
-      userName: data?.name || authState.userName,
-      userEmail: data?.email || authState.userEmail,
+      userName: data?.name || "",
+      userEmail: data?.email || "",
     };
     saveAuthState(updated);
-    setFlowStep("create_pin");
+    setFlowStep("add_card");
   };
 
-  // Handle login success -> if PIN configured go to lock, else create PIN
+  // Login success → lock or create_pin
   const handleLoginSuccess = (data?: { name: string; email: string }) => {
-    const updated = {
+    const updated: AuthState = {
       ...authState,
       userName: data?.name || authState.userName,
       userEmail: data?.email || authState.userEmail,
@@ -128,13 +126,13 @@ export default function Home() {
     }
   };
 
-  // Handle PIN creation -> store temp PIN and move to confirmation
+  // PIN creation → confirm step
   const handlePinCreated = (pin: string) => {
     setTempPin(pin);
     setFlowStep("confirm_pin");
   };
 
-  // Handle PIN confirmation match -> save PIN and unlock app
+  // PIN confirmed → save and unlock
   const handlePinConfirmed = () => {
     const updated: AuthState = {
       ...authState,
@@ -146,25 +144,12 @@ export default function Home() {
     setFlowStep("app");
   };
 
-  // Handle PIN Unlock success
-  const handleUnlockSuccess = () => {
-    setFlowStep("app");
-  };
+  const handleUnlockSuccess = () => setFlowStep("app");
+  const handleForgotPin = () => setFlowStep("login");
 
-  // Handle Forgot PIN click
-  const handleForgotPin = () => {
-    setFlowStep("login");
-  };
-
-  // Handle Logout
+  // Logout → full reset
   const handleLogout = () => {
-    const resetState: AuthState = {
-      ...DEFAULT_AUTH_STATE,
-      isRegistered: false,
-      hasPin: false,
-      pinCode: "",
-    };
-    saveAuthState(resetState);
+    saveAuthState(DEFAULT_AUTH_STATE);
     setFlowStep("welcome");
   };
 
@@ -173,7 +158,7 @@ export default function Home() {
     setIsAddModalOpen(true);
   };
 
-  // Active Screen Switcher for Mobile
+  // Mobile screens
   const renderMobileScreen = () => {
     switch (flowStep) {
       case "welcome":
@@ -184,6 +169,16 @@ export default function Home() {
 
       case "login":
         return <AuthScreen onAuth={handleLoginSuccess} defaultView="login" />;
+
+      case "add_card":
+        return (
+          <AddCardScreen
+            userName={authState.userName}
+            userEmail={authState.userEmail}
+            onSkip={() => setFlowStep("create_pin")}
+            onAdd={() => setFlowStep("create_pin")}
+          />
+        );
 
       case "create_pin":
         return (
@@ -240,7 +235,7 @@ export default function Home() {
           case "profilo":
             return (
               <ProfiloScreen
-                onNavigate={(tab) => setActiveTab(tab)}
+                onNavigate={(tab) => setActiveTab(tab as NavTab)}
                 onLogout={handleLogout}
               />
             );
@@ -255,7 +250,7 @@ export default function Home() {
     }
   };
 
-  // Render Desktop Gate: when locked/authenticating, shows PIN or Auth Screen
+  // Desktop screens
   const renderDesktopScreen = () => {
     switch (flowStep) {
       case "welcome":
@@ -264,6 +259,15 @@ export default function Home() {
         return <AuthScreen onAuth={handleRegisterSuccess} defaultView="register" />;
       case "login":
         return <AuthScreen onAuth={handleLoginSuccess} defaultView="login" />;
+      case "add_card":
+        return (
+          <AddCardScreen
+            userName={authState.userName}
+            userEmail={authState.userEmail}
+            onSkip={() => setFlowStep("create_pin")}
+            onAdd={() => setFlowStep("create_pin")}
+          />
+        );
       case "create_pin":
         return (
           <PinScreen
@@ -314,7 +318,6 @@ export default function Home() {
               {renderMobileScreen()}
             </div>
 
-            {/* Bottom Nav Bar is ONLY shown when fully unlocked in the App */}
             {isAppUnlocked && (
               <BottomNavBar
                 currentTab={activeTab}

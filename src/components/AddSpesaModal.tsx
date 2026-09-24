@@ -32,7 +32,7 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
   const [title, setTitle] = useState<string>("");
   const [amount, setAmount] = useState<string>("0");
   const [selectedCategory, setSelectedCategory] = useState<string>("Cibo");
-  const [selectedCardId, setSelectedCardId] = useState<string>(activeCard?.id || "card-zero");
+  const [selectedCardId, setSelectedCardId] = useState<string>(activeCard?.id || (cards[0]?.id ?? ""));
   const [note, setNote] = useState<string>("");
   const [date, setDate] = useState<string>("Oggi");
 
@@ -45,9 +45,11 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
       setNote("");
       if (activeCard?.id) {
         setSelectedCardId(activeCard.id);
+      } else if (cards.length > 0) {
+        setSelectedCardId(cards[0].id);
       }
     }
-  }, [isOpen, defaultType, activeCard?.id]);
+  }, [isOpen, defaultType, activeCard?.id, cards]);
 
   if (!isOpen) return null;
 
@@ -185,21 +187,25 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
             Carta / Conto Utilizzato
           </label>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            {cards.map((card) => (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => setSelectedCardId(card.id)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 border transition-all ${
-                  selectedCardId === card.id
-                    ? "bg-[#0B0B0B] text-white border-[#0B0B0B]"
-                    : "bg-white text-[#A7A7A7] border-[#A7A7A7]/30"
-                }`}
-              >
-                <CreditCard className="h-3.5 w-3.5" />
-                <span>{card.bankName}</span>
-              </button>
-            ))}
+            {cards.length === 0 ? (
+              <span className="text-xs text-[#A7A7A7] font-medium py-1">Nessuna carta registrata</span>
+            ) : (
+              cards.map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => setSelectedCardId(card.id)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 border transition-all ${
+                    selectedCardId === card.id
+                      ? "bg-[#0B0B0B] text-white border-[#0B0B0B]"
+                      : "bg-white text-[#A7A7A7] border-[#A7A7A7]/30"
+                  }`}
+                >
+                  <CreditCard className="h-3.5 w-3.5" />
+                  <span>{card.bankName}</span>
+                </button>
+              ))
+            )}
           </div>
         </div>
 

@@ -38,6 +38,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
     goals,
     subscriptions,
     totalActiveSubscriptionsCost,
+    profile,
   } = useApp();
 
   const [isScanOpen, setIsScanOpen] = useState(false);
@@ -46,7 +47,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
-  const nextGoal = goals[0] || { title: "MacBook", current: 1240, target: 2000, percent: 62 };
+  const nextGoal = goals[0] || null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
 
   return (
@@ -58,7 +59,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
       <div className="flex items-center justify-between pt-1 px-1">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[#0B0B0B] flex items-center gap-2">
-            Ciao Giada <span className="inline-block text-xl">👋</span>
+            {profile.name ? `Ciao ${profile.name.split(" ")[0]}` : "Benvenuto"} <span className="inline-block text-xl">👋</span>
           </h1>
           <p className="text-xs text-[#A7A7A7] font-medium mt-0.5">
             Un passo alla volta, grandi obiettivi.
@@ -81,18 +82,21 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
 
       {/* ── 2. WALLET CAROUSEL ── */}
       <div className="-mx-4">
-        <WalletCarousel onCardSelect={(_, idx) => setActiveCardIndex(idx)} />
+        <WalletCarousel
+          onCardSelect={(_, idx) => setActiveCardIndex(idx)}
+          onAddCardClick={() => onNavigate("carte")}
+        />
       </div>
 
       {/* ── 3. DISPONIBILITÀ (Card Bianca Compatta) ── */}
       <div className="rounded-[22px] bg-white border border-[#A7A7A7]/20 p-4 shadow-xs flex items-center justify-between">
         <div>
           <div className="flex items-center gap-1 text-[11px] text-[#A7A7A7] font-semibold mb-0.5">
-            <span>Disponibili su {activeCard.bankName}</span>
+            <span>Disponibili{activeCard ? ` su ${activeCard.bankName}` : ""}</span>
             <Info className="h-3 w-3 text-[#A7A7A7]" />
           </div>
           <div className="text-2xl font-black text-[#0B0B0B] tracking-tight">
-            {money(activeCard.balance)}
+            {money(activeCard?.balance ?? 0)}
           </div>
         </div>
 
@@ -178,45 +182,51 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
 
         {/* Single White Card containing top 3 transactions */}
         <div className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-3.5 shadow-xs flex flex-col divide-y divide-[#A7A7A7]/10">
-          {transactions.slice(0, 3).map((tx) => {
-            const isIncome = tx.amount > 0;
-            return (
-              <div
-                key={tx.id}
-                onClick={() => onNavigate("spese")}
-                className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 cursor-pointer hover:opacity-80 transition-opacity"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B] shrink-0">
-                    {tx.category === "Cibo" ? (
-                      <ShoppingCart className="h-4 w-4 text-[#0B0B0B]" />
-                    ) : tx.category === "Trasporti" ? (
-                      <Car className="h-4 w-4 text-[#0B0B0B]" />
-                    ) : isIncome ? (
-                      <DollarSign className="h-4 w-4 text-[#0B0B0B]" />
-                    ) : (
-                      <ShoppingBag className="h-4 w-4 text-[#0B0B0B]" />
-                    )}
+          {transactions.length === 0 ? (
+            <p className="text-xs text-[#A7A7A7] font-medium text-center py-4">
+              Nessun movimento recente
+            </p>
+          ) : (
+            transactions.slice(0, 3).map((tx) => {
+              const isIncome = tx.amount > 0;
+              return (
+                <div
+                  key={tx.id}
+                  onClick={() => onNavigate("spese")}
+                  className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B] shrink-0">
+                      {tx.category === "Cibo" ? (
+                        <ShoppingCart className="h-4 w-4 text-[#0B0B0B]" />
+                      ) : tx.category === "Trasporti" ? (
+                        <Car className="h-4 w-4 text-[#0B0B0B]" />
+                      ) : isIncome ? (
+                        <DollarSign className="h-4 w-4 text-[#0B0B0B]" />
+                      ) : (
+                        <ShoppingBag className="h-4 w-4 text-[#0B0B0B]" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#0B0B0B] leading-tight">
+                        {tx.title}
+                      </h4>
+                      <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
+                        {tx.category} · {tx.date}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-[#0B0B0B] leading-tight">
-                      {tx.title}
-                    </h4>
-                    <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
-                      {tx.category} · {tx.date}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-black text-[#0B0B0B]">
-                    {isIncome ? "+ " : "- "} {money(Math.abs(tx.amount))}
-                  </span>
-                  <ChevronRight className="h-3.5 w-3.5 text-[#A7A7A7]" />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-black text-[#0B0B0B]">
+                      {isIncome ? "+ " : "- "} {money(Math.abs(tx.amount))}
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5 text-[#A7A7A7]" />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -238,31 +248,40 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
               <ChevronRight className="h-3.5 w-3.5 text-[#A7A7A7]" />
             </div>
 
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B] shrink-0">
-                <Laptop className="h-4 w-4 text-[#0B0B0B]" />
-              </div>
-              <div>
-                <h4 className="text-xs font-extrabold text-[#0B0B0B] leading-tight">
-                  {nextGoal.title}
-                </h4>
-                <p className="text-[10px] text-[#A7A7A7] font-medium">
-                  {money(nextGoal.current)} / {money(nextGoal.target)}
-                </p>
-              </div>
-            </div>
+            {nextGoal ? (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-8 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B] shrink-0">
+                    <Laptop className="h-4 w-4 text-[#0B0B0B]" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-extrabold text-[#0B0B0B] leading-tight">
+                      {nextGoal.title}
+                    </h4>
+                    <p className="text-[10px] text-[#A7A7A7] font-medium">
+                      {money(nextGoal.current)} / {money(nextGoal.target)}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="mt-2">
-              <div className="w-full h-2 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 overflow-hidden mb-1">
-                <div
-                  className="h-full bg-[#FDC909] rounded-full transition-all duration-500"
-                  style={{ width: `${nextGoal.percent}%` }}
-                />
+                <div className="mt-2">
+                  <div className="w-full h-2 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 overflow-hidden mb-1">
+                    <div
+                      className="h-full bg-[#FDC909] rounded-full transition-all duration-500"
+                      style={{ width: `${nextGoal.percent}%` }}
+                    />
+                  </div>
+                  <div className="text-right text-[10px] font-black text-[#0B0B0B]">
+                    {nextGoal.percent}%
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="py-2 text-center">
+                <p className="text-xs font-bold text-[#0B0B0B]">Nessun obiettivo</p>
+                <p className="text-[10px] text-[#A7A7A7] mt-0.5">Tocca per creare</p>
               </div>
-              <div className="text-right text-[10px] font-black text-[#0B0B0B]">
-                {nextGoal.percent}%
-              </div>
-            </div>
+            )}
           </div>
         </div>
 

@@ -2,13 +2,15 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
+const STORAGE_KEY = "zero_app_state_v6";
+
 export interface CardItem {
   id: string;
   name: string;
   bankName: string;
   number: string;
   expiry: string;
-  type: "revolut" | "zero" | "mastercard";
+  type: "revolut" | "zero" | "mastercard" | "generic";
   balance: number;
 }
 
@@ -56,11 +58,21 @@ interface AppContextType {
   cards: CardItem[];
   activeCardIndex: number;
   setActiveCardIndex: (index: number) => void;
-  activeCard: CardItem;
+  activeCard: CardItem | null;
   transactions: TransactionItem[];
   subscriptions: SubscriptionItem[];
   goals: GoalItem[];
   profile: UserProfile;
+  initializeProfile: (data: {
+    name: string;
+    email: string;
+    card?: {
+      bankName: string;
+      number: string;
+      expiry: string;
+      balance: number;
+    };
+  }) => void;
   addTransaction: (data: {
     title: string;
     category: string;
@@ -83,7 +95,14 @@ interface AppContextType {
   addMoneyToGoal: (id: string, amount: number) => void;
   addGoal: (data: { title: string; target: number }) => void;
   deleteGoal: (id: string) => void;
-  addCard: (data: { bankName: string; name: string; number: string; expiry: string; balance: number; type?: "zero" | "revolut" | "mastercard" }) => void;
+  addCard: (data: {
+    bankName: string;
+    name: string;
+    number: string;
+    expiry: string;
+    balance: number;
+    type?: "zero" | "revolut" | "mastercard" | "generic";
+  }) => void;
   deleteCard: (id: string) => void;
   updateProfile: (data: Partial<UserProfile>) => void;
   resetAllData: () => void;
@@ -94,104 +113,10 @@ interface AppContextType {
   totalActiveSubscriptionsCost: number;
 }
 
-const DEFAULT_CARDS: CardItem[] = [
-  {
-    id: "card-revolut",
-    name: "Giada Morena",
-    bankName: "Revolut",
-    number: "•••• 8842",
-    expiry: "04/27",
-    type: "revolut",
-    balance: 450.0,
-  },
-  {
-    id: "card-zero",
-    name: "Giada Morena",
-    bankName: "ZERO",
-    number: "•••• •••• 3377",
-    expiry: "09/29",
-    type: "zero",
-    balance: 1245.8,
-  },
-  {
-    id: "card-mastercard",
-    name: "Giada Morena",
-    bankName: "Mastercard",
-    number: "•••• 1290",
-    expiry: "11/28",
-    type: "mastercard",
-    balance: 890.0,
-  },
-];
-
-const DEFAULT_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: "tx-1",
-    title: "Esselunga",
-    category: "Cibo",
-    amount: -42.8,
-    date: "Oggi, 14:32",
-    cardId: "card-zero",
-    type: "expense",
-  },
-  {
-    id: "tx-2",
-    title: "Benzina Eni",
-    category: "Trasporti",
-    amount: -55.0,
-    date: "Ieri, 18:11",
-    cardId: "card-zero",
-    type: "expense",
-  },
-  {
-    id: "tx-3",
-    title: "Stipendio Mensile",
-    category: "Entrata",
-    amount: 1800.0,
-    date: "2 Settembre",
-    cardId: "card-zero",
-    type: "income",
-  },
-  {
-    id: "tx-4",
-    title: "Zara",
-    category: "Shopping",
-    amount: -49.95,
-    date: "3 Settembre",
-    cardId: "card-zero",
-    type: "expense",
-  },
-  {
-    id: "tx-5",
-    title: "Farmacia",
-    category: "Casa",
-    amount: -12.5,
-    date: "1 Settembre",
-    cardId: "card-zero",
-    type: "expense",
-  },
-];
-
-const DEFAULT_SUBSCRIPTIONS: SubscriptionItem[] = [
-  { id: "1", name: "Netflix", cost: 6.99, frequency: "mese", date: "5 ott 2026", active: true, category: "Svago", color: "bg-red-500/10 text-red-600" },
-  { id: "2", name: "Spotify", cost: 3.49, frequency: "mese", date: "10 ott 2026", active: true, category: "Musica", color: "bg-emerald-500/10 text-emerald-600" },
-  { id: "3", name: "iCloud", cost: 0.99, frequency: "mese", date: "12 ott 2026", active: true, category: "Cloud", color: "bg-sky-500/10 text-sky-600" },
-  { id: "4", name: "Google One", cost: 29.99, frequency: "anno", date: "20 nov 2026", active: true, category: "Cloud", color: "bg-amber-500/10 text-amber-600" },
-  { id: "5", name: "Uno Bravo", cost: 49.0, frequency: "mese", date: "1 ott 2026", active: true, category: "Salute", color: "bg-indigo-500/10 text-indigo-600" },
-  { id: "6", name: "Ho.", cost: 8.95, frequency: "mese", date: "3 ott 2026", active: true, category: "Telefono", color: "bg-purple-500/10 text-purple-600" },
-];
-
-const DEFAULT_GOALS: GoalItem[] = [
-  { id: "g-1", title: "MacBook Pro M3", current: 1240, target: 2000, percent: 62, completed: false },
-  { id: "g-2", title: "Fondo Viaggio Giappone", current: 900, target: 1500, percent: 60, completed: false },
-  { id: "g-3", title: "Nuova Fotocamera", current: 350, target: 800, percent: 44, completed: false },
-  { id: "g-4", title: "Fondo Emergenza", current: 1200, target: 3000, percent: 40, completed: false },
-];
-
-const DEFAULT_PROFILE: UserProfile = {
-  name: "Giada Morena",
-  email: "giada@zero.app",
-  avatarText: "G",
+const EMPTY_PROFILE: UserProfile = {
+  name: "",
+  email: "",
+  avatarText: "",
   currency: "EUR (€)",
   notificationsEnabled: true,
   theme: "light",
@@ -200,17 +125,19 @@ const DEFAULT_PROFILE: UserProfile = {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [cards, setCards] = useState<CardItem[]>(DEFAULT_CARDS);
-  const [activeCardIndex, setActiveCardIndex] = useState<number>(1); // Default ZERO card
-  const [transactions, setTransactions] = useState<TransactionItem[]>(DEFAULT_TRANSACTIONS);
-  const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>(DEFAULT_SUBSCRIPTIONS);
-  const [goals, setGoals] = useState<GoalItem[]>(DEFAULT_GOALS);
-  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [cards, setCards] = useState<CardItem[]>([]);
+  const [activeCardIndex, setActiveCardIndex] = useState<number>(0);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
+  const [goals, setGoals] = useState<GoalItem[]>([]);
+  const [profile, setProfile] = useState<UserProfile>(EMPTY_PROFILE);
 
   // Load from localStorage on initial mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("zero_app_state_v3");
+      // Migrate: remove old keys
+      localStorage.removeItem("zero_app_state_v3");
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.cards) setCards(parsed.cards);
@@ -229,22 +156,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(
-        "zero_app_state_v3",
-        JSON.stringify({
-          cards,
-          activeCardIndex,
-          transactions,
-          subscriptions,
-          goals,
-          profile,
-        })
+        STORAGE_KEY,
+        JSON.stringify({ cards, activeCardIndex, transactions, subscriptions, goals, profile })
       );
     } catch (e) {
       console.error("Failed to save state to localStorage:", e);
     }
   }, [cards, activeCardIndex, transactions, subscriptions, goals, profile]);
 
-  const activeCard = cards[activeCardIndex] || cards[0] || DEFAULT_CARDS[0];
+  const activeCard = cards[activeCardIndex] ?? null;
+
+  // Initialize profile after registration (with optional first card)
+  const initializeProfile = (data: {
+    name: string;
+    email: string;
+    card?: { bankName: string; number: string; expiry: string; balance: number };
+  }) => {
+    const newProfile: UserProfile = {
+      name: data.name,
+      email: data.email,
+      avatarText: data.name.charAt(0).toUpperCase(),
+      currency: "EUR (€)",
+      notificationsEnabled: true,
+      theme: "light",
+    };
+    setProfile(newProfile);
+
+    if (data.card) {
+      const newCard: CardItem = {
+        id: "card-" + Date.now(),
+        name: data.name,
+        bankName: data.card.bankName,
+        number: data.card.number,
+        expiry: data.card.expiry || "00/00",
+        type: "generic",
+        balance: data.card.balance || 0,
+      };
+      setCards([newCard]);
+      setActiveCardIndex(0);
+    } else {
+      setCards([]);
+      setActiveCardIndex(0);
+    }
+    setTransactions([]);
+    setSubscriptions([]);
+    setGoals([]);
+  };
 
   // Add Transaction
   const addTransaction = (data: {
@@ -256,7 +213,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     date?: string;
     cardId?: string;
   }) => {
-    const targetCardId = data.cardId || activeCard.id;
+    const targetCardId = data.cardId || activeCard?.id || "";
     const finalAmount = data.type === "expense" ? -Math.abs(data.amount) : Math.abs(data.amount);
 
     const newTx: TransactionItem = {
@@ -264,7 +221,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       title: data.title,
       category: data.category,
       amount: finalAmount,
-      date: data.date || "Oggi, " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
+      date:
+        data.date ||
+        "Oggi, " +
+          new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
       cardId: targetCardId,
       type: data.type,
       note: data.note,
@@ -272,7 +232,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setTransactions((prev) => [newTx, ...prev]);
 
-    // Update target card balance
     setCards((prevCards) =>
       prevCards.map((c) =>
         c.id === targetCardId ? { ...c, balance: Math.max(0, c.balance + finalAmount) } : c
@@ -284,25 +243,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteTransaction = (id: string) => {
     const targetTx = transactions.find((t) => t.id === id);
     if (!targetTx) return;
-
     setTransactions((prev) => prev.filter((t) => t.id !== id));
-
-    // Revert card balance
     setCards((prevCards) =>
       prevCards.map((c) =>
-        c.id === targetTx.cardId ? { ...c, balance: Math.max(0, c.balance - targetTx.amount) } : c
+        c.id === targetTx.cardId
+          ? { ...c, balance: Math.max(0, c.balance - targetTx.amount) }
+          : c
       )
     );
   };
 
-  // Toggle Subscription
   const toggleSubscription = (id: string) => {
     setSubscriptions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
     );
   };
 
-  // Add Subscription
   const addSubscription = (data: {
     name: string;
     cost: number;
@@ -318,34 +274,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       date: data.date,
       active: true,
       category: data.category,
-      color: "bg-[#F5E050]/20 text-[#121212]",
+      color: "bg-[#FDC909]/20 text-[#0B0B0B]",
     };
     setSubscriptions((prev) => [...prev, newSub]);
   };
 
-  // Delete Subscription
   const deleteSubscription = (id: string) => {
     setSubscriptions((prev) => prev.filter((s) => s.id !== id));
   };
 
-  // Add Money to Goal
   const addMoneyToGoal = (id: string, amount: number) => {
     setGoals((prev) =>
       prev.map((g) => {
         if (g.id !== id) return g;
         const newCurrent = g.current + amount;
         const newPercent = Math.min(100, Math.round((newCurrent / g.target) * 100));
-        return {
-          ...g,
-          current: newCurrent,
-          percent: newPercent,
-          completed: newCurrent >= g.target,
-        };
+        return { ...g, current: newCurrent, percent: newPercent, completed: newCurrent >= g.target };
       })
     );
   };
 
-  // Add Goal
   const addGoal = (data: { title: string; target: number }) => {
     const newGoal: GoalItem = {
       id: "g-" + Date.now(),
@@ -358,19 +306,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setGoals((prev) => [...prev, newGoal]);
   };
 
-  // Delete Goal
   const deleteGoal = (id: string) => {
     setGoals((prev) => prev.filter((g) => g.id !== id));
   };
 
-  // Add Card
   const addCard = (data: {
     bankName: string;
     name: string;
     number: string;
     expiry: string;
     balance: number;
-    type?: "zero" | "revolut" | "mastercard";
+    type?: "zero" | "revolut" | "mastercard" | "generic";
   }) => {
     const newCard: CardItem = {
       id: "card-" + Date.now(),
@@ -378,20 +324,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       name: data.name || profile.name,
       number: data.number.startsWith("••••") ? data.number : `•••• ${data.number.slice(-4)}`,
       expiry: data.expiry || "12/28",
-      type: data.type || "zero",
+      type: data.type || "generic",
       balance: data.balance || 0,
     };
     setCards((prev) => [...prev, newCard]);
   };
 
-  // Delete Card
   const deleteCard = (id: string) => {
-    if (cards.length <= 1) return; // Keep at least one card
     setCards((prev) => prev.filter((c) => c.id !== id));
     setActiveCardIndex(0);
   };
 
-  // Update Profile
   const updateProfile = (data: Partial<UserProfile>) => {
     setProfile((prev) => {
       const updated = { ...prev, ...data };
@@ -402,19 +345,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Reset All Data
   const resetAllData = () => {
-    setCards(DEFAULT_CARDS);
-    setActiveCardIndex(1);
-    setTransactions(DEFAULT_TRANSACTIONS);
-    setSubscriptions(DEFAULT_SUBSCRIPTIONS);
-    setGoals(DEFAULT_GOALS);
-    setProfile(DEFAULT_PROFILE);
-    localStorage.removeItem("zero_app_state_v3");
+    setCards([]);
+    setActiveCardIndex(0);
+    setTransactions([]);
+    setSubscriptions([]);
+    setGoals([]);
+    setProfile(EMPTY_PROFILE);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("zero_auth_state_v5");
+    localStorage.removeItem("zero_auth_state_v6");
   };
 
-  // Export CSV
   const exportCSV = () => {
+    if (transactions.length === 0) {
+      alert("Nessun movimento da esportare.");
+      return;
+    }
     const headers = ["ID", "Titolo", "Categoria", "Importo", "Tipo", "Data", "ID Carta"];
     const rows = transactions.map((t) => [
       t.id,
@@ -425,17 +372,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       `"${t.date}"`,
       t.cardId,
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `ZERO_Movimenti_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `ZERO_Movimenti_${new Date().toISOString().slice(0, 10)}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Computed Totals
   const totalMonthlySpending = transactions
     .filter((t) => t.amount < 0)
     .reduce((acc, t) => acc + Math.abs(t.amount), 0);
@@ -444,7 +395,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     .filter((t) => t.amount > 0)
     .reduce((acc, t) => acc + t.amount, 0);
 
-  const totalMonthlySavings = activeCard.balance;
+  const totalMonthlySavings = activeCard?.balance ?? 0;
 
   const totalActiveSubscriptionsCost = subscriptions
     .filter((s) => s.active)
@@ -461,6 +412,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         subscriptions,
         goals,
         profile,
+        initializeProfile,
         addTransaction,
         deleteTransaction,
         toggleSubscription,

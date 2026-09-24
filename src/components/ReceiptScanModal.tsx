@@ -204,7 +204,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         amount: num,
         type: "expense",
         date: date || todayIT(),
-        cardId: activeCard.id,
+        cardId: activeCard?.id || "",
         note: "Acquisito da scansione scontrino",
       });
       setStep("success");
@@ -482,7 +482,9 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
               {/* Carta */}
               <div className="flex items-center justify-between bg-white border border-[#A7A7A7] rounded-xl px-3 py-2.5">
                 <span className="text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest">Carta</span>
-                <span className="text-xs font-bold text-[#0B0B0B]">{activeCard.bankName} {activeCard.number}</span>
+                <span className="text-xs font-bold text-[#0B0B0B]">
+                  {activeCard ? `${activeCard.bankName} ${activeCard.number}` : "Nessuna carta"}
+                </span>
               </div>
             </div>
           </div>

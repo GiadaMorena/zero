@@ -18,21 +18,20 @@ export function AltroMenuSheet({ isOpen, onClose }: AltroMenuSheetProps) {
 
   const handleExecuteTransfer = () => {
     const amt = parseFloat(transferAmount) || 0;
-    if (amt > 0) {
-      // Transfer: deduct from card 1, add to card 2
+    if (amt > 0 && cards.length >= 2) {
       addTransaction({
-        title: "Trasferimento a Revolut",
+        title: `Trasferimento a ${cards[1].bankName}`,
         category: "Altro",
         amount: amt,
         type: "expense",
-        cardId: "card-zero",
+        cardId: cards[0].id,
       });
       addTransaction({
-        title: "Trasferimento da ZERO",
+        title: `Trasferimento da ${cards[0].bankName}`,
         category: "Altro",
         amount: amt,
         type: "income",
-        cardId: "card-revolut",
+        cardId: cards[1].id,
       });
     }
     setShowTransfer(false);
