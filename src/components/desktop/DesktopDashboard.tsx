@@ -270,31 +270,42 @@ export function DesktopDashboard({
               <ChevronRight className="h-4 w-4 text-[#A3A39E]" />
             </div>
 
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center shrink-0">
-                <Laptop className="h-5 w-5 text-[#121212]" />
-              </div>
+          {nextGoal ? (
+            <>
               <div>
-                <h4 className="text-sm font-extrabold text-[#121212]">{nextGoal.title}</h4>
-                <p className="text-xs text-[#73736E] font-semibold">
-                  {money(nextGoal.current)} / {money(nextGoal.target)}
-                </p>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-10 w-10 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] flex items-center justify-center shrink-0">
+                    <Laptop className="h-5 w-5 text-[#121212]" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-[#121212]">{nextGoal.title}</h4>
+                    <p className="text-xs text-[#73736E] font-semibold">
+                      {money(nextGoal.current)} / {money(nextGoal.target)}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div>
-            <div className="w-full h-2.5 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] overflow-hidden mb-1.5">
-              <div
-                className="h-full bg-[#F5E050] rounded-full transition-all duration-500"
-                style={{ width: `${nextGoal.percent}%` }}
-              />
+              <div>
+                <div className="w-full h-2.5 rounded-full bg-[#F8F8F5] border border-[#EBEBE5] overflow-hidden mb-1.5">
+                  <div
+                    className="h-full bg-[#F5E050] rounded-full transition-all duration-500"
+                    style={{ width: `${nextGoal.percent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-xs font-bold text-[#73736E]">
+                  <span>Progresso</span>
+                  <span className="text-[#121212]">{nextGoal.percent}%</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="py-6 text-center">
+              <p className="text-xs font-bold text-[#121212]">Nessun obiettivo attivo</p>
+              <p className="text-[11px] text-[#73736E] mt-1">Clicca per creare il tuo primo traguardo</p>
             </div>
-            <div className="flex justify-between items-center text-xs font-bold text-[#73736E]">
-              <span>Progresso</span>
-              <span className="text-[#121212]">{nextGoal.percent}%</span>
-            </div>
-          </div>
+          )}
+        </div>
         </div>
 
         {/* Abbonamenti Card */}
