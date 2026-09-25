@@ -28,7 +28,6 @@ export function PinScreen({
 }: PinScreenProps) {
   const [currentMode, setCurrentMode] = useState<PinMode>(initialMode);
   const [pinDigits, setPinDigits] = useState<string[]>([]);
-  const [firstPin, setFirstPin] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isShaking, setIsShaking] = useState<boolean>(false);
 
@@ -62,21 +61,17 @@ export function PinScreen({
   // Process completed 6-digit PIN entry
   const handleCompletePin = (code: string) => {
     if (currentMode === "create") {
-      setFirstPin(code);
-      setTimeout(() => {
-        setPinDigits([]);
-        setCurrentMode("confirm");
-      }, 200);
+      onPinSet?.(code);
     } else if (currentMode === "confirm") {
-      if (code === firstPin) {
+      // The parent switches flow steps after the first entry, which remounts
+      // this screen. Compare against the PIN passed back as expectedPin.
+      if (code === expectedPin) {
         if (onPinSet) onPinSet(code);
         if (onSuccess) onSuccess();
       } else {
         triggerError("Il codice non coincide. Riprova.");
         setTimeout(() => {
           setPinDigits([]);
-          setFirstPin("");
-          setCurrentMode("create");
         }, 800);
       }
     } else if (currentMode === "lock") {
