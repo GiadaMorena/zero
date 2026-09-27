@@ -17,6 +17,7 @@ import {
   ArrowUpRight,
   Scan,
   CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import Logo from "@/assets/logo.png";
@@ -26,6 +27,7 @@ export type DesktopSection =
   | "movimenti"
   | "carte"
   | "abbonamenti"
+  | "assicurazioni"
   | "obiettivi"
   | "analisi"
   | "impostazioni"
@@ -37,6 +39,7 @@ const NAV_ITEMS: { id: DesktopSection; label: string; icon: React.ElementType }[
   { id: "analisi", label: "Analisi", icon: BarChart2 },
   { id: "obiettivi", label: "Obiettivi", icon: Target },
   { id: "abbonamenti", label: "Abbonamenti", icon: CreditCard },
+  { id: "assicurazioni", label: "Assicurazioni & Pensione", icon: ShieldCheck },
   { id: "carte", label: "Carte", icon: CreditCard },
   { id: "impostazioni", label: "Impostazioni", icon: Settings },
 ];
@@ -47,6 +50,7 @@ const PAGE_TITLES: Record<DesktopSection, string> = {
   analisi:       "Analisi finanziaria",
   obiettivi:     "Obiettivi di risparmio",
   abbonamenti:   "Abbonamenti attivi",
+  assicurazioni: "Assicurazioni e Previdenza",
   carte:         "Le tue carte e conti",
   impostazioni:  "Impostazioni",
   profilo:       "Profilo utente",

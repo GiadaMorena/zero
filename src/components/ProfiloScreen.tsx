@@ -7,6 +7,7 @@ import {
   Download,
   Bell,
   Shield,
+  ShieldCheck,
   HelpCircle,
   ChevronRight,
   ArrowLeft,
@@ -23,7 +24,7 @@ interface ProfiloScreenProps {
 type ActiveSection = null | "profilo" | "notifiche" | "sicurezza" | "aiuto";
 
 export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
-  const { profile, updateProfile, exportCSV } = useApp();
+  const { profile, updateProfile, exportCSV, protections } = useApp();
   const [activeSection, setActiveSection] = useState<ActiveSection>(null);
 
   // Profilo personale edit state
@@ -46,6 +47,8 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
     setActiveSection(section);
   };
 
+  const activeProtectionsCount = protections.filter((p) => p.active).length;
+
   const menuItems = [
     {
       title: "Profilo personale",
@@ -56,6 +59,12 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
       title: "Metodi di pagamento",
       icon: CreditCard,
       action: () => onNavigate("carte"),
+    },
+    {
+      title: "Assicurazioni e previdenza",
+      icon: ShieldCheck,
+      action: () => onNavigate("assicurazioni"),
+      badge: activeProtectionsCount > 0 ? `${activeProtectionsCount} attive` : undefined,
     },
     {
       title: "Esporta dati",

@@ -11,6 +11,7 @@ import { AnalisiScreen } from "@/components/AnalisiScreen";
 import { CarteScreen } from "@/components/CarteScreen";
 import { ObiettiviScreen } from "@/components/ObiettiviScreen";
 import { AbbonamentiScreen } from "@/components/AbbonamentiScreen";
+import { AssicurazioniScreen } from "@/components/AssicurazioniScreen";
 import { StatisticheScreen } from "@/components/StatisticheScreen";
 import { ProfiloScreen } from "@/components/ProfiloScreen";
 import { AddSpesaModal } from "@/components/AddSpesaModal";
@@ -272,6 +273,8 @@ export default function Home() {
             return <ObiettiviScreen />;
           case "abbonamenti":
             return <AbbonamentiScreen />;
+          case "assicurazioni":
+            return <AssicurazioniScreen onBack={() => setActiveTab("profilo")} />;
           case "statistiche":
             return <StatisticheScreen />;
           case "profilo":

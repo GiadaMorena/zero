@@ -402,7 +402,11 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
 
       {/* Modals */}
       <ReceiptScanModal isOpen={isScanOpen} onClose={() => setIsScanOpen(false)} />
-      <AltroMenuSheet isOpen={isAltroOpen} onClose={() => setIsAltroOpen(false)} />
+      <AltroMenuSheet
+        isOpen={isAltroOpen}
+        onClose={() => setIsAltroOpen(false)}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 }

@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowLeftRight, Tag, X, Check } from "lucide-react";
+import { ArrowLeftRight, Tag, X, Check, ShieldCheck } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 interface AltroMenuSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigate?: (tab: string) => void;
 }
 
-export function AltroMenuSheet({ isOpen, onClose }: AltroMenuSheetProps) {
-  const { cards, addTransaction } = useApp();
+export function AltroMenuSheet({ isOpen, onClose, onNavigate }: AltroMenuSheetProps) {
+  const { cards, addTransaction, protections } = useApp();
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
   const [transferSuccess, setTransferSuccess] = useState(false);
@@ -49,6 +50,7 @@ export function AltroMenuSheet({ isOpen, onClose }: AltroMenuSheetProps) {
   };
 
   const hasMultipleCards = cards.length >= 2;
+  const activeProtectionsCount = protections.filter((p) => p.active).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-xs p-0 sm:p-4 select-none">
@@ -129,6 +131,37 @@ export function AltroMenuSheet({ isOpen, onClose }: AltroMenuSheetProps) {
         ) : (
           /* Main Menu Options */
           <div className="flex flex-col gap-2.5">
+            {/* Option 1: Assicurazioni & Previdenza */}
+            <button
+              onClick={() => {
+                onClose();
+                onNavigate?.("assicurazioni");
+              }}
+              className="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#A7A7A7]/20 shadow-xs hover:border-[#0B0B0B] transition-all text-left group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-[#0B0B0B] text-[#FDC909] flex items-center justify-center font-bold shadow-xs">
+                  <ShieldCheck className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-extrabold text-[#0B0B0B]">
+                      Assicurazioni & Previdenza
+                    </h4>
+                    {activeProtectionsCount > 0 && (
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#FDC909] text-[#0B0B0B]">
+                        {activeProtectionsCount} attive
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
+                    Monitora polizze e fondi pensione (senza intaccare i totali)
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Option 2: Trasferimento tra carte */}
             <button
               onClick={() => setShowTransfer(true)}
               className="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#A7A7A7]/20 shadow-xs hover:border-[#0B0B0B] transition-all text-left group cursor-pointer"
@@ -148,6 +181,7 @@ export function AltroMenuSheet({ isOpen, onClose }: AltroMenuSheetProps) {
               </div>
             </button>
 
+            {/* Option 3: Gestione categorie */}
             <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#A7A7A7]/20 opacity-60 text-left">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-[#F7F7F5] text-[#A7A7A7] flex items-center justify-center font-bold border border-[#A7A7A7]/20">

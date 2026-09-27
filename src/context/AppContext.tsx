@@ -46,6 +46,20 @@ export interface GoalItem {
   completed: boolean;
 }
 
+export interface ProtectionItem {
+  id: string;
+  title: string;
+  provider: string;
+  type: "assicurazione" | "pensione";
+  category: string;
+  amount: number;
+  amountType: "premio_annuale" | "premio_mensile" | "valore_maturato" | "versamento_periodico";
+  policyNumber?: string;
+  renewalDate?: string;
+  note?: string;
+  active: boolean;
+}
+
 export interface UserProfile {
   name: string;
   email: string;
@@ -63,6 +77,7 @@ interface AppContextType {
   transactions: TransactionItem[];
   subscriptions: SubscriptionItem[];
   goals: GoalItem[];
+  protections: ProtectionItem[];
   profile: UserProfile;
   initializeProfile: (data: {
     name: string;
@@ -96,6 +111,19 @@ interface AppContextType {
   addMoneyToGoal: (id: string, amount: number) => void;
   addGoal: (data: { title: string; target: number }) => void;
   deleteGoal: (id: string) => void;
+  addProtection: (data: {
+    title: string;
+    provider: string;
+    type: "assicurazione" | "pensione";
+    category: string;
+    amount: number;
+    amountType: "premio_annuale" | "premio_mensile" | "valore_maturato" | "versamento_periodico";
+    policyNumber?: string;
+    renewalDate?: string;
+    note?: string;
+  }) => void;
+  deleteProtection: (id: string) => void;
+  toggleProtection: (id: string) => void;
   addCard: (data: {
     bankName: string;
     name: string;
@@ -179,12 +207,30 @@ function dbToGoal(row: any): GoalItem {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dbToProtection(row: any): ProtectionItem {
+  return {
+    id: row.id,
+    title: row.title,
+    provider: row.provider || "",
+    type: (row.type || "assicurazione") as ProtectionItem["type"],
+    category: row.category || "Altro",
+    amount: Number(row.amount) || 0,
+    amountType: (row.amount_type || row.amountType || "premio_annuale") as ProtectionItem["amountType"],
+    policyNumber: row.policy_number || row.policyNumber,
+    renewalDate: row.renewal_date || row.renewalDate,
+    note: row.note,
+    active: row.active ?? true,
+  };
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [cards, setCards] = useState<CardItem[]>([]);
   const [activeCardIndex, setActiveCardIndex] = useState<number>(0);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
   const [goals, setGoals] = useState<GoalItem[]>([]);
+  const [protections, setProtections] = useState<ProtectionItem[]>([]);
   const [profile, setProfile] = useState<UserProfile>(EMPTY_PROFILE);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -197,12 +243,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           { data: txData },
           { data: subData },
           { data: goalsData },
+          { data: protectionsData },
           { data: profileData },
         ] = await Promise.all([
           supabase.from("cards").select("*").eq("user_id", uid).order("created_at"),
           supabase.from("transactions").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
           supabase.from("subscriptions").select("*").eq("user_id", uid).order("created_at"),
           supabase.from("goals").select("*").eq("user_id", uid).order("created_at"),
+          supabase.from("protections").select("*").eq("user_id", uid).order("created_at").then((r) => r, () => ({ data: null })),
           supabase.from("profiles").select("*").eq("id", uid).single(),
         ]);
 
@@ -210,6 +258,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (txData) setTransactions(txData.map(dbToTransaction));
         if (subData) setSubscriptions(subData.map(dbToSubscription));
         if (goalsData) setGoals(goalsData.map(dbToGoal));
+        if (protectionsData && Array.isArray(protectionsData)) {
+          setProtections(protectionsData.map(dbToProtection));
+        }
         if (profileData) {
           setProfile({
             name: profileData.name || "",
@@ -237,6 +288,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (parsed.transactions) setTransactions(parsed.transactions);
           if (parsed.subscriptions) setSubscriptions(parsed.subscriptions);
           if (parsed.goals) setGoals(parsed.goals);
+          if (parsed.protections) setProtections(parsed.protections);
           if (parsed.profile) setProfile(parsed.profile);
         }
       } catch (e) {
@@ -272,12 +324,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ cards, activeCardIndex, transactions, subscriptions, goals, profile })
+        JSON.stringify({ cards, activeCardIndex, transactions, subscriptions, goals, protections, profile })
       );
     } catch (e) {
       console.error("Failed to save state to localStorage:", e);
     }
-  }, [cards, activeCardIndex, transactions, subscriptions, goals, profile]);
+  }, [cards, activeCardIndex, transactions, subscriptions, goals, protections, profile]);
 
   // ── Helper to always get valid user ID from Supabase session ──────
   const getEffectiveUserId = async (): Promise<string | null> => {
@@ -588,6 +640,94 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ── Assicurazioni & Previdenza (Non calcolate sul totale) ───────────
+  const addProtection = async (data: {
+    title: string;
+    provider: string;
+    type: "assicurazione" | "pensione";
+    category: string;
+    amount: number;
+    amountType: "premio_annuale" | "premio_mensile" | "valore_maturato" | "versamento_periodico";
+    policyNumber?: string;
+    renewalDate?: string;
+    note?: string;
+  }) => {
+    const tempId = "prot-" + Date.now();
+    const newProt: ProtectionItem = {
+      id: tempId,
+      title: data.title,
+      provider: data.provider,
+      type: data.type,
+      category: data.category,
+      amount: data.amount,
+      amountType: data.amountType,
+      policyNumber: data.policyNumber,
+      renewalDate: data.renewalDate,
+      note: data.note,
+      active: true,
+    };
+    setProtections((prev) => [...prev, newProt]);
+
+    const uid = await getEffectiveUserId();
+    if (uid) {
+      try {
+        const { data: inserted } = await supabase.from("protections").insert({
+          user_id: uid,
+          title: newProt.title,
+          provider: newProt.provider,
+          type: newProt.type,
+          category: newProt.category,
+          amount: newProt.amount,
+          amount_type: newProt.amountType,
+          policy_number: newProt.policyNumber,
+          renewal_date: newProt.renewalDate,
+          note: newProt.note,
+          active: true,
+        }).select().single();
+        if (inserted) {
+          setProtections((prev) =>
+            prev.map((p) => (p.id === tempId ? dbToProtection(inserted) : p))
+          );
+        }
+      } catch (e) {
+        console.error("Supabase protections sync (cached locally):", e);
+      }
+    }
+  };
+
+  const deleteProtection = async (id: string) => {
+    setProtections((prev) => prev.filter((p) => p.id !== id));
+    const uid = await getEffectiveUserId();
+    if (uid) {
+      try {
+        await supabase.from("protections").delete().eq("id", id).eq("user_id", uid);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const toggleProtection = async (id: string) => {
+    let nextActive = true;
+    setProtections((prev) =>
+      prev.map((p) => {
+        if (p.id === id) {
+          nextActive = !p.active;
+          return { ...p, active: nextActive };
+        }
+        return p;
+      })
+    );
+    const uid = await getEffectiveUserId();
+    if (uid) {
+      try {
+        await supabase.from("protections").update({ active: nextActive }).eq("id", id).eq("user_id", uid);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   // ── Cards ──────────────────────────────────────────────────────────
   const addCard = async (data: {
     bankName: string;
@@ -689,6 +829,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTransactions([]);
     setSubscriptions([]);
     setGoals([]);
+    setProtections([]);
     setProfile(EMPTY_PROFILE);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem("zero_auth_state_v5");
@@ -754,6 +895,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         transactions,
         subscriptions,
         goals,
+        protections,
         profile,
         initializeProfile,
         addTransaction,
@@ -764,6 +906,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addMoneyToGoal,
         addGoal,
         deleteGoal,
+        addProtection,
+        deleteProtection,
+        toggleProtection,
         addCard,
         deleteCard,
         updateProfile,

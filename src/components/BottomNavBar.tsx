@@ -3,7 +3,7 @@
 import React from "react";
 import { Home, BarChart2, Scan, FileText, User } from "lucide-react";
 
-export type NavTab = "home" | "spese" | "analisi" | "carte" | "obiettivi" | "abbonamenti" | "statistiche" | "profilo";
+export type NavTab = "home" | "spese" | "analisi" | "carte" | "obiettivi" | "abbonamenti" | "statistiche" | "profilo" | "assicurazioni";
 
 interface BottomNavBarProps {
   currentTab: NavTab;

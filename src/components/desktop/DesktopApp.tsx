@@ -9,6 +9,7 @@ import { DesktopObiettivi } from "./DesktopObiettivi";
 import { DesktopAbbonamenti } from "./DesktopAbbonamenti";
 import { DesktopCarte } from "./DesktopCarte";
 import { DesktopImpostazioni } from "./DesktopImpostazioni";
+import { AssicurazioniScreen } from "../AssicurazioniScreen";
 import { AddSpesaModal } from "../AddSpesaModal";
 import { ReceiptScanModal } from "../ReceiptScanModal";
 
@@ -46,6 +47,12 @@ export function DesktopApp() {
         return <DesktopCarte />;
       case "abbonamenti":
         return <DesktopAbbonamenti />;
+      case "assicurazioni":
+        return (
+          <div className="max-w-xl mx-auto py-4">
+            <AssicurazioniScreen />
+          </div>
+        );
       case "obiettivi":
         return <DesktopObiettivi />;
       case "analisi":
