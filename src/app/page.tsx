@@ -205,7 +205,12 @@ export default function Home() {
   const renderMobileScreen = () => {
     switch (flowStep) {
       case "welcome":
-        return <WelcomeScreen onStart={() => setFlowStep("login")} />;
+        return (
+          <WelcomeScreen
+            onLogin={() => setFlowStep("login")}
+            onRegister={() => setFlowStep("register")}
+          />
+        );
 
       case "register":
         return <AuthScreen onAuth={handleRegisterSuccess} defaultView="register" />;
@@ -299,7 +304,12 @@ export default function Home() {
   const renderDesktopScreen = () => {
     switch (flowStep) {
       case "welcome":
-        return <WelcomeScreen onStart={() => setFlowStep("login")} />;
+        return (
+          <WelcomeScreen
+            onLogin={() => setFlowStep("login")}
+            onRegister={() => setFlowStep("register")}
+          />
+        );
       case "register":
         return <AuthScreen onAuth={handleRegisterSuccess} defaultView="register" />;
       case "login":
