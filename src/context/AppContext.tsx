@@ -50,7 +50,7 @@ export interface ProtectionItem {
   id: string;
   title: string;
   provider: string;
-  type: "assicurazione" | "pensione";
+  type: "assicurazione" | "pensione" | "pac";
   category: string;
   amount: number;
   amountType: "premio_annuale" | "premio_mensile" | "valore_maturato" | "versamento_periodico";
@@ -114,7 +114,7 @@ interface AppContextType {
   addProtection: (data: {
     title: string;
     provider: string;
-    type: "assicurazione" | "pensione";
+    type: "assicurazione" | "pensione" | "pac";
     category: string;
     amount: number;
     amountType: "premio_annuale" | "premio_mensile" | "valore_maturato" | "versamento_periodico";
@@ -640,11 +640,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ── Assicurazioni & Previdenza (Non calcolate sul totale) ───────────
+  // ── Assicurazioni, Previdenza & PAC (Non calcolate sul totale) ────
   const addProtection = async (data: {
     title: string;
     provider: string;
-    type: "assicurazione" | "pensione";
+    type: "assicurazione" | "pensione" | "pac";
     category: string;
     amount: number;
     amountType: "premio_annuale" | "premio_mensile" | "valore_maturato" | "versamento_periodico";

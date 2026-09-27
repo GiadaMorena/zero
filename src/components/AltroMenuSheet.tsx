@@ -131,7 +131,7 @@ export function AltroMenuSheet({ isOpen, onClose, onNavigate }: AltroMenuSheetPr
         ) : (
           /* Main Menu Options */
           <div className="flex flex-col gap-2.5">
-            {/* Option 1: Assicurazioni & Previdenza */}
+            {/* Option 1: Assicurazioni, Pensione & PAC */}
             <button
               onClick={() => {
                 onClose();
@@ -146,7 +146,7 @@ export function AltroMenuSheet({ isOpen, onClose, onNavigate }: AltroMenuSheetPr
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-extrabold text-[#0B0B0B]">
-                      Assicurazioni & Previdenza
+                      Assicurazioni, Pensione & PAC
                     </h4>
                     {activeProtectionsCount > 0 && (
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#FDC909] text-[#0B0B0B]">
@@ -155,7 +155,7 @@ export function AltroMenuSheet({ isOpen, onClose, onNavigate }: AltroMenuSheetPr
                     )}
                   </div>
                   <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
-                    Monitora polizze e fondi pensione (senza intaccare i totali)
+                    Monitora polizze, fondi e PAC (senza intaccare i totali)
                   </p>
                 </div>
               </div>

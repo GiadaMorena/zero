@@ -61,7 +61,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
       action: () => onNavigate("carte"),
     },
     {
-      title: "Assicurazioni e previdenza",
+      title: "Assicurazioni, pensione & PAC",
       icon: ShieldCheck,
       action: () => onNavigate("assicurazioni"),
       badge: activeProtectionsCount > 0 ? `${activeProtectionsCount} attive` : undefined,

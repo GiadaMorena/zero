@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Umbrella,
   Landmark,
+  TrendingUp,
   Car,
   Home,
   Heart,
@@ -18,7 +19,8 @@ import {
   Info,
   ChevronRight,
   Plane,
-  AlertCircle,
+  Coins,
+  BarChart3,
 } from "lucide-react";
 import { useApp, ProtectionItem } from "@/context/AppContext";
 
@@ -56,6 +58,24 @@ export function ProtectionToggle({
 
 const PRESET_PROTECTIONS = [
   {
+    title: "PAC ETF All-World",
+    provider: "Trade Republic",
+    type: "pac" as const,
+    category: "etf",
+    amount: 150,
+    amountType: "premio_mensile" as const,
+    renewalDate: "1° del mese",
+  },
+  {
+    title: "PAC Portafoglio Gestito",
+    provider: "Moneyfarm",
+    type: "pac" as const,
+    category: "roboadvisor",
+    amount: 200,
+    amountType: "premio_mensile" as const,
+    renewalDate: "Mensile",
+  },
+  {
     title: "RCA Auto & Assistenza",
     provider: "UnipolSai",
     type: "assicurazione" as const,
@@ -91,15 +111,6 @@ const PRESET_PROTECTIONS = [
     amountType: "valore_maturato" as const,
     renewalDate: "Orizzonte 2050",
   },
-  {
-    title: "Piano Previdenza / PAC",
-    provider: "Poste Vita",
-    type: "pensione" as const,
-    category: "pensione_integrativa",
-    amount: 100,
-    amountType: "versamento_periodico" as const,
-    renewalDate: "Mensile",
-  },
 ];
 
 interface AssicurazioniScreenProps {
@@ -109,16 +120,16 @@ interface AssicurazioniScreenProps {
 export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
   const { protections, addProtection, deleteProtection, toggleProtection } = useApp();
 
-  const [filter, setFilter] = useState<"Tutti" | "Assicurazioni" | "Pensione">("Tutti");
+  const [filter, setFilter] = useState<"Tutti" | "Assicurazioni" | "Pensione" | "PAC">("Tutti");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Form State
-  const [protType, setProtType] = useState<"assicurazione" | "pensione">("assicurazione");
+  const [protType, setProtType] = useState<"assicurazione" | "pensione" | "pac">("pac");
   const [title, setTitle] = useState("");
   const [provider, setProvider] = useState("");
-  const [category, setCategory] = useState("auto");
+  const [category, setCategory] = useState("etf");
   const [amount, setAmount] = useState("");
-  const [amountType, setAmountType] = useState<ProtectionItem["amountType"]>("premio_annuale");
+  const [amountType, setAmountType] = useState<ProtectionItem["amountType"]>("premio_mensile");
   const [policyNumber, setPolicyNumber] = useState("");
   const [renewalDate, setRenewalDate] = useState("");
   const [note, setNote] = useState("");
@@ -129,11 +140,13 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
   const filteredProtections = protections.filter((p) => {
     if (filter === "Assicurazioni") return p.type === "assicurazione";
     if (filter === "Pensione") return p.type === "pensione";
+    if (filter === "PAC") return p.type === "pac";
     return true;
   });
 
   const activeInsurances = protections.filter((p) => p.type === "assicurazione" && p.active);
   const activePensions = protections.filter((p) => p.type === "pensione" && p.active);
+  const activePACs = protections.filter((p) => p.type === "pac" && p.active);
 
   const handleApplyPreset = (preset: typeof PRESET_PROTECTIONS[0]) => {
     setTitle(preset.title);
@@ -152,7 +165,13 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
     if (title.trim()) {
       addProtection({
         title: title.trim(),
-        provider: provider.trim() || (protType === "assicurazione" ? "Compagnia Assicurativa" : "Fondo Previdenziale"),
+        provider:
+          provider.trim() ||
+          (protType === "assicurazione"
+            ? "Compagnia Assicurativa"
+            : protType === "pensione"
+            ? "Fondo Previdenziale"
+            : "Piattaforma / Broker"),
         type: protType,
         category,
         amount: numAmount,
@@ -173,7 +192,8 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
     }
   };
 
-  const getCategoryIcon = (cat: string, type: "assicurazione" | "pensione") => {
+  const getCategoryIcon = (cat: string, type: "assicurazione" | "pensione" | "pac") => {
+    if (type === "pac") return TrendingUp;
     if (type === "pensione") return Landmark;
     const lower = (cat || "").toLowerCase();
     if (lower.includes("auto") || lower.includes("veicol")) return Car;
@@ -184,15 +204,15 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
     return ShieldCheck;
   };
 
-  const formatAmountLabel = (type: ProtectionItem["amountType"], val: number) => {
+  const formatAmountLabel = (type: ProtectionItem["amountType"], val: number, protType?: "assicurazione" | "pensione" | "pac") => {
     if (val <= 0) return "Importo non specificato";
     switch (type) {
       case "premio_annuale":
         return `${money(val)} / anno`;
       case "premio_mensile":
-        return `${money(val)} / mese`;
+        return protType === "pac" ? `Versamento: ${money(val)} / mese` : `${money(val)} / mese`;
       case "valore_maturato":
-        return `Capitale: ${money(val)}`;
+        return `Capitale accumulato: ${money(val)}`;
       case "versamento_periodico":
         return `Versamento: ${money(val)}`;
       default:
@@ -218,10 +238,10 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
           )}
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[#0B0B0B]">
-              Assicurazioni & Pensione
+              Assicurazioni, Pensione & PAC
             </h1>
             <p className="text-xs text-[#A7A7A7] font-medium mt-0.5">
-              Coperture e previdenza integrativa
+              Coperture, previdenza e piani di accumulo
             </p>
           </div>
         </div>
@@ -231,6 +251,8 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
             setProvider("");
             setAmount("");
             setRenewalDate("");
+            setProtType("pac");
+            setAmountType("premio_mensile");
             setIsAddModalOpen(true);
           }}
           className="h-9 w-9 rounded-full bg-[#0B0B0B] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
@@ -249,49 +271,69 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
             Valore separato dal totale liquido
           </p>
           <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5 leading-snug">
-            Le assicurazioni e i fondi pensione sono conservati a solo scopo di monitoraggio e promemoria. Non vengono detratti dal saldo del conto né sommati alle spese ordinarie.
+            Le polizze, la previdenza integrativa e i piani di accumulo (PAC) sono registrati a solo scopo di monitoraggio e custodia patrimoniale. Non intaccano il saldo spendibile né il totale delle spese ordinarie.
           </p>
         </div>
       </div>
 
-      {/* ── 3. STATS SUMMARY CARDS ── */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* Assicurazioni Card */}
-        <div className="p-3.5 rounded-[22px] bg-white border border-[#A7A7A7]/20 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-7 w-7 rounded-xl bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B]">
-              <ShieldCheck className="h-4 w-4" />
+      {/* ── 3. STATS SUMMARY CARDS (3 Columns) ── */}
+      <div className="grid grid-cols-3 gap-2">
+        {/* PAC Card */}
+        <div className="p-3 rounded-[20px] bg-white border border-[#A7A7A7]/20 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="h-6 w-6 rounded-lg bg-[#0B0B0B] text-[#FDC909] flex items-center justify-center font-bold">
+              <TrendingUp className="h-3.5 w-3.5" />
             </div>
-            <span className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-wider">
-              Assicurazioni
+            <span className="text-[9px] font-bold text-[#A7A7A7] uppercase tracking-wider">
+              PAC
             </span>
           </div>
           <div>
-            <p className="text-lg font-black text-[#0B0B0B] tracking-tight">
+            <p className="text-base font-black text-[#0B0B0B] tracking-tight leading-tight">
+              {activePACs.length} attivi
+            </p>
+            <p className="text-[9px] text-[#A7A7A7] font-medium mt-0.5 truncate">
+              Investimenti
+            </p>
+          </div>
+        </div>
+
+        {/* Assicurazioni Card */}
+        <div className="p-3 rounded-[20px] bg-white border border-[#A7A7A7]/20 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="h-6 w-6 rounded-lg bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B]">
+              <ShieldCheck className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-[9px] font-bold text-[#A7A7A7] uppercase tracking-wider">
+              Polizze
+            </span>
+          </div>
+          <div>
+            <p className="text-base font-black text-[#0B0B0B] tracking-tight leading-tight">
               {activeInsurances.length} attive
             </p>
-            <p className="text-[10px] text-[#A7A7A7] font-semibold mt-0.5">
-              Polizze e coperture
+            <p className="text-[9px] text-[#A7A7A7] font-medium mt-0.5 truncate">
+              Coperture
             </p>
           </div>
         </div>
 
         {/* Previdenza Card */}
-        <div className="p-3.5 rounded-[22px] bg-white border border-[#A7A7A7]/20 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-7 w-7 rounded-xl bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B]">
-              <Landmark className="h-4 w-4" />
+        <div className="p-3 rounded-[20px] bg-white border border-[#A7A7A7]/20 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="h-6 w-6 rounded-lg bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B]">
+              <Landmark className="h-3.5 w-3.5" />
             </div>
-            <span className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-wider">
-              Previdenza
+            <span className="text-[9px] font-bold text-[#A7A7A7] uppercase tracking-wider">
+              Pensione
             </span>
           </div>
           <div>
-            <p className="text-lg font-black text-[#0B0B0B] tracking-tight">
+            <p className="text-base font-black text-[#0B0B0B] tracking-tight leading-tight">
               {activePensions.length} fondi
             </p>
-            <p className="text-[10px] text-[#A7A7A7] font-semibold mt-0.5">
-              Pensione integrativa & PAC
+            <p className="text-[9px] text-[#A7A7A7] font-medium mt-0.5 truncate">
+              Previdenza
             </p>
           </div>
         </div>
@@ -326,13 +368,13 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
         </div>
       </div>
 
-      {/* ── 5. FILTER TABS ── */}
-      <div className="grid grid-cols-3 gap-2 bg-white border border-[#A7A7A7]/20 p-1.5 rounded-2xl">
-        {(["Tutti", "Assicurazioni", "Pensione"] as const).map((f) => (
+      {/* ── 5. FILTER TABS (4 Segments) ── */}
+      <div className="grid grid-cols-4 gap-1.5 bg-white border border-[#A7A7A7]/20 p-1.5 rounded-2xl">
+        {(["Tutti", "Assicurazioni", "Pensione", "PAC"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer truncate text-center ${
               filter === f
                 ? "bg-[#FDC909] text-[#0B0B0B] shadow-xs"
                 : "text-[#A7A7A7] hover:text-[#0B0B0B]"
@@ -343,7 +385,7 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
         ))}
       </div>
 
-      {/* ── 6. LIST OF PROTECTIONS ── */}
+      {/* ── 6. LIST OF ITEMS ── */}
       <div className="flex flex-col gap-2.5">
         {filteredProtections.map((item) => {
           const Icon = getCategoryIcon(item.category, item.type);
@@ -371,7 +413,7 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                     </span>
                   </div>
                   <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5">
-                    {formatAmountLabel(item.amountType, item.amount)}
+                    {formatAmountLabel(item.amountType, item.amount, item.type)}
                     {item.renewalDate && ` · ${item.renewalDate}`}
                   </p>
                 </div>
@@ -403,10 +445,10 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
 
         {filteredProtections.length === 0 && (
           <div className="text-center py-10 text-[#A7A7A7] text-xs font-medium bg-white rounded-[24px] border border-[#A7A7A7]/20 p-6 flex flex-col items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-[#A7A7A7]/60" />
-            <p className="font-bold text-[#0B0B0B]">Nessuna copertura inserita</p>
+            <TrendingUp className="h-6 w-6 text-[#A7A7A7]/60" />
+            <p className="font-bold text-[#0B0B0B]">Nessun elemento presente</p>
             <p className="text-[11px] max-w-xs">
-              Usa i pulsanti in alto per aggiungere rapidamente una polizza o fondo pensione (RCA, Casa, Sanitaria, Fondo Cometa...).
+              Usa i pulsanti in alto per aggiungere una polizza, un fondo pensione o un Piano di Accumulo (PAC ETF, Moneyfarm, Trade Republic...).
             </p>
           </div>
         )}
@@ -430,7 +472,7 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                   <X className="h-4 w-4" />
                 </button>
                 <h2 className="text-sm font-black text-[#0B0B0B]">
-                  Nuova copertura / fondo
+                  Nuova posizione
                 </h2>
                 <button
                   type="submit"
@@ -441,8 +483,23 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                 </button>
               </div>
 
-              {/* Type Switch (Assicurazione vs Pensione) */}
-              <div className="grid grid-cols-2 gap-2 bg-white border border-[#A7A7A7]/20 p-1.5 rounded-2xl mb-4">
+              {/* Type Switch (PAC vs Assicurazione vs Pensione) */}
+              <div className="grid grid-cols-3 gap-1.5 bg-white border border-[#A7A7A7]/20 p-1.5 rounded-2xl mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProtType("pac");
+                    setAmountType("premio_mensile");
+                    setCategory("etf");
+                  }}
+                  className={`py-2 rounded-xl text-xs font-bold transition-all text-center ${
+                    protType === "pac"
+                      ? "bg-[#0B0B0B] text-white shadow-xs"
+                      : "text-[#A7A7A7] hover:text-[#0B0B0B]"
+                  }`}
+                >
+                  📈 PAC
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -450,13 +507,13 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                     setAmountType("premio_annuale");
                     setCategory("auto");
                   }}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`py-2 rounded-xl text-xs font-bold transition-all text-center ${
                     protType === "assicurazione"
-                      ? "bg-[#FDC909] text-[#0B0B0B] shadow-xs"
+                      ? "bg-[#FDC909] text-[#0B0B0B] shadow-xs font-black"
                       : "text-[#A7A7A7] hover:text-[#0B0B0B]"
                   }`}
                 >
-                  🛡️ Assicurazione
+                  🛡️ Polizza
                 </button>
                 <button
                   type="button"
@@ -465,24 +522,30 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                     setAmountType("valore_maturato");
                     setCategory("pensione_integrativa");
                   }}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`py-2 rounded-xl text-xs font-bold transition-all text-center ${
                     protType === "pensione"
                       ? "bg-[#0B0B0B] text-white shadow-xs"
                       : "text-[#A7A7A7] hover:text-[#0B0B0B]"
                   }`}
                 >
-                  🏛️ Fondo Pensione
+                  🏛️ Pensione
                 </button>
               </div>
 
               <form id="add-prot-form" onSubmit={handleSaveProtection} className="flex flex-col gap-3">
                 <div>
                   <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-                    Titolo / Denominazione *
+                    {protType === "pac" ? "Nome Piano / Strumento *" : protType === "assicurazione" ? "Titolo Polizza *" : "Denominazione Fondo *"}
                   </label>
                   <input
                     type="text"
-                    placeholder={protType === "assicurazione" ? "Es. RCA Auto Golf, Polizza Casa..." : "Es. Fondo Cometa, PAC Pensione..."}
+                    placeholder={
+                      protType === "pac"
+                        ? "Es. PAC ETF MSCI World, PAC Moneyfarm..."
+                        : protType === "assicurazione"
+                        ? "Es. RCA Auto Golf, Polizza Casa..."
+                        : "Es. Fondo Cometa, Previdenza PAC..."
+                    }
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
@@ -492,11 +555,17 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
 
                 <div>
                   <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-                    Compagnia / Ente / Fondo
+                    {protType === "pac" ? "Piattaforma / Broker" : protType === "assicurazione" ? "Compagnia Assicurativa" : "Ente / Gestore Fondo"}
                   </label>
                   <input
                     type="text"
-                    placeholder="Es. Allianz, Generali, UnipolSai, Fondo Fon.Te..."
+                    placeholder={
+                      protType === "pac"
+                        ? "Es. Trade Republic, Scalable, Directa, Fineco, Moneyfarm..."
+                        : protType === "assicurazione"
+                        ? "Es. Allianz, Generali, UnipolSai..."
+                        : "Es. Fondo Cometa, Fondo Fon.Te, Amundi..."
+                    }
                     value={provider}
                     onChange={(e) => setProvider(e.target.value)}
                     className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
@@ -510,7 +579,7 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                     </label>
                     <input
                       type="text"
-                      placeholder="Es. 350 o 15000"
+                      placeholder="Es. 150 o 5000"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
@@ -526,9 +595,9 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                       onChange={(e) => setAmountType(e.target.value as ProtectionItem["amountType"])}
                       className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none"
                     >
-                      <option value="premio_annuale">Premio annuale</option>
-                      <option value="premio_mensile">Premio mensile</option>
-                      <option value="valore_maturato">Capitale maturato</option>
+                      <option value="premio_mensile">Versamento mensile</option>
+                      <option value="premio_annuale">Premio / Versamento annuo</option>
+                      <option value="valore_maturato">Capitale maturato / accumulato</option>
                       <option value="versamento_periodico">Versamento periodico</option>
                     </select>
                   </div>
@@ -537,11 +606,11 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-                      Scadenza / Rinnovo
+                      {protType === "pac" ? "Frequenza / Orizzonte" : "Scadenza / Rinnovo"}
                     </label>
                     <input
                       type="text"
-                      placeholder="Es. 15 Maggio o 2050"
+                      placeholder={protType === "pac" ? "Es. 1° del mese o 2035" : "Es. 15 Maggio o 2050"}
                       value={renewalDate}
                       onChange={(e) => setRenewalDate(e.target.value)}
                       className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
@@ -550,11 +619,11 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
 
                   <div>
                     <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-                      N° Polizza (opzionale)
+                      Codice / N° Contratto
                     </label>
                     <input
                       type="text"
-                      placeholder="Es. POL-9842"
+                      placeholder="Opzionale"
                       value={policyNumber}
                       onChange={(e) => setPolicyNumber(e.target.value)}
                       className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
@@ -566,7 +635,7 @@ export function AssicurazioniScreen({ onBack }: AssicurazioniScreenProps) {
                   type="submit"
                   className="w-full py-3.5 mt-4 rounded-full bg-[#0B0B0B] text-white font-black text-sm hover:bg-black active:scale-[0.98] transition-all cursor-pointer shadow-md"
                 >
-                  Salva copertura
+                  Salva posizione
                 </button>
               </form>
             </div>
