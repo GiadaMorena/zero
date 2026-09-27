@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import Logo from "@/assets/logo.png";
+import { supabase } from "@/lib/supabase";
 
 type AuthView = "login" | "register";
 
@@ -94,23 +95,59 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
     }, 200);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  // ── Mappa errori Supabase → italiano ────────────────────
+  const mapAuthError = (message: string): string => {
+    if (message.includes("Invalid login credentials") || message.includes("invalid_credentials"))
+      return "Email o password non corretti.";
+    if (message.includes("Email not confirmed"))
+      return "Email non confermata. Controlla la tua casella di posta.";
+    if (message.includes("User already registered") || message.includes("already been registered"))
+      return "Email già registrata. Prova ad accedere.";
+    if (message.includes("Password should be at least"))
+      return "La password deve essere di almeno 6 caratteri.";
+    if (message.includes("Unable to validate email address"))
+      return "Email non valida.";
+    if (message.includes("rate limit") || message.includes("too many"))
+      return "Troppi tentativi. Riprova tra qualche minuto.";
+    if (message.includes("network") || message.includes("fetch"))
+      return "Errore di connessione. Controlla la rete.";
+    return "Si è verificato un errore. Riprova.";
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail.trim() || !loginPassword.trim()) {
       setError("Inserisci email e password per continuare");
       return;
     }
     setIsLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      });
+      if (authError) {
+        setError(mapAuthError(authError.message));
+        return;
+      }
+      const name = data.user?.user_metadata?.name || loginEmail.split("@")[0];
+      onAuth({ name, email: loginEmail.trim() });
+    } catch {
+      setError("Errore di connessione. Controlla la rete.");
+    } finally {
       setIsLoading(false);
-      onAuth({ name: loginEmail.split("@")[0], email: loginEmail });
-    }, 600);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
       setError("Compila tutti i campi richiesti");
+      return;
+    }
+    if (regPassword.length < 6) {
+      setError("La password deve essere di almeno 6 caratteri.");
       return;
     }
     if (regPassword !== regConfirm) {
@@ -118,10 +155,26 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
       return;
     }
     setIsLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      const { error: authError } = await supabase.auth.signUp({
+        email: regEmail.trim(),
+        password: regPassword,
+        options: {
+          data: { name: regName.trim() },
+          emailRedirectTo: undefined,
+        },
+      });
+      if (authError) {
+        setError(mapAuthError(authError.message));
+        return;
+      }
+      onAuth({ name: regName.trim(), email: regEmail.trim() });
+    } catch {
+      setError("Errore di connessione. Controlla la rete.");
+    } finally {
       setIsLoading(false);
-      onAuth({ name: regName, email: regEmail });
-    }, 600);
+    }
   };
 
   /* ─── Login Form ──────────────────────────────────────── */

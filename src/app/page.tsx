@@ -18,6 +18,7 @@ import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DesktopApp } from "@/components/desktop/DesktopApp";
 import { AppProvider } from "@/context/AppContext";
+import { supabase } from "@/lib/supabase";
 
 export type FlowStep =
   | "welcome"
@@ -55,28 +56,51 @@ export default function Home() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalType, setAddModalType] = useState<"expense" | "income">("expense");
 
-  // 1. Initial Load & Persistence
+  // 1. Initial Load — check Supabase session first, then localStorage PIN data
   useEffect(() => {
-    try {
-      // Migrate old auth key
-      localStorage.removeItem("zero_auth_state_v5");
+    const init = async () => {
+      try {
+        // Migrate old auth key
+        localStorage.removeItem("zero_auth_state_v5");
 
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed: AuthState = JSON.parse(saved);
-        setAuthState(parsed);
+        const { data: { session } } = await supabase.auth.getSession();
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const parsed: AuthState | null = saved ? JSON.parse(saved) : null;
 
-        if (!parsed.isRegistered) {
-          setFlowStep("welcome");
-        } else if (!parsed.hasPin) {
-          setFlowStep("create_pin");
+        if (session?.user) {
+          // User is authenticated with Supabase
+          const name = session.user.user_metadata?.name || session.user.email?.split("@")[0] || "";
+          const email = session.user.email || "";
+          const updatedState: AuthState = {
+            isRegistered: true,
+            hasPin: parsed?.hasPin || false,
+            pinCode: parsed?.pinCode || "",
+            userName: name,
+            userEmail: email,
+          };
+          setAuthState(updatedState);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
+          } catch { /* ignore */ }
+
+          if (updatedState.hasPin && updatedState.pinCode) {
+            setFlowStep("lock");
+          } else {
+            setFlowStep("app");
+          }
+        } else if (parsed?.isRegistered) {
+          // Has local data but no Supabase session — ask to log in again
+          setAuthState(parsed);
+          setFlowStep("login");
         } else {
-          setFlowStep("lock");
+          setFlowStep("welcome");
         }
+      } catch (e) {
+        console.error("Failed to initialize auth:", e);
+        setFlowStep("welcome");
       }
-    } catch (e) {
-      console.error("Failed to load auth state:", e);
-    }
+    };
+    init();
   }, []);
 
   const saveAuthState = (newState: AuthState) => {
@@ -147,8 +171,9 @@ export default function Home() {
   const handleUnlockSuccess = () => setFlowStep("app");
   const handleForgotPin = () => setFlowStep("login");
 
-  // Logout → full reset
-  const handleLogout = () => {
+  // Logout → sign out from Supabase + full local reset
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     saveAuthState(DEFAULT_AUTH_STATE);
     setFlowStep("welcome");
   };

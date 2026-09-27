@@ -57,7 +57,7 @@ export function AddCardScreen({ userName, userEmail, onSkip, onAdd }: AddCardScr
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!bankName.trim()) {
       setError("Inserisci il nome della banca");
       return;
@@ -68,8 +68,8 @@ export function AddCardScreen({ userName, userEmail, onSkip, onAdd }: AddCardScr
     }
     setError("");
     setIsLoading(true);
-    setTimeout(() => {
-      initializeProfile({
+    try {
+      await initializeProfile({
         name: userName,
         email: userEmail,
         card: {
@@ -79,14 +79,21 @@ export function AddCardScreen({ userName, userEmail, onSkip, onAdd }: AddCardScr
           balance: parseFloat(balance) || 0,
         },
       });
-      setIsLoading(false);
       onAdd();
-    }, 400);
+    } catch (e) {
+      console.error(e);
+      onAdd();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSkip = () => {
-    initializeProfile({ name: userName, email: userEmail });
-    onSkip();
+  const handleSkip = async () => {
+    try {
+      await initializeProfile({ name: userName, email: userEmail });
+    } finally {
+      onSkip();
+    }
   };
 
   return (
