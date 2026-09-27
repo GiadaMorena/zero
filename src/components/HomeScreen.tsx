@@ -104,10 +104,10 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
         <div className="px-3 py-1.5 rounded-2xl bg-[#FDC909] border border-[#FDC909] flex flex-col items-end">
           <div className="flex items-center gap-0.5 text-xs font-black text-[#0B0B0B]">
             <TrendingUp className="h-3.5 w-3.5 text-[#0B0B0B]" />
-            <span>-12%</span>
+            <span>{transactions.length > 0 ? `${transactions.length} mov.` : "Attivo"}</span>
           </div>
           <span className="text-[9px] text-[#0B0B0B] font-medium leading-tight">
-            rispetto al mese scorso
+            questo mese
           </span>
         </div>
       </div>
@@ -312,25 +312,35 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
               </div>
             </div>
 
-            {/* App Icons — 4 Color Monochromatic Badges */}
-            <div className="flex items-center -space-x-1.5 my-1.5">
-              <div className="h-5 w-5 rounded-full bg-[#0B0B0B] text-[#FDC909] text-[8px] font-black flex items-center justify-center ring-2 ring-white">
-                S
-              </div>
-              <div className="h-5 w-5 rounded-full bg-[#0B0B0B] text-white text-[8px] font-black flex items-center justify-center ring-2 ring-white">
-                N
-              </div>
-              <div className="h-5 w-5 rounded-full bg-[#0B0B0B] text-white text-[8px] font-black flex items-center justify-center ring-2 ring-white">
-                ☁
-              </div>
-              <div className="h-5 w-5 rounded-full bg-[#F7F7F5] text-[#A7A7A7] text-[8px] font-extrabold flex items-center justify-center ring-2 ring-white border border-[#A7A7A7]/20">
-                +{Math.max(0, activeSubsCount - 3)}
-              </div>
-            </div>
-          </div>
+            {/* App Icons — Real Dynamic Badges */}
+            {subscriptions.length > 0 ? (
+              <>
+                <div className="flex items-center -space-x-1.5 my-1.5">
+                  {subscriptions.slice(0, 3).map((sub, i) => (
+                    <div
+                      key={sub.id || i}
+                      className="h-5 w-5 rounded-full bg-[#0B0B0B] text-[#FDC909] text-[8px] font-black flex items-center justify-center ring-2 ring-white uppercase"
+                    >
+                      {sub.name.charAt(0)}
+                    </div>
+                  ))}
+                  {subscriptions.length > 3 && (
+                    <div className="h-5 w-5 rounded-full bg-[#F7F7F5] text-[#A7A7A7] text-[8px] font-extrabold flex items-center justify-center ring-2 ring-white border border-[#A7A7A7]/20">
+                      +{subscriptions.length - 3}
+                    </div>
+                  )}
+                </div>
 
-          <div className="text-[9px] text-[#A7A7A7] font-medium pt-1 border-t border-[#A7A7A7]/10 truncate">
-            Prossimo: <span className="font-bold text-[#0B0B0B]">Spotify · 15 Set</span>
+                <div className="text-[9px] text-[#A7A7A7] font-medium pt-1 border-t border-[#A7A7A7]/10 truncate">
+                  Prossimo: <span className="font-bold text-[#0B0B0B]">{subscriptions[0].name} · {subscriptions[0].date}</span>
+                </div>
+              </>
+            ) : (
+              <div className="py-2 text-center">
+                <p className="text-[10px] text-[#A7A7A7]">Nessun abbonamento attivo</p>
+                <p className="text-[9px] font-bold text-[#0B0B0B] mt-0.5">Tocca per aggiungere</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

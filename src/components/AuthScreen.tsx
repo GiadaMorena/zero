@@ -157,7 +157,7 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
     setIsLoading(true);
     setError("");
     try {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: regEmail.trim(),
         password: regPassword,
         options: {
@@ -167,6 +167,15 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
       });
       if (authError) {
         setError(mapAuthError(authError.message));
+        return;
+      }
+      // Supabase returns an empty identities array if user already exists
+      if (
+        signUpData.user &&
+        Array.isArray(signUpData.user.identities) &&
+        signUpData.user.identities.length === 0
+      ) {
+        setError("Questa email è già registrata. Accedi con le tue credenziali.");
         return;
       }
       onAuth({ name: regName.trim(), email: regEmail.trim() });

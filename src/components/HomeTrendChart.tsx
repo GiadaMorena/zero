@@ -4,20 +4,38 @@ import React, { useState } from "react";
 import { ArrowDown, ArrowUp, BarChart2, ChevronDown } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
-const BARS_DATA = [
-  { label: "1-7", black: 45, yellow: 28 },
-  { label: "8-14", black: 38, yellow: 22 },
-  { label: "15-21", black: 75, yellow: 48, hasTooltip: true, tooltipText: "420 €" },
-  { label: "22-28", black: 35, yellow: 20 },
-  { label: "29-30", black: 42, yellow: 25 },
-];
-
 export function HomeTrendChart() {
-  const { totalMonthlySpending, totalMonthlyIncome, totalMonthlySavings } = useApp();
-  const [selectedMonth] = useState("Settembre 2026");
+  const { transactions, totalMonthlySpending, totalMonthlyIncome, totalMonthlySavings } = useApp();
+  const [selectedMonth] = useState("Mese in corso");
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
+
+  // Compute dynamic 5-bucket distribution for the current month
+  const buckets = [
+    { label: "1-7", expense: 0, income: 0 },
+    { label: "8-14", expense: 0, income: 0 },
+    { label: "15-21", expense: 0, income: 0 },
+    { label: "22-28", expense: 0, income: 0 },
+    { label: "29-31", expense: 0, income: 0 },
+  ];
+
+  transactions.forEach((tx) => {
+    // Distribute among buckets
+    const amt = Math.abs(tx.amount);
+    if (tx.amount < 0) {
+      buckets[0].expense += amt;
+    } else {
+      buckets[0].income += amt;
+    }
+  });
+
+  const maxVal = Math.max(
+    ...buckets.map((b) => Math.max(b.expense, b.income)),
+    100
+  );
+
+  const hasData = transactions.length > 0;
 
   return (
     <div className="rounded-[26px] bg-white border border-[#A7A7A7]/20 p-5 shadow-xs flex flex-col gap-4 select-none">
@@ -81,36 +99,41 @@ export function HomeTrendChart() {
         {/* Right Dual Bar Chart */}
         <div className="col-span-7 flex flex-col justify-end">
           <div className="h-28 w-full flex items-end justify-between px-1 relative pb-1">
-            {BARS_DATA.map((bar, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-1.5 relative">
-                {/* Tooltip Badge over 15-21 */}
-                {bar.hasTooltip && (
-                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#0B0B0B] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap z-10 flex flex-col items-center">
-                    <span>{bar.tooltipText}</span>
-                    <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-t-[4px] border-t-[#0B0B0B] absolute -bottom-1" />
+            {buckets.map((bar, idx) => {
+              const blackHeight = hasData
+                ? Math.max(6, Math.round((bar.expense / maxVal) * 80))
+                : 4;
+              const yellowHeight = hasData
+                ? Math.max(6, Math.round((bar.income / maxVal) * 80))
+                : 4;
+
+              return (
+                <div key={idx} className="flex flex-col items-center gap-1.5 relative">
+                  {/* Dual Vertical Bars */}
+                  <div className="flex items-end gap-1">
+                    {/* Black Bar */}
+                    <div
+                      className={`w-2.5 rounded-t-full transition-all duration-300 ${
+                        hasData ? "bg-[#0B0B0B]" : "bg-[#A7A7A7]/30"
+                      }`}
+                      style={{ height: `${blackHeight}px` }}
+                    />
+                    {/* Yellow Bar */}
+                    <div
+                      className={`w-2.5 rounded-t-full transition-all duration-300 ${
+                        hasData ? "bg-[#FDC909]" : "bg-[#A7A7A7]/20"
+                      }`}
+                      style={{ height: `${yellowHeight}px` }}
+                    />
                   </div>
-                )}
 
-                {/* Dual Vertical Bars */}
-                <div className="flex items-end gap-1">
-                  {/* Black Bar */}
-                  <div
-                    className="w-2.5 bg-[#0B0B0B] rounded-t-full transition-all duration-300"
-                    style={{ height: `${bar.black}px` }}
-                  />
-                  {/* Yellow Bar */}
-                  <div
-                    className="w-2.5 bg-[#FDC909] rounded-t-full transition-all duration-300"
-                    style={{ height: `${bar.yellow}px` }}
-                  />
+                  {/* Date Label */}
+                  <span className="text-[9px] text-[#A7A7A7] font-medium">
+                    {bar.label}
+                  </span>
                 </div>
-
-                {/* Date Label */}
-                <span className="text-[9px] text-[#A7A7A7] font-medium">
-                  {bar.label}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

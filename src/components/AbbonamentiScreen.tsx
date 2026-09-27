@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Bell, ChevronRight, Film, Music, Cloud, Search, Brain, Phone, X } from "lucide-react";
+import { Plus, Bell, Film, Music, Cloud, Sparkles, Bot, Dumbbell, Smartphone, Trash2, X, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 export function SubscriptionToggle({
@@ -36,9 +36,27 @@ export function SubscriptionToggle({
   );
 }
 
+const PRESET_SUBSCRIPTIONS = [
+  { name: "Netflix", cost: 6.99, freq: "mese" as const, cat: "Svago", icon: Film },
+  { name: "Spotify", cost: 10.99, freq: "mese" as const, cat: "Musica", icon: Music },
+  { name: "iCloud+", cost: 0.99, freq: "mese" as const, cat: "Cloud", icon: Cloud },
+  { name: "Disney+", cost: 8.99, freq: "mese" as const, cat: "Svago", icon: Sparkles },
+  { name: "ChatGPT Plus", cost: 22.99, freq: "mese" as const, cat: "Produttività", icon: Bot },
+  { name: "Amazon Prime", cost: 4.99, freq: "mese" as const, cat: "Shopping", icon: Film },
+  { name: "Palestra", cost: 45.00, freq: "mese" as const, cat: "Salute", icon: Dumbbell },
+  { name: "Offerta Mobile", cost: 9.99, freq: "mese" as const, cat: "Utenze", icon: Smartphone },
+];
+
 export function AbbonamentiScreen() {
-  const { subscriptions, toggleSubscription, addSubscription, totalActiveSubscriptionsCost } = useApp();
-  const [filter, setFilter] = useState<"Tutti" | "Attivi" | "In scadenza">("Attivi");
+  const {
+    subscriptions,
+    toggleSubscription,
+    addSubscription,
+    deleteSubscription,
+    totalActiveSubscriptionsCost,
+  } = useApp();
+
+  const [filter, setFilter] = useState<"Tutti" | "Attivi" | "Disattivati">("Attivi");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Form state
@@ -54,9 +72,27 @@ export function AbbonamentiScreen() {
 
   const filteredSubs = subscriptions.filter((s) => {
     if (filter === "Attivi") return s.active;
-    if (filter === "In scadenza") return s.active && s.id === "1";
+    if (filter === "Disattivati") return !s.active;
     return true;
   });
+
+  const handleApplyPreset = (preset: typeof PRESET_SUBSCRIPTIONS[0]) => {
+    setName(preset.name);
+    setCost(String(preset.cost).replace(".", ","));
+    setFrequency(preset.freq);
+    setCategory(preset.cat);
+    setIsAddModalOpen(true);
+  };
+
+  const handleQuickAddPreset = (preset: typeof PRESET_SUBSCRIPTIONS[0]) => {
+    addSubscription({
+      name: preset.name,
+      cost: preset.cost,
+      frequency: preset.freq,
+      date: `1 ${new Date().toLocaleDateString("it-IT", { month: "long" })}`,
+      category: preset.cat,
+    });
+  };
 
   const handleSaveSub = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +100,7 @@ export function AbbonamentiScreen() {
     if (name.trim() && numCost > 0) {
       const dateLabel = `${renewDay} ${renewMonth}`;
       addSubscription({
-        name,
+        name: name.trim(),
         cost: numCost,
         frequency,
         date: dateLabel,
@@ -76,6 +112,17 @@ export function AbbonamentiScreen() {
       setRenewMonth("gennaio");
       setIsAddModalOpen(false);
     }
+  };
+
+  const getSubIcon = (subName: string) => {
+    const lower = subName.toLowerCase();
+    if (lower.includes("netflix") || lower.includes("disney") || lower.includes("prime")) return Film;
+    if (lower.includes("spotify") || lower.includes("apple music")) return Music;
+    if (lower.includes("icloud") || lower.includes("google") || lower.includes("drive")) return Cloud;
+    if (lower.includes("chatgpt") || lower.includes("ai")) return Bot;
+    if (lower.includes("palestra") || lower.includes("gym")) return Dumbbell;
+    if (lower.includes("iliad") || lower.includes("vodafone") || lower.includes("tim") || lower.includes("ho")) return Smartphone;
+    return Sparkles;
   };
 
   return (
@@ -90,24 +137,60 @@ export function AbbonamentiScreen() {
             Abbonamenti
           </h1>
           <p className="text-xs text-[#A7A7A7] font-medium mt-0.5">
-            Totale attivo: <span className="font-extrabold text-[#0B0B0B]">{money(totalActiveSubscriptionsCost)} / mese</span>
+            Totale attivo:{" "}
+            <span className="font-extrabold text-[#0B0B0B]">
+              {money(totalActiveSubscriptionsCost)} / mese
+            </span>
           </p>
         </div>
         <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="h-9 w-9 rounded-full bg-[#0B0B0B] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
+          onClick={() => {
+            setName("");
+            setCost("");
+            setIsAddModalOpen(true);
+          }}
+          className="h-9 w-9 rounded-full bg-[#0B0B0B] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer"
         >
           <Plus className="h-4 w-4 stroke-[2.5]" />
         </button>
       </div>
 
+      {/* Preset Fast Selection Slider */}
+      <div>
+        <div className="flex items-center justify-between px-1 mb-1.5">
+          <span className="text-[11px] font-bold text-[#A7A7A7] uppercase tracking-wider">
+            Aggiunta rapida
+          </span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {PRESET_SUBSCRIPTIONS.map((preset) => {
+            const Icon = preset.icon;
+            return (
+              <button
+                key={preset.name}
+                onClick={() => handleApplyPreset(preset)}
+                className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white border border-[#A7A7A7]/20 shadow-2xs shrink-0 hover:border-[#0B0B0B] active:scale-95 transition-all text-left cursor-pointer group"
+              >
+                <div className="h-6 w-6 rounded-lg bg-[#F7F7F5] text-[#0B0B0B] flex items-center justify-center group-hover:bg-[#FDC909] transition-colors">
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#0B0B0B] leading-tight">{preset.name}</p>
+                  <p className="text-[10px] text-[#A7A7A7] font-medium">{money(preset.cost)}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Filter Segment Pills */}
       <div className="grid grid-cols-3 gap-2 bg-white border border-[#A7A7A7]/20 p-1.5 rounded-2xl">
-        {(["Tutti", "Attivi", "In scadenza"] as const).map((f) => (
+        {(["Tutti", "Attivi", "Disattivati"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               filter === f
                 ? "bg-[#FDC909] text-[#0B0B0B] shadow-xs"
                 : "text-[#A7A7A7] hover:text-[#0B0B0B]"
@@ -120,41 +203,64 @@ export function AbbonamentiScreen() {
 
       {/* Subscription List */}
       <div className="flex flex-col gap-2.5">
-        {filteredSubs.map((sub) => (
-          <div
-            key={sub.id}
-            onClick={() => toggleSubscription(sub.id)}
-            className={`flex items-center justify-between p-3.5 rounded-[22px] bg-white border cursor-pointer transition-all ${
-              sub.active
-                ? "border-[#A7A7A7]/30 shadow-xs opacity-100"
-                : "border-[#A7A7A7]/20 opacity-50 bg-[#F7F7F5]"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center font-bold text-sm shrink-0 text-[#0B0B0B]">
-                <Film className="h-4.5 w-4.5" />
+        {filteredSubs.map((sub) => {
+          const Icon = getSubIcon(sub.name);
+          return (
+            <div
+              key={sub.id}
+              onClick={() => toggleSubscription(sub.id)}
+              className={`flex items-center justify-between p-3.5 rounded-[22px] bg-white border cursor-pointer transition-all ${
+                sub.active
+                  ? "border-[#A7A7A7]/30 shadow-xs opacity-100"
+                  : "border-[#A7A7A7]/20 opacity-50 bg-[#F7F7F5]"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center font-bold text-sm shrink-0 text-[#0B0B0B]">
+                  <Icon className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-extrabold text-[#0B0B0B] leading-tight">
+                    {sub.name}
+                  </h4>
+                  <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5">
+                    {money(sub.cost)} / {sub.frequency} · <span className="text-[#A7A7A7]">{sub.date}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-xs font-extrabold text-[#0B0B0B] leading-tight">
-                  {sub.name}
-                </h4>
-                <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5">
-                  {money(sub.cost)} / {sub.frequency} · <span className="text-[#A7A7A7]">{sub.date}</span>
-                </p>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Vuoi rimuovere l'abbonamento ${sub.name}?`)) {
+                      deleteSubscription(sub.id);
+                    }
+                  }}
+                  className="p-1.5 rounded-lg text-[#A7A7A7] hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Elimina"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+
+                {/* Custom Sleek ZERO Subscription Toggle */}
+                <SubscriptionToggle
+                  checked={sub.active}
+                  onChange={() => toggleSubscription(sub.id)}
+                />
               </div>
             </div>
-
-            {/* Custom Sleek ZERO Subscription Toggle */}
-            <SubscriptionToggle
-              checked={sub.active}
-              onChange={() => toggleSubscription(sub.id)}
-            />
-          </div>
-        ))}
+          );
+        })}
 
         {filteredSubs.length === 0 && (
-          <div className="text-center py-10 text-[#A7A7A7] text-xs font-medium">
-            Nessun abbonamento trovato.
+          <div className="text-center py-10 text-[#A7A7A7] text-xs font-medium bg-white rounded-[24px] border border-[#A7A7A7]/20 p-6 flex flex-col items-center gap-2">
+            <Sparkles className="h-6 w-6 text-[#A7A7A7]/60" />
+            <p className="font-bold text-[#0B0B0B]">Nessun abbonamento presente</p>
+            <p className="text-[11px] max-w-xs">
+              Usa i pulsanti in alto per aggiungere rapidamente i tuoi servizi preferiti (Netflix, Spotify, iCloud...) o creane uno nuovo.
+            </p>
           </div>
         )}
       </div>
@@ -174,12 +280,11 @@ export function AbbonamentiScreen() {
             </p>
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 text-[#A7A7A7]" />
       </div>
 
       {/* Add Subscription Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-md p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-xs p-0 sm:p-4 select-none">
           <div className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
             <div className="flex items-center justify-between mb-4">
               <button
@@ -194,7 +299,35 @@ export function AbbonamentiScreen() {
               <div className="w-8" />
             </div>
 
-            <div className="flex flex-col gap-3">
+            {/* Quick Chips in modal */}
+            <div className="mb-4">
+              <label className="block text-[10px] font-bold text-[#A7A7A7] uppercase tracking-wider mb-1.5">
+                Scegli servizio comune
+              </label>
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                {PRESET_SUBSCRIPTIONS.slice(0, 5).map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => {
+                      setName(p.name);
+                      setCost(String(p.cost).replace(".", ","));
+                      setFrequency(p.freq);
+                      setCategory(p.cat);
+                    }}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold shrink-0 transition-colors ${
+                      name === p.name
+                        ? "bg-[#FDC909] text-[#0B0B0B]"
+                        : "bg-white border border-[#A7A7A7]/20 text-[#A7A7A7] hover:text-[#0B0B0B]"
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveSub} className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
                   Nome servizio
@@ -205,6 +338,7 @@ export function AbbonamentiScreen() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                  required
                 />
               </div>
 
@@ -218,7 +352,8 @@ export function AbbonamentiScreen() {
                     placeholder="9,99"
                     value={cost}
                     onChange={(e) => setCost(e.target.value)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                    required
                   />
                 </div>
 
@@ -228,8 +363,8 @@ export function AbbonamentiScreen() {
                   </label>
                   <select
                     value={frequency}
-                    onChange={(e) => setFrequency(e.target.value as any)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none"
+                    onChange={(e) => setFrequency(e.target.value as "mese" | "anno")}
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none"
                   >
                     <option value="mese">Mensile</option>
                     <option value="anno">Annuale</option>
@@ -246,7 +381,7 @@ export function AbbonamentiScreen() {
                   <select
                     value={renewDay}
                     onChange={(e) => setRenewDay(e.target.value)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
                   >
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={String(d)}>{d}</option>
@@ -255,7 +390,7 @@ export function AbbonamentiScreen() {
                   <select
                     value={renewMonth}
                     onChange={(e) => setRenewMonth(e.target.value)}
-                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7] text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
+                    className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
                   >
                     {["gennaio","febbraio","marzo","aprile","maggio","giugno",
                       "luglio","agosto","settembre","ottobre","novembre","dicembre"
@@ -267,12 +402,12 @@ export function AbbonamentiScreen() {
               </div>
 
               <button
-                onClick={handleSaveSub}
-                className="w-full py-3.5 mt-2 rounded-full bg-[#0B0B0B] text-white font-black text-sm hover:bg-black transition-all"
+                type="submit"
+                className="w-full py-3.5 mt-2 rounded-full bg-[#0B0B0B] text-white font-black text-sm hover:bg-black active:scale-[0.98] transition-all cursor-pointer"
               >
                 Salva abbonamento
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
