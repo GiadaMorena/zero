@@ -279,6 +279,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cards, activeCardIndex, transactions, subscriptions, goals, profile]);
 
+  // ── Helper to always get valid user ID from Supabase session ──────
+  const getEffectiveUserId = async (): Promise<string | null> => {
+    if (userId) return userId;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      setUserId(session.user.id);
+      return session.user.id;
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id) {
+      setUserId(user.id);
+      return user.id;
+    }
+    return null;
+  };
+
   const activeCard = cards[activeCardIndex] ?? null;
 
   // ── Initialize profile after registration ─────────────────────────
@@ -297,10 +313,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setProfile(newProfile);
 
+    const uid = await getEffectiveUserId();
+
     // Update profile in Supabase if logged in
-    if (userId) {
+    if (uid) {
       await supabase.from("profiles").upsert({
-        id: userId,
+        id: uid,
         name: data.name,
         email: data.email,
         avatar_text: data.name.charAt(0).toUpperCase(),
@@ -320,9 +338,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
 
       // Save to Supabase if logged in
-      if (userId) {
+      if (uid) {
         const { data: inserted } = await supabase.from("cards").insert({
-          user_id: userId,
+          user_id: uid,
           name: newCard.name,
           bank_name: newCard.bankName,
           number: newCard.number,
@@ -385,9 +403,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
 
     // Persist to Supabase
-    if (userId) {
+    const uid = await getEffectiveUserId();
+    if (uid) {
       const { data: inserted } = await supabase.from("transactions").insert({
-        user_id: userId,
+        user_id: uid,
         title: data.title,
         category: data.category,
         amount: finalAmount,
@@ -410,7 +429,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (card) {
           await supabase.from("cards").update({
             balance: Math.max(0, card.balance + finalAmount),
-          }).eq("id", targetCardId).eq("user_id", userId);
+          }).eq("id", targetCardId).eq("user_id", uid);
         }
       }
     }
@@ -430,14 +449,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       )
     );
 
-    if (userId) {
-      await supabase.from("transactions").delete().eq("id", id).eq("user_id", userId);
+    const uid = await getEffectiveUserId();
+    if (uid) {
+      await supabase.from("transactions").delete().eq("id", id).eq("user_id", uid);
       if (targetTx.cardId) {
         const card = cards.find((c) => c.id === targetTx.cardId);
         if (card) {
           await supabase.from("cards").update({
             balance: Math.max(0, card.balance - targetTx.amount),
-          }).eq("id", targetTx.cardId).eq("user_id", userId);
+          }).eq("id", targetTx.cardId).eq("user_id", uid);
         }
       }
     }
@@ -448,10 +468,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSubscriptions((prev) =>
       prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
     );
-    if (userId) {
+    const uid = await getEffectiveUserId();
+    if (uid) {
       const sub = subscriptions.find((s) => s.id === id);
       if (sub) {
-        await supabase.from("subscriptions").update({ active: !sub.active }).eq("id", id).eq("user_id", userId);
+        await supabase.from("subscriptions").update({ active: !sub.active }).eq("id", id).eq("user_id", uid);
       }
     }
   };
@@ -476,9 +497,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setSubscriptions((prev) => [...prev, newSub]);
 
-    if (userId) {
+    const uid = await getEffectiveUserId();
+    if (uid) {
       const { data: inserted } = await supabase.from("subscriptions").insert({
-        user_id: userId,
+        user_id: uid,
         name: data.name,
         cost: data.cost,
         frequency: data.frequency,
@@ -497,8 +519,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteSubscription = async (id: string) => {
     setSubscriptions((prev) => prev.filter((s) => s.id !== id));
-    if (userId) {
-      await supabase.from("subscriptions").delete().eq("id", id).eq("user_id", userId);
+    const uid = await getEffectiveUserId();
+    if (uid) {
+      await supabase.from("subscriptions").delete().eq("id", id).eq("user_id", uid);
     }
   };
 
@@ -512,7 +535,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return { ...g, current: newCurrent, percent: newPercent, completed: newCurrent >= g.target };
       })
     );
-    if (userId) {
+    const uid = await getEffectiveUserId();
+    if (uid) {
       const goal = goals.find((g) => g.id === id);
       if (goal) {
         const newCurrent = goal.current + amount;
@@ -521,7 +545,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           current: newCurrent,
           percent: newPercent,
           completed: newCurrent >= goal.target,
-        }).eq("id", id).eq("user_id", userId);
+        }).eq("id", id).eq("user_id", uid);
       }
     }
   };
@@ -538,9 +562,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setGoals((prev) => [...prev, newGoal]);
 
-    if (userId) {
+    const uid = await getEffectiveUserId();
+    if (uid) {
       const { data: inserted } = await supabase.from("goals").insert({
-        user_id: userId,
+        user_id: uid,
         title: data.title,
         current: 0,
         target: data.target,
@@ -557,8 +582,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteGoal = async (id: string) => {
     setGoals((prev) => prev.filter((g) => g.id !== id));
-    if (userId) {
-      await supabase.from("goals").delete().eq("id", id).eq("user_id", userId);
+    const uid = await getEffectiveUserId();
+    if (uid) {
+      await supabase.from("goals").delete().eq("id", id).eq("user_id", uid);
     }
   };
 
@@ -586,9 +612,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setCards((prev) => [...prev, newCard]);
 
-    if (userId) {
+    const uid = await getEffectiveUserId();
+    if (uid) {
       const { data: inserted } = await supabase.from("cards").insert({
-        user_id: userId,
+        user_id: uid,
         name: newCard.name,
         bank_name: newCard.bankName,
         number: newCard.number,
@@ -607,8 +634,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteCard = async (id: string) => {
     setCards((prev) => prev.filter((c) => c.id !== id));
     setActiveCardIndex(0);
-    if (userId) {
-      await supabase.from("cards").delete().eq("id", id).eq("user_id", userId);
+    const uid = await getEffectiveUserId();
+    if (uid) {
+      await supabase.from("cards").delete().eq("id", id).eq("user_id", uid);
     }
   };
 
@@ -620,14 +648,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    if (userId) {
+    const uid = await getEffectiveUserId();
+    if (uid) {
       await supabase.from("profiles").update({
         ...(data.name !== undefined && { name: data.name, avatar_text: data.name.charAt(0).toUpperCase() }),
         ...(data.email !== undefined && { email: data.email }),
         ...(data.currency !== undefined && { currency: data.currency }),
         ...(data.notificationsEnabled !== undefined && { notifications_enabled: data.notificationsEnabled }),
         ...(data.theme !== undefined && { theme: data.theme }),
-      }).eq("id", userId);
+      }).eq("id", uid);
     }
   };
 

@@ -333,17 +333,41 @@ export function CarteScreen() {
   } = useApp();
 
   const [showModal, setShowModal] = useState(false);
-  const [selectedFilterCardId, setSelectedFilterCardId] = useState<string | "all">("all");
+  const [selectedCardFilterIds, setSelectedCardFilterIds] = useState<string[]>([]);
 
   const holderName = profile.name || "Utente";
 
   const totalBalance = cards.reduce((acc, c) => acc + (c.balance || 0), 0);
 
+  const isAllSelected = selectedCardFilterIds.length === 0;
+
+  const handleToggleCardFilter = (cardId: string) => {
+    setSelectedCardFilterIds((prev) => {
+      if (prev.includes(cardId)) {
+        return prev.filter((id) => id !== cardId);
+      } else {
+        return [...prev, cardId];
+      }
+    });
+  };
+
+  const handleSelectAllCards = () => {
+    setSelectedCardFilterIds([]);
+  };
+
+  const activeFilteredCards = isAllSelected
+    ? cards
+    : cards.filter((c) => selectedCardFilterIds.includes(c.id));
+
+  const activeFilteredTotal = activeFilteredCards.reduce(
+    (acc, c) => acc + (c.balance || 0),
+    0
+  );
+
   // Filter transactions based on selected card filter
-  const displayedTransactions =
-    selectedFilterCardId === "all"
-      ? transactions
-      : transactions.filter((t) => t.cardId === selectedFilterCardId);
+  const displayedTransactions = isAllSelected
+    ? transactions
+    : transactions.filter((t) => selectedCardFilterIds.includes(t.cardId));
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
@@ -378,10 +402,14 @@ export function CarteScreen() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-wider">
-                Patrimonio Totale Disponibile
+                {isAllSelected
+                  ? "Patrimonio Totale Disponibile"
+                  : `Totale Selezionato (${selectedCardFilterIds.length} ${
+                      selectedCardFilterIds.length === 1 ? "carta" : "carte"
+                    })`}
               </p>
               <p className="text-2xl font-black text-[#0B0B0B] tracking-tight mt-0.5">
-                {money(totalBalance)}
+                {money(activeFilteredTotal)}
               </p>
             </div>
             <div className="h-10 w-10 rounded-2xl bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shadow-xs">
@@ -389,38 +417,55 @@ export function CarteScreen() {
             </div>
           </div>
 
-          {/* Quick filter chips for cards */}
+          {/* Multi-Select filter chips for cards */}
           {cards.length > 1 && (
             <div className="pt-2 border-t border-[#A7A7A7]/10 flex flex-col gap-1.5">
-              <p className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-wider">
-                Filtra movimenti per carta:
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-wider">
+                  Filtra e combina più carte:
+                </p>
+                {!isAllSelected && (
+                  <button
+                    type="button"
+                    onClick={handleSelectAllCards}
+                    className="text-[10px] font-extrabold text-[#0B0B0B] underline cursor-pointer"
+                  >
+                    Resetta a Tutte
+                  </button>
+                )}
+              </div>
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                 <button
                   type="button"
-                  onClick={() => setSelectedFilterCardId("all")}
+                  onClick={handleSelectAllCards}
                   className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-colors cursor-pointer ${
-                    selectedFilterCardId === "all"
+                    isAllSelected
                       ? "bg-[#0B0B0B] text-[#F7F7F5]"
                       : "bg-[#F7F7F5] border border-[#A7A7A7]/20 text-[#A7A7A7] hover:text-[#0B0B0B]"
                   }`}
                 >
                   Tutte ({money(totalBalance)})
                 </button>
-                {cards.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setSelectedFilterCardId(c.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-colors cursor-pointer ${
-                      selectedFilterCardId === c.id
-                        ? "bg-[#FDC909] text-[#0B0B0B]"
-                        : "bg-[#F7F7F5] border border-[#A7A7A7]/20 text-[#A7A7A7] hover:text-[#0B0B0B]"
-                    }`}
-                  >
-                    {c.bankName} ({money(c.balance)})
-                  </button>
-                ))}
+                {cards.map((c) => {
+                  const isChecked = selectedCardFilterIds.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => handleToggleCardFilter(c.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        isChecked
+                          ? "bg-[#FDC909] text-[#0B0B0B] shadow-2xs"
+                          : "bg-[#F7F7F5] border border-[#A7A7A7]/20 text-[#A7A7A7] hover:text-[#0B0B0B]"
+                      }`}
+                    >
+                      {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                      <span>
+                        {c.bankName} ({money(c.balance)})
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -485,17 +530,19 @@ export function CarteScreen() {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-extrabold text-[#0B0B0B]">
               Movimenti{" "}
-              {selectedFilterCardId !== "all"
-                ? `(${cards.find((c) => c.id === selectedFilterCardId)?.bankName})`
+              {!isAllSelected
+                ? `(${selectedCardFilterIds.length} ${
+                    selectedCardFilterIds.length === 1 ? "carta filtrata" : "carte filtrate"
+                  })`
                 : "recenti"}
             </h3>
-            {selectedFilterCardId !== "all" && (
+            {!isAllSelected && (
               <button
                 type="button"
-                onClick={() => setSelectedFilterCardId("all")}
-                className="text-[10px] font-bold text-[#A7A7A7] hover:text-[#0B0B0B]"
+                onClick={handleSelectAllCards}
+                className="text-[10px] font-bold text-[#A7A7A7] hover:text-[#0B0B0B] cursor-pointer"
               >
-                Mostra tutti
+                Mostra tutte
               </button>
             )}
           </div>
