@@ -32,12 +32,16 @@ function AddCardModal({ onClose, holderName }: { onClose: () => void; holderName
       style={{ background: "rgba(11,11,11,0.5)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-md rounded-t-[32px] bg-[#F7F7F5] p-6 flex flex-col gap-4"
-           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 24px) + 1.5rem)" }}>
+      <form
+        onSubmit={handleAdd}
+        className="w-full max-w-md rounded-t-[32px] bg-[#F7F7F5] p-6 flex flex-col gap-4"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 24px) + 1.5rem)" }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-lg font-black text-[#0B0B0B] tracking-tight">Aggiungi carta</h2>
           <button
+            type="button"
             onClick={onClose}
             className="h-8 w-8 rounded-full bg-white border border-[#A7A7A7]/30 flex items-center justify-center text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors cursor-pointer"
           >
@@ -79,7 +83,7 @@ function AddCardModal({ onClose, holderName }: { onClose: () => void; holderName
 
         {/* CTA */}
         <button
-          onClick={handleAdd}
+          type="submit"
           className="w-full h-14 rounded-full bg-[#0B0B0B] text-[#F7F7F5] font-black text-sm flex items-center justify-between p-1.5 hover:bg-black active:scale-[0.98] transition-all cursor-pointer group mt-1"
         >
           <div className="w-11 h-11 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
@@ -89,7 +93,7 @@ function AddCardModal({ onClose, holderName }: { onClose: () => void; holderName
             Aggiungi carta
           </span>
         </button>
-      </div>
+      </form>
     </div>
   );
 }
