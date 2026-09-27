@@ -114,27 +114,41 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
     return "Si è verificato un errore. Riprova.";
   };
 
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail.trim() || !loginPassword.trim()) {
-      setError("Inserisci email e password per continuare");
+    const cleanEmail = loginEmail.trim();
+    const cleanPassword = loginPassword;
+    if (!cleanEmail || !cleanPassword) {
+      setError("Inserisci sia l'email che la password per accedere.");
+      return;
+    }
+    if (!isValidEmail(cleanEmail)) {
+      setError("Inserisci un indirizzo email valido (es. nome@email.it).");
       return;
     }
     setIsLoading(true);
     setError("");
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: loginEmail.trim(),
-        password: loginPassword,
+        email: cleanEmail,
+        password: cleanPassword,
       });
       if (authError) {
         setError(mapAuthError(authError.message));
         return;
       }
-      const name = data.user?.user_metadata?.name || loginEmail.split("@")[0];
-      onAuth({ name, email: loginEmail.trim() });
-    } catch {
-      setError("Errore di connessione. Controlla la rete.");
+      if (!data.user) {
+        setError("Credenziali non valide. Riprova.");
+        return;
+      }
+      const name = data.user?.user_metadata?.name || cleanEmail.split("@")[0];
+      onAuth({ name, email: cleanEmail });
+    } catch (err) {
+      console.error(err);
+      setError("Errore durante l'accesso. Controlla la rete e riprova.");
     } finally {
       setIsLoading(false);
     }
@@ -142,26 +156,33 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
-      setError("Compila tutti i campi richiesti");
+    const cleanName = regName.trim();
+    const cleanEmail = regEmail.trim();
+    const cleanPassword = regPassword;
+    if (!cleanName || !cleanEmail || !cleanPassword) {
+      setError("Compila tutti i campi richiesti.");
       return;
     }
-    if (regPassword.length < 6) {
-      setError("La password deve essere di almeno 6 caratteri.");
+    if (!isValidEmail(cleanEmail)) {
+      setError("Inserisci un indirizzo email valido (es. nome@email.it).");
       return;
     }
-    if (regPassword !== regConfirm) {
-      setError("Le password non coincidono");
+    if (cleanPassword.length < 6) {
+      setError("La password deve contenere almeno 6 caratteri.");
+      return;
+    }
+    if (cleanPassword !== regConfirm) {
+      setError("Le password inserite non coincidono.");
       return;
     }
     setIsLoading(true);
     setError("");
     try {
       const { data: signUpData, error: authError } = await supabase.auth.signUp({
-        email: regEmail.trim(),
-        password: regPassword,
+        email: cleanEmail,
+        password: cleanPassword,
         options: {
-          data: { name: regName.trim() },
+          data: { name: cleanName },
           emailRedirectTo: undefined,
         },
       });
@@ -175,12 +196,13 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
         Array.isArray(signUpData.user.identities) &&
         signUpData.user.identities.length === 0
       ) {
-        setError("Questa email è già registrata. Accedi con le tue credenziali.");
+        setError("Questa email è già registrata. Vai su Accedi per entrare.");
         return;
       }
-      onAuth({ name: regName.trim(), email: regEmail.trim() });
-    } catch {
-      setError("Errore di connessione. Controlla la rete.");
+      onAuth({ name: cleanName, email: cleanEmail });
+    } catch (err) {
+      console.error(err);
+      setError("Errore durante la registrazione. Controlla la connessione e riprova.");
     } finally {
       setIsLoading(false);
     }
