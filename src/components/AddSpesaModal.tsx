@@ -96,25 +96,30 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-md p-0 sm:p-4 select-none">
-      <div className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full bg-white border border-[#A7A7A7] text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <div className="text-center">
-            <h2 className="text-sm font-black text-[#0B0B0B] tracking-tight">
-              {type === "expense" ? "Aggiungi spesa" : "Nuova entrata"}
-            </h2>
-            <p className="text-[10px] text-[#A7A7A7] font-medium">
-              {type === "expense" ? "Registra un'uscita nel tuo bilancio" : "Registra un accredito nel tuo bilancio"}
-            </p>
+      <div className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300 min-h-[75dvh] max-h-[92dvh] overflow-y-auto no-scrollbar flex flex-col justify-between">
+        <div>
+          {/* Header */}
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#A7A7A7]/15">
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-full bg-white border border-[#A7A7A7]/30 text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="text-center">
+              <h2 className="text-sm font-black text-[#0B0B0B] tracking-tight">
+                {type === "expense" ? "Aggiungi spesa" : "Nuova entrata"}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="px-3.5 py-1.5 rounded-full bg-[#0B0B0B] text-white text-xs font-black hover:bg-black active:scale-95 transition-all shadow-xs cursor-pointer"
+            >
+              Salva
+            </button>
           </div>
-          <div className="w-8" />
-        </div>
 
         {/* Type Toggle (Uscita / Entrata) */}
         <div className="grid grid-cols-2 gap-2 bg-white p-1.5 rounded-2xl mb-4 border border-[#A7A7A7]/20">
@@ -253,10 +258,12 @@ export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddS
           />
         </div>
 
+        </div>
+
         {/* Save Button */}
         <button
           onClick={handleSave}
-          className={`w-full py-3.5 rounded-full font-black text-sm shadow-xl transition-all active:scale-[0.98] ${
+          className={`w-full py-3.5 mt-4 rounded-full font-black text-sm shadow-xl transition-all active:scale-[0.98] cursor-pointer ${
             type === "income"
               ? "bg-[#FDC909] text-[#0B0B0B] hover:bg-[#0B0B0B] hover:text-[#FDC909]"
               : "bg-[#0B0B0B] text-white hover:bg-black"

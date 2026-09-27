@@ -56,14 +56,30 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
           />
         </button>
 
-        {/* Central Floating Elevated Button: SCANSIONE (#FDC909) */}
+        {/* Central Floating Elevated Button: ENTRATE / USCITE (+ / -) (#FDC909) */}
         <div className="relative -top-5 px-1 shrink-0">
           <button
             onClick={handleCenterAction}
-            className="h-14 w-14 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center border-4 border-[#F7F7F5] active:scale-95 hover:scale-105 transition-all group"
-            title="Scansiona scontrino"
+            className="h-14 w-14 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center border-4 border-[#F7F7F5] shadow-lg active:scale-95 hover:scale-105 transition-all group"
+            title="Registra entrata o uscita"
           >
-            <Scan className="h-6 w-6 stroke-[2.5] text-[#0B0B0B]" />
+            {/* Custom + / - icon with slash in between for income & expenses */}
+            <svg
+              className="h-6 w-6 stroke-current text-[#0B0B0B]"
+              viewBox="0 0 24 24"
+              fill="none"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {/* Plus on top left */}
+              <line x1="5" y1="7" x2="11" y2="7" />
+              <line x1="8" y1="4" x2="8" y2="10" />
+              {/* Diagonal divider slash */}
+              <line x1="15" y1="4" x2="9" y2="20" strokeWidth="2.2" />
+              {/* Minus on bottom right */}
+              <line x1="13" y1="16" x2="19" y2="16" />
+            </svg>
           </button>
         </div>
 

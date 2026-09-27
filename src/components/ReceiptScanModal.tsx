@@ -237,7 +237,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
       />
 
       {/* ── TOP BAR ────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 pt-2 pb-4 shrink-0">
+      <div className="flex items-center justify-between px-5 pt-2 pb-3 shrink-0">
         <button
           onClick={handleClose}
           className="h-9 w-9 rounded-full bg-[#F7F7F5] flex items-center justify-center hover:bg-[#A7A7A7] transition-colors"
@@ -250,6 +250,19 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
            "Scansione scontrino"}
         </h2>
         <div className="w-9" />
+      </div>
+
+      {/* ── INFO BANNER: FUNZIONALITÀ IN SVILUPPO ──────────────── */}
+      <div className="mx-5 mb-3 bg-[#FDC909]/15 border border-[#FDC909]/40 rounded-2xl p-3 flex items-start gap-2.5 shrink-0">
+        <AlertCircle className="h-4 w-4 text-[#FDC909] shrink-0 mt-0.5" />
+        <div>
+          <p className="text-xs font-black text-[#FDC909] leading-tight">
+            Funzionalità in sviluppo (IA in test)
+          </p>
+          <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5 leading-snug">
+            La lettura automatica degli scontrini è in fase di calibrazione. Puoi testare la scansione o salvare la spesa manualmente.
+          </p>
+        </div>
       </div>
 
       {/* ══ STEP: IDLE / CAMERA VIEWFINDER ════════════════════ */}

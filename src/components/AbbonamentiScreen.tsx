@@ -285,19 +285,27 @@ export function AbbonamentiScreen() {
       {/* Add Subscription Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-xs p-0 sm:p-4 select-none">
-          <div className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="p-2 rounded-full bg-white border border-[#A7A7A7]/30 text-[#0B0B0B]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <h2 className="text-sm font-black text-[#0B0B0B]">
-                Nuovo abbonamento
-              </h2>
-              <div className="w-8" />
-            </div>
+          <div className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300 min-h-[68dvh] max-h-[92dvh] overflow-y-auto no-scrollbar flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#A7A7A7]/15">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="p-2 rounded-full bg-white border border-[#A7A7A7]/30 text-[#0B0B0B] hover:bg-[#F7F7F5]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <h2 className="text-sm font-black text-[#0B0B0B]">
+                  Nuovo abbonamento
+                </h2>
+                <button
+                  type="submit"
+                  form="add-sub-form"
+                  className="px-3.5 py-1.5 rounded-full bg-[#0B0B0B] text-white text-xs font-black hover:bg-black active:scale-95 transition-all shadow-xs cursor-pointer"
+                >
+                  Aggiungi
+                </button>
+              </div>
 
             {/* Quick Chips in modal */}
             <div className="mb-4">
@@ -327,7 +335,7 @@ export function AbbonamentiScreen() {
               </div>
             </div>
 
-            <form onSubmit={handleSaveSub} className="flex flex-col gap-3">
+            <form id="add-sub-form" onSubmit={handleSaveSub} className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
                   Nome servizio
@@ -403,11 +411,12 @@ export function AbbonamentiScreen() {
 
               <button
                 type="submit"
-                className="w-full py-3.5 mt-2 rounded-full bg-[#0B0B0B] text-white font-black text-sm hover:bg-black active:scale-[0.98] transition-all cursor-pointer"
+                className="w-full py-3.5 mt-4 rounded-full bg-[#0B0B0B] text-white font-black text-sm hover:bg-black active:scale-[0.98] transition-all cursor-pointer shadow-md"
               >
                 Salva abbonamento
               </button>
             </form>
+            </div>
           </div>
         </div>
       )}
