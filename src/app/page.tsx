@@ -68,8 +68,19 @@ export default function Home() {
         const parsed: AuthState | null = saved ? JSON.parse(saved) : null;
 
         if (session?.user) {
-          // User is authenticated with Supabase
-          const name = session.user.user_metadata?.name || session.user.email?.split("@")[0] || "";
+          // User is authenticated with Supabase - fetch fresh profile name
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", session.user.id)
+            .single();
+
+          const name =
+            prof?.name ||
+            parsed?.userName ||
+            session.user.user_metadata?.name ||
+            session.user.email?.split("@")[0] ||
+            "";
           const email = session.user.email || "";
           const updatedState: AuthState = {
             isRegistered: true,
@@ -134,7 +145,7 @@ export default function Home() {
     setFlowStep("add_card");
   };
 
-  // Login success → lock or create_pin
+  // Login success → app (no double prompt) or create_pin (if never set)
   const handleLoginSuccess = (data?: { name: string; email: string }) => {
     const updated: AuthState = {
       ...authState,
@@ -144,16 +155,22 @@ export default function Home() {
     };
     saveAuthState(updated);
     if (updated.hasPin && updated.pinCode) {
-      setFlowStep("lock");
+      setFlowStep("app");
     } else {
       setFlowStep("create_pin");
     }
   };
 
-  // PIN creation → confirm step
+  // PIN creation → save immediately (single prompt) and open app
   const handlePinCreated = (pin: string) => {
-    setTempPin(pin);
-    setFlowStep("confirm_pin");
+    const updated: AuthState = {
+      ...authState,
+      isRegistered: true,
+      hasPin: true,
+      pinCode: pin,
+    };
+    saveAuthState(updated);
+    setFlowStep("app");
   };
 
   // PIN confirmed → save and unlock

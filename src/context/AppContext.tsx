@@ -648,8 +648,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
+    if (data.name) {
+      // Sync name on all active cards in state
+      setCards((prev) => prev.map((c) => ({ ...c, name: data.name! })));
+      // Update local storage auth state cache
+      try {
+        const savedAuth = localStorage.getItem("zero_auth_state_v6");
+        if (savedAuth) {
+          const parsedAuth = JSON.parse(savedAuth);
+          parsedAuth.userName = data.name;
+          localStorage.setItem("zero_auth_state_v6", JSON.stringify(parsedAuth));
+        }
+      } catch (e) {
+        console.error("Failed to update auth state storage:", e);
+      }
+    }
+
     const uid = await getEffectiveUserId();
     if (uid) {
+      if (data.name) {
+        // Sync name on cards table in Supabase
+        await supabase.from("cards").update({ name: data.name }).eq("user_id", uid);
+        // Sync user metadata on Supabase Auth
+        await supabase.auth.updateUser({ data: { name: data.name } }).catch(() => {});
+      }
       await supabase.from("profiles").update({
         ...(data.name !== undefined && { name: data.name, avatar_text: data.name.charAt(0).toUpperCase() }),
         ...(data.email !== undefined && { email: data.email }),

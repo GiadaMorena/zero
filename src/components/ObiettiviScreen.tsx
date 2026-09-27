@@ -171,45 +171,40 @@ export function ObiettiviScreen() {
         )}
       </div>
 
-      {/* Add Goal Modal (Raised & Spacious) */}
+      {/* Add Goal Modal (Identical to Abbonamenti layout, raised & spacious) */}
       {isAddGoalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[#0B0B0B]/60 backdrop-blur-xs p-0 sm:p-4 select-none"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsAddGoalOpen(false);
-          }}
-        >
-          <form
-            onSubmit={handleSaveGoal}
-            className="w-full max-w-md min-h-[50dvh] max-h-[92dvh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] bg-[#F7F7F5] p-6 flex flex-col justify-between gap-6 shadow-2xl animate-in slide-in-from-bottom duration-300"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 24px) + 1.5rem)" }}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-xs p-0 sm:p-4 select-none">
+          <div
+            className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300 min-h-[68dvh] max-h-[92dvh] overflow-y-auto no-scrollbar flex flex-col justify-between"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 24px) + 2.5rem)" }}
           >
             <div>
-              {/* Header with Dual Actions */}
+              {/* Header with Dual Actions (Aggiungi on top right) */}
               <div className="flex items-center justify-between pb-3 mb-5 border-b border-[#A7A7A7]/15">
                 <button
                   type="button"
                   onClick={() => setIsAddGoalOpen(false)}
-                  className="px-3 py-1.5 rounded-full bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors cursor-pointer"
+                  className="p-2 rounded-full bg-white border border-[#A7A7A7]/30 text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors cursor-pointer"
                 >
-                  Annulla
+                  <X className="h-4 w-4" />
                 </button>
-                <h2 className="text-base font-black text-[#0B0B0B] tracking-tight">
+                <h2 className="text-sm font-black text-[#0B0B0B]">
                   Nuovo obiettivo
                 </h2>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-full bg-[#FDC909] text-[#0B0B0B] text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+                  form="add-goal-form"
+                  className="px-3.5 py-1.5 rounded-full bg-[#0B0B0B] text-white text-xs font-black hover:bg-black active:scale-95 transition-all shadow-xs cursor-pointer"
                 >
-                  Salva
+                  Aggiungi
                 </button>
               </div>
 
               {/* Form Fields */}
-              <div className="flex flex-col gap-4">
+              <form id="add-goal-form" onSubmit={handleSaveGoal} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-extrabold text-[#A7A7A7] uppercase tracking-wider pl-1">
-                    Titolo obiettivo *
+                    Titolo obiettivo
                   </label>
                   <input
                     type="text"
@@ -218,14 +213,14 @@ export function ObiettiviScreen() {
                     onChange={(e) => setNewTitle(e.target.value)}
                     autoFocus
                     required
-                    className="w-full px-4 rounded-2xl bg-white border border-[#A7A7A7]/40 text-sm font-semibold text-[#0B0B0B] placeholder:text-[#A7A7A7] focus:outline-none focus:border-[#FDC909] focus:ring-2 focus:ring-[#FDC909] transition-all"
-                    style={{ height: "52px" }}
+                    className="w-full px-4 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] placeholder:text-[#A7A7A7] focus:outline-none focus:border-[#FDC909] transition-all"
+                    style={{ height: "48px" }}
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-extrabold text-[#A7A7A7] uppercase tracking-wider pl-1">
-                    Importo target (€) *
+                    Importo target (€)
                   </label>
                   <input
                     type="text"
@@ -233,26 +228,21 @@ export function ObiettiviScreen() {
                     value={newTarget}
                     onChange={(e) => setNewTarget(e.target.value)}
                     required
-                    className="w-full px-4 rounded-2xl bg-white border border-[#A7A7A7]/40 text-sm font-semibold text-[#0B0B0B] placeholder:text-[#A7A7A7] focus:outline-none focus:border-[#FDC909] focus:ring-2 focus:ring-[#FDC909] transition-all"
-                    style={{ height: "52px" }}
+                    className="w-full px-4 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] placeholder:text-[#A7A7A7] focus:outline-none focus:border-[#FDC909] transition-all"
+                    style={{ height: "48px" }}
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Bottom Large CTA */}
-            <button
-              type="submit"
-              className="w-full h-14 rounded-full bg-[#0B0B0B] text-[#F7F7F5] font-black text-sm flex items-center justify-between p-1.5 hover:bg-black active:scale-[0.98] transition-all cursor-pointer group shadow-lg"
-            >
-              <div className="w-11 h-11 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-                <ArrowRight className="h-4 w-4 stroke-[2.5]" />
-              </div>
-              <span className="flex-1 text-center pr-6 tracking-wide font-extrabold text-[#F7F7F5]">
-                Crea obiettivo di risparmio
-              </span>
-            </button>
-          </form>
+                {/* Bottom CTA Button */}
+                <button
+                  type="submit"
+                  className="w-full py-3.5 mt-4 rounded-full bg-[#0B0B0B] text-white font-black text-sm hover:bg-black active:scale-[0.98] transition-all cursor-pointer shadow-md"
+                >
+                  Salva obiettivo
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>

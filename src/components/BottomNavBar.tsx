@@ -63,22 +63,21 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
             className="h-14 w-14 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center border-4 border-[#F7F7F5] shadow-lg active:scale-95 hover:scale-105 transition-all group"
             title="Registra entrata o uscita"
           >
-            {/* Custom + / - icon with slash in between for income & expenses */}
+            {/* Perfectly balanced, bold mathematical ± (Plus-Minus) icon representing income and expenses */}
             <svg
-              className="h-6 w-6 stroke-current text-[#0B0B0B]"
+              className="h-6 w-6 text-[#0B0B0B]"
               viewBox="0 0 24 24"
               fill="none"
-              strokeWidth="2.5"
+              stroke="currentColor"
+              strokeWidth="2.6"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              {/* Plus on top left */}
-              <line x1="5" y1="7" x2="11" y2="7" />
-              <line x1="8" y1="4" x2="8" y2="10" />
-              {/* Diagonal divider slash */}
-              <line x1="15" y1="4" x2="9" y2="20" strokeWidth="2.2" />
-              {/* Minus on bottom right */}
-              <line x1="13" y1="16" x2="19" y2="16" />
+              {/* Plus on top (centered at x=12, y=8) */}
+              <line x1="6.5" y1="8" x2="17.5" y2="8" />
+              <line x1="12" y1="2.5" x2="12" y2="13.5" />
+              {/* Minus on bottom (centered at x=12, y=18.5) */}
+              <line x1="6.5" y1="18.5" x2="17.5" y2="18.5" />
             </svg>
           </button>
         </div>
