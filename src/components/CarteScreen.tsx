@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Trash2, CreditCard, ArrowRight, X, User } from "lucide-react";
+import { Plus, Trash2, CreditCard, ArrowRight, X, Wallet, Eye, EyeOff, Layers, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 /* ─── Add Card Modal ─────────────────────────────────────── */
@@ -52,17 +52,23 @@ function AddCardModal({
         className="w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] bg-[#F7F7F5] p-6 flex flex-col gap-4 shadow-2xl animate-in slide-in-from-bottom duration-300"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 24px) + 1.5rem)" }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-black text-[#0B0B0B] tracking-tight">
-            Aggiungi nuova carta
-          </h2>
+        {/* Header with dual Action: Annulla / Titolo / Aggiungi */}
+        <div className="flex items-center justify-between pb-3 border-b border-[#A7A7A7]/15">
           <button
             type="button"
             onClick={onClose}
-            className="h-8 w-8 rounded-full bg-white border border-[#A7A7A7]/30 flex items-center justify-center text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-full bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors cursor-pointer"
           >
-            <X className="h-4 w-4" />
+            Annulla
+          </button>
+          <h2 className="text-base font-black text-[#0B0B0B] tracking-tight">
+            Aggiungi nuova carta
+          </h2>
+          <button
+            type="submit"
+            className="px-4 py-1.5 rounded-full bg-[#FDC909] text-[#0B0B0B] text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+          >
+            Aggiungi
           </button>
         </div>
 
@@ -172,7 +178,7 @@ function AddCardModal({
           </p>
         )}
 
-        {/* Big CTA Button */}
+        {/* Big CTA Button at bottom */}
         <button
           type="submit"
           className="w-full h-14 rounded-full bg-[#0B0B0B] text-[#F7F7F5] font-black text-sm flex items-center justify-between p-1.5 hover:bg-black active:scale-[0.98] transition-all cursor-pointer group mt-2 shadow-lg"
@@ -196,6 +202,8 @@ function CardVisual({
   expiry,
   balance,
   holderName,
+  isSelected,
+  onSelect,
   onDelete,
 }: {
   bankName: string;
@@ -203,12 +211,19 @@ function CardVisual({
   expiry: string;
   balance: number;
   holderName: string;
+  isSelected?: boolean;
+  onSelect?: () => void;
   onDelete: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <div className="relative rounded-[24px] bg-[#0B0B0B] text-[#F7F7F5] p-5 overflow-hidden shadow-md">
+    <div
+      onClick={onSelect}
+      className={`relative rounded-[24px] bg-[#0B0B0B] text-[#F7F7F5] p-5 overflow-hidden shadow-md transition-all ${
+        isSelected ? "ring-2 ring-[#FDC909]" : ""
+      }`}
+    >
       {/* Ambient subtle glow */}
       <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#FDC909]/10 blur-3xl pointer-events-none" />
 
@@ -216,9 +231,16 @@ function CardVisual({
         {/* Top row: Bank name + Balance on Left | Icons and Actions on Right */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <p className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-widest">
-              {bankName}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-widest">
+                {bankName}
+              </p>
+              {isSelected && (
+                <span className="text-[9px] font-black bg-[#FDC909] text-[#0B0B0B] px-1.5 py-0.2 rounded-full">
+                  Attiva
+                </span>
+              )}
+            </div>
             <p className="text-2xl font-black tracking-tight mt-0.5 text-[#F7F7F5]">
               {balance.toLocaleString("it-IT", { style: "currency", currency: "EUR" })}
             </p>
@@ -229,18 +251,27 @@ function CardVisual({
             {!confirmDelete ? (
               <button
                 type="button"
-                onClick={() => setConfirmDelete(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete(true);
+                }}
                 className="h-8 w-8 rounded-full bg-white/10 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center text-[#A7A7A7] transition-colors cursor-pointer"
                 title="Elimina carta"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             ) : (
-              <div className="flex items-center gap-1.5 bg-red-500/20 rounded-full px-2.5 py-1 border border-red-500/40 animate-in fade-in">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 bg-red-500/20 rounded-full px-2.5 py-1 border border-red-500/40 animate-in fade-in"
+              >
                 <span className="text-[10px] font-bold text-red-200">Elimina?</span>
                 <button
                   type="button"
-                  onClick={onDelete}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
                   className="text-[10px] font-black text-red-400 hover:text-red-300 transition-colors cursor-pointer px-1"
                 >
                   Sì
@@ -248,7 +279,10 @@ function CardVisual({
                 <span className="text-[#A7A7A7]">·</span>
                 <button
                   type="button"
-                  onClick={() => setConfirmDelete(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmDelete(false);
+                  }}
                   className="text-[10px] font-black text-[#A7A7A7] hover:text-[#F7F7F5] transition-colors cursor-pointer px-1"
                 >
                   No
@@ -289,10 +323,30 @@ function CardVisual({
 
 /* ─── CarteScreen ────────────────────────────────────────── */
 export function CarteScreen() {
-  const { cards, deleteCard, transactions, profile } = useApp();
+  const {
+    cards,
+    activeCardIndex,
+    setActiveCardIndex,
+    deleteCard,
+    transactions,
+    profile,
+  } = useApp();
+
   const [showModal, setShowModal] = useState(false);
+  const [selectedFilterCardId, setSelectedFilterCardId] = useState<string | "all">("all");
 
   const holderName = profile.name || "Utente";
+
+  const totalBalance = cards.reduce((acc, c) => acc + (c.balance || 0), 0);
+
+  // Filter transactions based on selected card filter
+  const displayedTransactions =
+    selectedFilterCardId === "all"
+      ? transactions
+      : transactions.filter((t) => t.cardId === selectedFilterCardId);
+
+  const money = (val: number) =>
+    new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
   return (
     <div
@@ -317,6 +371,61 @@ export function CarteScreen() {
           <Plus className="h-4 w-4 stroke-[2.5]" />
         </button>
       </div>
+
+      {/* Total Balance Overview Widget */}
+      {cards.length > 0 && (
+        <div className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-4.5 shadow-xs flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-wider">
+                Patrimonio Totale Disponibile
+              </p>
+              <p className="text-2xl font-black text-[#0B0B0B] tracking-tight mt-0.5">
+                {money(totalBalance)}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-2xl bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shadow-xs">
+              <Wallet className="h-5 w-5" />
+            </div>
+          </div>
+
+          {/* Quick filter chips for cards */}
+          {cards.length > 1 && (
+            <div className="pt-2 border-t border-[#A7A7A7]/10 flex flex-col gap-1.5">
+              <p className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-wider">
+                Filtra movimenti per carta:
+              </p>
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedFilterCardId("all")}
+                  className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-colors cursor-pointer ${
+                    selectedFilterCardId === "all"
+                      ? "bg-[#0B0B0B] text-[#F7F7F5]"
+                      : "bg-[#F7F7F5] border border-[#A7A7A7]/20 text-[#A7A7A7] hover:text-[#0B0B0B]"
+                  }`}
+                >
+                  Tutte ({money(totalBalance)})
+                </button>
+                {cards.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedFilterCardId(c.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-colors cursor-pointer ${
+                      selectedFilterCardId === c.id
+                        ? "bg-[#FDC909] text-[#0B0B0B]"
+                        : "bg-[#F7F7F5] border border-[#A7A7A7]/20 text-[#A7A7A7] hover:text-[#0B0B0B]"
+                    }`}
+                  >
+                    {c.bankName} ({money(c.balance)})
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Empty state */}
       {cards.length === 0 && (
@@ -343,7 +452,7 @@ export function CarteScreen() {
       {/* Cards list */}
       {cards.length > 0 && (
         <div className="flex flex-col gap-3">
-          {cards.map((card) => (
+          {cards.map((card, idx) => (
             <CardVisual
               key={card.id}
               bankName={card.bankName}
@@ -351,6 +460,8 @@ export function CarteScreen() {
               expiry={card.expiry}
               balance={card.balance}
               holderName={card.name || holderName}
+              isSelected={activeCardIndex === idx}
+              onSelect={() => setActiveCardIndex(idx)}
               onDelete={() => deleteCard(card.id)}
             />
           ))}
@@ -358,7 +469,7 @@ export function CarteScreen() {
           {/* Large prominent "Aggiungi un'altra carta" button */}
           <button
             onClick={() => setShowModal(true)}
-            className="w-full h-14 rounded-[22px] bg-white border-2 border-dashed border-[#A7A7A7]/40 text-[#0B0B0B] text-xs font-black flex items-center justify-center gap-2 hover:border-[#0B0B0B] hover:bg-[#F7F7F5] active:scale-[0.99] transition-all cursor-pointer shadow-2xs"
+            className="w-full h-14 rounded-[22px] bg-white border-2 border-dashed border-[#A7A7A7]/40 text-[#0B0B0B] text-xs font-black flex items-center justify-center gap-2 hover:border-[#0B0B0B] hover:bg-[#F7F7F5] active:scale-[0.99] transition-all cursor-pointer shadow-2xs mt-1"
           >
             <div className="h-6 w-6 rounded-full bg-[#0B0B0B] text-[#FDC909] flex items-center justify-center">
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -371,17 +482,31 @@ export function CarteScreen() {
       {/* Recent transactions per card */}
       {cards.length > 0 && (
         <div className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-4 shadow-xs">
-          <h3 className="text-xs font-extrabold text-[#0B0B0B] mb-3">
-            Ultimi movimenti
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-extrabold text-[#0B0B0B]">
+              Movimenti{" "}
+              {selectedFilterCardId !== "all"
+                ? `(${cards.find((c) => c.id === selectedFilterCardId)?.bankName})`
+                : "recenti"}
+            </h3>
+            {selectedFilterCardId !== "all" && (
+              <button
+                type="button"
+                onClick={() => setSelectedFilterCardId("all")}
+                className="text-[10px] font-bold text-[#A7A7A7] hover:text-[#0B0B0B]"
+              >
+                Mostra tutti
+              </button>
+            )}
+          </div>
 
-          {transactions.length === 0 ? (
+          {displayedTransactions.length === 0 ? (
             <p className="text-[11px] text-[#A7A7A7] text-center py-4">
-              Nessun movimento registrato
+              Nessun movimento per questa selezione
             </p>
           ) : (
             <div className="flex flex-col gap-2">
-              {transactions.slice(0, 5).map((tx) => {
+              {displayedTransactions.slice(0, 5).map((tx) => {
                 const card = cards.find((c) => c.id === tx.cardId);
                 return (
                   <div

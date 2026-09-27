@@ -32,6 +32,7 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
   const {
+    cards,
     activeCard,
     setActiveCardIndex,
     transactions,
@@ -43,10 +44,12 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
 
   const [isScanOpen, setIsScanOpen] = useState(false);
   const [isAltroOpen, setIsAltroOpen] = useState(false);
+  const [balanceView, setBalanceView] = useState<"card" | "total">("card");
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
+  const totalCardsBalance = cards.reduce((acc, c) => acc + (c.balance || 0), 0);
   const nextGoal = goals[0] || null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
 
@@ -88,28 +91,62 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
         />
       </div>
 
-      {/* ── 3. DISPONIBILITÀ (Card Bianca Compatta) ── */}
-      <div className="rounded-[22px] bg-white border border-[#A7A7A7]/20 p-4 shadow-xs flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-1 text-[11px] text-[#A7A7A7] font-semibold mb-0.5">
-            <span>Disponibili{activeCard ? ` su ${activeCard.bankName}` : ""}</span>
-            <Info className="h-3 w-3 text-[#A7A7A7]" />
+      {/* ── 3. DISPONIBILITÀ (Card Bianca Compatta con Toggle Singola/Totale) ── */}
+      <div className="rounded-[22px] bg-white border border-[#A7A7A7]/20 p-4 shadow-xs flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-1 text-[11px] text-[#A7A7A7] font-semibold mb-0.5">
+              <span>
+                {balanceView === "total"
+                  ? `Patrimonio totale (${cards.length} ${cards.length === 1 ? "carta" : "carte"})`
+                  : `Disponibili${activeCard ? ` su ${activeCard.bankName}` : ""}`}
+              </span>
+              <Info className="h-3 w-3 text-[#A7A7A7]" />
+            </div>
+            <div className="text-2xl font-black text-[#0B0B0B] tracking-tight">
+              {money(balanceView === "total" ? totalCardsBalance : (activeCard?.balance ?? 0))}
+            </div>
           </div>
-          <div className="text-2xl font-black text-[#0B0B0B] tracking-tight">
-            {money(activeCard?.balance ?? 0)}
+
+          {/* Badge a Destra */}
+          <div className="px-3 py-1.5 rounded-2xl bg-[#FDC909] border border-[#FDC909] flex flex-col items-end">
+            <div className="flex items-center gap-0.5 text-xs font-black text-[#0B0B0B]">
+              <TrendingUp className="h-3.5 w-3.5 text-[#0B0B0B]" />
+              <span>{transactions.length > 0 ? `${transactions.length} mov.` : "Attivo"}</span>
+            </div>
+            <span className="text-[9px] text-[#0B0B0B] font-medium leading-tight">
+              questo mese
+            </span>
           </div>
         </div>
 
-        {/* Badge a Destra */}
-        <div className="px-3 py-1.5 rounded-2xl bg-[#FDC909] border border-[#FDC909] flex flex-col items-end">
-          <div className="flex items-center gap-0.5 text-xs font-black text-[#0B0B0B]">
-            <TrendingUp className="h-3.5 w-3.5 text-[#0B0B0B]" />
-            <span>{transactions.length > 0 ? `${transactions.length} mov.` : "Attivo"}</span>
+        {/* Dual toggle if user has multiple cards */}
+        {cards.length > 1 && (
+          <div className="flex items-center gap-1.5 pt-2 border-t border-[#A7A7A7]/10">
+            <button
+              type="button"
+              onClick={() => setBalanceView("card")}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-colors cursor-pointer ${
+                balanceView === "card"
+                  ? "bg-[#0B0B0B] text-[#F7F7F5]"
+                  : "bg-[#F7F7F5] text-[#A7A7A7] hover:text-[#0B0B0B]"
+              }`}
+            >
+              {activeCard ? activeCard.bankName : "Carta attiva"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setBalanceView("total")}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-colors cursor-pointer ${
+                balanceView === "total"
+                  ? "bg-[#FDC909] text-[#0B0B0B]"
+                  : "bg-[#F7F7F5] text-[#A7A7A7] hover:text-[#0B0B0B]"
+              }`}
+            >
+              Totale complessivo ({money(totalCardsBalance)})
+            </button>
           </div>
-          <span className="text-[9px] text-[#0B0B0B] font-medium leading-tight">
-            questo mese
-          </span>
-        </div>
+        )}
       </div>
 
       {/* ── 4. AZIONI RAPIDE (4 Card Grid) ── */}
