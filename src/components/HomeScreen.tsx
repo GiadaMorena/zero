@@ -18,6 +18,7 @@ import {
   TrendingUp,
   ShoppingBag,
   DollarSign,
+  ShieldCheck,
 } from "lucide-react";
 import { WalletCarousel } from "./WalletCarousel";
 import { HomeTrendChart } from "./HomeTrendChart";
@@ -39,6 +40,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
     goals,
     subscriptions,
     totalActiveSubscriptionsCost,
+    protections,
     profile,
   } = useApp();
 
@@ -382,7 +384,37 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
         </div>
       </div>
 
-      {/* ── 8. BANNER MOTIVAZIONALE ── */}
+      {/* ── 8. ASSICURAZIONI, PENSIONE & PAC ── */}
+      <div
+        onClick={() => onNavigate("assicurazioni")}
+        className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-3.5 shadow-xs flex items-center justify-between cursor-pointer hover:border-[#0B0B0B] transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-[#0B0B0B] text-[#FDC909] flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+            <ShieldCheck className="h-5 w-5 stroke-[2.2]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-black text-[#0B0B0B] leading-tight">
+                Assicurazioni, Pensione & PAC
+              </h4>
+              {protections.length > 0 && (
+                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-[#FDC909] text-[#0B0B0B]">
+                  {protections.filter((p) => p.active).length} attive
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
+              Polizze, fondi e piani di accumulo a lungo termine
+            </p>
+          </div>
+        </div>
+        <div className="h-7 w-7 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B] group-hover:bg-[#FDC909] transition-colors shrink-0">
+          <ChevronRight className="h-4 w-4" />
+        </div>
+      </div>
+
+      {/* ── 9. BANNER MOTIVAZIONALE ── */}
       <div className="rounded-[20px] bg-white border border-[#A7A7A7]/20 p-3 shadow-xs flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-[#FDC909] text-[#0B0B0B] flex items-center justify-center shrink-0 shadow-xs">
