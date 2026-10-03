@@ -86,6 +86,24 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
 
   const formRef = useRef<HTMLDivElement>(null);
 
+  const handleGoogleLogin = async () => {
+    setError("");
+    setIsLoading(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + "/" },
+      });
+      if (authError) {
+        setError("Accesso Google non disponibile. Riprova più tardi.");
+        setIsLoading(false);
+      }
+    } catch {
+      setError("Impossibile aprire Google. Controlla la connessione e riprova.");
+      setIsLoading(false);
+    }
+  };
+
   const switchView = (to: AuthView) => {
     setError("");
     setIsTransitioning(true);
@@ -410,6 +428,15 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
           </div>
 
           {/* Animated form container */}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="w-full h-12 mb-4 rounded-2xl bg-white border border-[#A7A7A7]/40 text-sm font-bold text-[#0B0B0B] hover:border-[#FDC909] disabled:opacity-60 cursor-pointer"
+          >
+            {isLoading ? "Attendi..." : "Continua con Google"}
+          </button>
+          <p className="text-center text-xs text-[#A7A7A7] mb-4">oppure con email e password</p>
           <div
             ref={formRef}
             className={`transition-all duration-200 ${

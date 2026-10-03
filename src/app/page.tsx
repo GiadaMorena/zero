@@ -69,6 +69,7 @@ export default function Home() {
         const parsed: AuthState | null = saved ? JSON.parse(saved) : null;
 
         if (session?.user) {
+          const sameAccount = parsed?.userEmail === session.user.email;
           // User is authenticated with Supabase - fetch fresh profile name
           const { data: prof } = await supabase
             .from("profiles")
@@ -78,15 +79,15 @@ export default function Home() {
 
           const name =
             prof?.name ||
-            parsed?.userName ||
+            (sameAccount ? parsed?.userName : "") ||
             session.user.user_metadata?.name ||
             session.user.email?.split("@")[0] ||
             "";
           const email = session.user.email || "";
           const updatedState: AuthState = {
             isRegistered: true,
-            hasPin: parsed?.hasPin || false,
-            pinCode: parsed?.pinCode || "",
+            hasPin: sameAccount ? parsed?.hasPin || false : false,
+            pinCode: sameAccount ? parsed?.pinCode || "" : "",
             userName: name,
             userEmail: email,
           };
@@ -98,7 +99,7 @@ export default function Home() {
           if (updatedState.hasPin && updatedState.pinCode) {
             setFlowStep("lock");
           } else {
-            setFlowStep("app");
+            setFlowStep("create_pin");
           }
         } else if (parsed?.isRegistered) {
           // Has local data but no Supabase session — ask to log in again
