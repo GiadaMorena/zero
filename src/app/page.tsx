@@ -162,16 +162,10 @@ export default function Home() {
     }
   };
 
-  // PIN creation → save immediately (single prompt) and open app
+  // Keep the new PIN temporary until the second entry confirms it.
   const handlePinCreated = (pin: string) => {
-    const updated: AuthState = {
-      ...authState,
-      isRegistered: true,
-      hasPin: true,
-      pinCode: pin,
-    };
-    saveAuthState(updated);
-    setFlowStep("app");
+    setTempPin(pin);
+    setFlowStep("confirm_pin");
   };
 
   // PIN confirmed → save and unlock
