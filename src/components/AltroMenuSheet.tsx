@@ -53,8 +53,8 @@ export function AltroMenuSheet({ isOpen, onClose, onNavigate }: AltroMenuSheetPr
   const activeProtectionsCount = protections.filter((p) => p.active).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-xs p-0 sm:p-4 select-none">
-      <div className="w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/20 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
+    <div className="zero-backdrop fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-xs p-0 sm:p-4 select-none">
+      <div className="zero-panel w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/20 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <button
@@ -206,3 +206,4 @@ export function AltroMenuSheet({ isOpen, onClose, onNavigate }: AltroMenuSheetPr
     </div>
   );
 }
+

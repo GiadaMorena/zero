@@ -72,7 +72,7 @@ export function DesktopApp() {
   };
 
   return (
-    <>
+    <div className="zero-motion">
       <DesktopLayout
         activeSection={activeSection}
         onNavigate={(s) => setActiveSection(s)}
@@ -81,7 +81,7 @@ export function DesktopApp() {
         onOpenAddIncome={() => handleOpenAdd("income")}
         onOpenScan={() => setIsScanOpen(true)}
       >
-        {renderContent()}
+        <div key={activeSection} className="zero-screen">{renderContent()}</div>
       </DesktopLayout>
 
       {/* Add Expense / Income Modal */}
@@ -96,6 +96,6 @@ export function DesktopApp() {
         isOpen={isScanOpen}
         onClose={() => setIsScanOpen(false)}
       />
-    </>
+    </div>
   );
 }

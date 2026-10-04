@@ -203,7 +203,7 @@ export function AbbonamentiScreen() {
       </div>
 
       {/* Subscription List */}
-      <div className="flex flex-col gap-2.5">
+      <div key={filter} className="zero-list flex flex-col gap-2.5">
         {filteredSubs.map((sub) => {
           const Icon = getSubIcon(sub.name);
           return (

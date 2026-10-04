@@ -359,11 +359,11 @@ export default function Home() {
 
       {/* Mobile Experience (< 768px) */}
       <div className="md:hidden">
-        <main className="w-full min-h-[100dvh] flex flex-col bg-[#F7F7F5] selection:bg-[#FDC909]">
+        <main className={`w-full min-h-[100dvh] flex flex-col bg-[#F7F7F5] selection:bg-[#FDC909] ${isAppUnlocked ? "zero-motion" : ""}`}>
           <div className="flex-1 flex flex-col w-full bg-[#F7F7F5]">
             <div
               key={flowStep + (isAppUnlocked ? activeTab : "")}
-              className="flex-1 overflow-y-auto no-scrollbar relative animate-in fade-in duration-300"
+              className={`flex-1 overflow-y-auto no-scrollbar relative ${isAppUnlocked ? "zero-screen" : "animate-in fade-in duration-300"}`}
             >
               {renderMobileScreen()}
             </div>

@@ -95,3 +95,57 @@
 .animate-float-card {
   animation: float-card 4s ease-in-out infinite;
 }
+
+/* Shared motion language for the signed-in app. */
+@keyframes zero-screen-enter {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: none; }
+}
+@keyframes zero-section-enter {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: none; }
+}
+@keyframes zero-panel-enter {
+  from { opacity: 0; translate: 0 20px; scale: .985; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+@keyframes zero-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+.zero-screen { animation: zero-screen-enter 300ms cubic-bezier(.22,1,.36,1) both; }
+.zero-list > * { animation: zero-section-enter 240ms cubic-bezier(.22,1,.36,1) backwards; }
+.zero-list > :nth-child(2) { animation-delay: 25ms; }
+.zero-list > :nth-child(3) { animation-delay: 45ms; }
+.zero-list > :nth-child(4) { animation-delay: 65ms; }
+.zero-screen > div > :not(.fixed):nth-child(-n+8) {
+  animation: zero-section-enter 360ms cubic-bezier(.22,1,.36,1) backwards;
+}
+.zero-screen > div > :nth-child(2) { animation-delay: 25ms; }
+.zero-screen > div > :nth-child(3) { animation-delay: 45ms; }
+.zero-screen > div > :nth-child(4) { animation-delay: 65ms; }
+.zero-screen > div > :nth-child(5) { animation-delay: 85ms; }
+.zero-motion button {
+  transition: scale 160ms cubic-bezier(.22,1,.36,1), background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, opacity 200ms ease, transform 250ms cubic-bezier(.22,1,.36,1);
+  font-variant-numeric: tabular-nums;
+}
+.zero-motion button:active:not(:disabled) { scale: .97; }
+.zero-motion button:focus-visible { outline: 2px solid #b78a00; outline-offset: 3px; }
+.zero-motion input, .zero-motion textarea, .zero-motion select {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+.zero-motion [role="switch"] > span { transition: left 220ms cubic-bezier(.22,1,.36,1), box-shadow 180ms ease; }
+.zero-motion [role="switch"]:active { scale: .94; }
+.zero-nav > button { position: relative; border-radius: 18px; }
+.zero-nav > button[aria-current="page"] { background-color: #fdc90918; }
+.zero-nav > button svg { transition: transform 220ms cubic-bezier(.22,1,.36,1), color 180ms ease; }
+.zero-nav > button[aria-current="page"] svg { transform: translateY(-2px); }
+.zero-backdrop { animation: zero-backdrop-enter 180ms ease both; }
+.zero-panel { animation: zero-panel-enter 320ms cubic-bezier(.22,1,.36,1) both; }
+@media (hover: hover) and (pointer: fine) {
+  .zero-motion button:not(:disabled):hover { scale: 1.015; }
+  .zero-motion button[aria-pressed]:hover { filter: brightness(1.035); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zero-screen, .zero-screen > div > *, .zero-list > *, .zero-backdrop, .zero-panel { animation: none !important; }
+  .zero-motion *, .zero-motion *::before, .zero-motion *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  .zero-motion button:active, .zero-motion button:hover { scale: 1 !important; }
+}
+

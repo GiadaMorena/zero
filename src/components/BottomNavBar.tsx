@@ -22,10 +22,11 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
 
   return (
     <div className="fixed bottom-4 left-0 right-0 z-40 px-4 pointer-events-none select-none flex justify-center max-w-md mx-auto">
-      <div className="pointer-events-auto bg-white border border-[#A7A7A7] rounded-full px-3 py-2 flex items-center justify-between gap-1 w-full relative">
+      <div className="zero-nav pointer-events-auto bg-white border border-[#A7A7A7] rounded-full px-3 py-2 flex items-center justify-between gap-1 w-full relative">
         {/* Tab 1: Home (Active) */}
         <button
           onClick={() => onSelectTab("home")}
+          aria-current={currentTab === "home" ? "page" : undefined}
           className="flex-1 flex flex-col items-center justify-center py-1 transition-all"
         >
           <Home
@@ -45,6 +46,8 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
         {/* Tab 2: Analisi */}
         <button
           onClick={() => onSelectTab("analisi")}
+          aria-label="Analisi"
+          aria-current={currentTab === "analisi" || currentTab === "statistiche" ? "page" : undefined}
           className="flex-1 flex flex-col items-center justify-center py-1 transition-all"
         >
           <BarChart2
@@ -85,6 +88,8 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
         {/* Tab 3: Movimenti (spese) */}
         <button
           onClick={() => onSelectTab("spese")}
+          aria-label="Movimenti"
+          aria-current={currentTab === "spese" ? "page" : undefined}
           className="flex-1 flex flex-col items-center justify-center py-1 transition-all"
         >
           <FileText
@@ -97,6 +102,8 @@ export function BottomNavBar({ currentTab, onSelectTab, onOpenScan }: BottomNavB
         {/* Tab 4: Profilo */}
         <button
           onClick={() => onSelectTab("profilo")}
+          aria-label="Profilo"
+          aria-current={currentTab === "profilo" ? "page" : undefined}
           className="flex-1 flex flex-col items-center justify-center py-1 transition-all"
         >
           <User
