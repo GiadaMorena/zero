@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
-import "./ZeroHome.css";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import Logo from "@/assets/logo.png";
+import styles from "./WelcomeScreen.module.css";
 
 interface WelcomeScreenProps {
   onLogin?: () => void;
@@ -10,94 +12,33 @@ interface WelcomeScreenProps {
 }
 
 export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenProps) {
-  const handleLoginClick = () => {
-    if (onLogin) onLogin();
-    else if (onStart) onStart();
-  };
-
-  const handleRegisterClick = () => {
-    if (onRegister) onRegister();
-    else if (onStart) onStart();
-  };
-
   return (
-    <main className="zero-home">
-      <div className="zero-statusbar" aria-hidden="true">
-        <span>9:41</span>
-        <div className="zero-status-icons">
-          <span className="signal">▮▮▮</span>
-          <span className="wifi">⌁</span>
-          <span className="battery"><i /></span>
-        </div>
-      </div>
+    <main className={styles.screen}>
+      <div className={styles.layout}>
+        <header className={styles.brand}>
+          <Image src={Logo} alt="" width={24} height={36} className={styles.mark} />
+          <span>ZERO</span>
+        </header>
 
-      <svg className="zero-line-art" viewBox="0 0 828 1792" preserveAspectRatio="none" aria-hidden="true">
-        <path
-          d="M290 390
-             C335 255 505 115 720 125
-             C805 130 805 210 770 270
-             C725 345 610 430 500 505
-             L375 590
-             C430 530 490 475 555 430
-             C630 378 690 315 735 245
-             C765 198 760 160 720 150"
-        />
-        <path
-          d="M275 1080
-             C220 1165 180 1260 205 1385
-             C230 1505 355 1570 505 1570
-             C625 1570 730 1515 805 1440"
-        />
-      </svg>
-
-      <section className="zero-copy">
-        <div className="zero-logo" aria-label="ZERO">
-          <span className="z">Z</span>
-          <span className="e">E</span>
-          <span className="r">R</span>
-          <span className="o">O</span>
-        </div>
-
-        <p className="zero-tagline">
-          ZERO ANSIA<br />
-          DA FINE MESE.
-        </p>
-      </section>
-
-      <div className="zero-card-stack" aria-hidden="true">
-        <div className="zero-card zero-card-white" />
-        <div className="zero-card zero-card-yellow" />
-        <div className="zero-card zero-card-black">
-          <div className="card-logo">ZERO</div>
-          <div className="card-chip">
-            <span />
-            <span />
-            <span />
+        <section className={styles.intro} aria-labelledby="welcome-title">
+          <p className={styles.eyebrow}>IL TUO SPAZIO, PER I TUOI SOLDI.</p>
+          <h1 id="welcome-title">Le tue finanze.<br />Un po’ più<br /><span className={styles.highlight}>semplici.</span></h1>
+          <p className={styles.description}>Spese, abbonamenti e obiettivi.<br />Tutto insieme, con chiarezza.</p>
+          <div className={styles.features} aria-label="Carte, spese e obiettivi">
+            <span>Carte</span><span>Spese</span><span>Obiettivi</span>
           </div>
-          <div className="card-number"><b>••••</b><b>••••</b><b>3377</b></div>
-          <div className="card-expiry">09/29</div>
-          <div className="card-mark">Z</div>
+        </section>
+
+        <div className={styles.actions}>
+          <button type="button" onClick={onLogin ?? onStart} className={styles.primary}>
+            <span>Accedi</span><ArrowRight aria-hidden="true" size={21} />
+          </button>
+          <button type="button" onClick={onRegister ?? onStart} className={styles.secondary}>
+            Crea un account
+          </button>
+          <p className={styles.footer}>Un passo alla volta, con ZERO.</p>
         </div>
       </div>
-
-      <div className="zero-actions">
-        <button
-          onClick={handleLoginClick}
-          className="zero-button zero-primary"
-          type="button"
-        >
-          <span>Accedi</span><span className="arrow">→</span>
-        </button>
-        <button
-          onClick={handleRegisterClick}
-          className="zero-button zero-secondary"
-          type="button"
-        >
-          <span>Registrati</span><span className="arrow">→</span>
-        </button>
-      </div>
-
-      <div className="zero-home-indicator" aria-hidden="true" />
     </main>
   );
 }

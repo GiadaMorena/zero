@@ -1,0 +1,39 @@
+.screen {
+  min-height: 100dvh;
+  background: #f7f7f5;
+  color: #0b0b0b;
+  padding: max(32px, env(safe-area-inset-top)) 28px max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+}
+.layout { width: 100%; max-width: 430px; display: flex; flex-direction: column; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 900; letter-spacing: -.06em; }
+.mark { width: 24px; height: 36px; object-fit: contain; }
+.intro { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 48px 0; }
+.eyebrow { font-size: 10px; font-weight: 750; letter-spacing: .13em; color: #666661; margin: 0 0 22px; }
+.intro h1 { font-size: clamp(42px, 11.8vw, 58px); font-weight: 850; line-height: 1.05; letter-spacing: -.065em; margin: 0; }
+.highlight { display: inline-block; position: relative; z-index: 0; }
+.highlight::before { content: ""; position: absolute; bottom: 1px; left: -3px; right: -9px; height: 40%; background: #fdc909; z-index: -1; border-radius: 3px; }
+.description { font-size: 15px; line-height: 1.65; color: #666661; margin: 26px 0 0; }
+.features { display: flex; gap: 0; margin-top: 30px; font-size: 11px; font-weight: 650; color: #666661; }
+.features span + span::before { content: "·"; padding: 0 12px; color: #9a9a93; }
+.actions { display: flex; flex-direction: column; gap: 12px; }
+.primary, .secondary { min-height: 56px; border-radius: 18px; font-size: 15px; font-weight: 750; cursor: pointer; transition: transform .15s, background .15s; }
+.primary { display: flex; align-items: center; justify-content: space-between; padding: 0 22px; background: #0b0b0b; color: #fff; border: 1px solid #0b0b0b; }
+.primary svg { color: #fdc909; }
+.secondary { background: #fff; border: 1px solid #dcdcd6; color: #0b0b0b; }
+.primary:hover { background: #262623; }
+.secondary:hover { background: #eeeeea; }
+.primary:active, .secondary:active { transform: scale(.985); }
+.primary:focus-visible, .secondary:focus-visible { outline: 3px solid #fdc909; outline-offset: 4px; }
+.footer { margin: 10px 0 0; text-align: center; font-size: 11px; color: #777771; }
+@media (min-width: 768px) {
+  .screen { padding: 54px 40px; }
+  .layout { max-width: 460px; }
+}
+@media (max-height: 650px) {
+  .intro { padding: 28px 0; }
+  .intro h1 { font-size: 40px; }
+  .features { margin-top: 18px; }
+  .description { margin-top: 18px; }
+}
