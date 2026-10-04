@@ -5,6 +5,7 @@ import { Plus, Trash2, CreditCard, ArrowRight, X, Wallet, Eye, EyeOff, Layers, C
 import { useApp } from "@/context/AppContext";
 import { getCardAppearance } from "@/lib/cardAppearance";
 import { CardChip } from "./BankCardDetails";
+import { BankIdentity } from "./BankIdentity";
 
 /* ─── Add Card Modal ─────────────────────────────────────── */
 function AddCardModal({
@@ -235,9 +236,7 @@ function CardVisual({
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-extrabold tracking-tight">
-                {bankName}
-              </p>
+              <BankIdentity bankName={bankName} />
               {isSelected && (
                 <span className="text-[9px] font-black bg-[#FDC909] text-[#0B0B0B] px-1.5 py-0.2 rounded-full">
                   Attiva

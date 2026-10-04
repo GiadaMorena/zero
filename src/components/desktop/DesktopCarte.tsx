@@ -5,6 +5,7 @@ import { Plus, CreditCard, Check, Trash2, X, Star } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { getCardAppearance } from "@/lib/cardAppearance";
 import { CardChip } from "../BankCardDetails";
+import { BankIdentity } from "../BankIdentity";
 
 export function DesktopCarte() {
   const { cards, activeCardIndex, setActiveCardIndex, addCard, deleteCard, profile } = useApp();
@@ -99,7 +100,7 @@ export function DesktopCarte() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5 opacity-80" />
-                    <span className="text-sm font-extrabold tracking-wider">{card.bankName}</span>
+                    <BankIdentity bankName={card.bankName} />
                   </div>
                   <div className="flex items-center gap-2">
                     {isSelected ? (

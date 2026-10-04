@@ -1,4 +1,5 @@
 import { Wifi } from "lucide-react";
+import { BankIdentity } from "./BankIdentity";
 
 export function CardChip() {
   return (
@@ -14,7 +15,7 @@ export function BankCardDetails({ bankName, number, expiry, holder }: { bankName
   return (
     <>
       <div className="relative flex items-start justify-between gap-3">
-        <span className="max-w-[190px] truncate text-base font-extrabold tracking-tight">{bankName}</span>
+        <BankIdentity bankName={bankName} />
         <Wifi aria-hidden="true" className="h-5 w-5 shrink-0 rotate-90 opacity-75" />
       </div>
       <div className="relative my-auto"><CardChip /></div>

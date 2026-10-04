@@ -1,6 +1,7 @@
 "use client";
 
 import { getCardAppearance } from "@/lib/cardAppearance";
+import { BankIdentity } from "../BankIdentity";
 
 import React from "react";
 import {
@@ -166,7 +167,7 @@ export function DesktopDashboard({
               >
                 {/* Header card */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold tracking-wider opacity-80">{card.bankName}</span>
+                  <BankIdentity bankName={card.bankName} />
                   {isSelected && (
                     <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-[#F5E050] text-[#121212]">
                       Principale
