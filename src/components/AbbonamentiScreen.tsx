@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Plus, Bell, Film, Music, Cloud, Sparkles, Bot, Dumbbell, Smartphone, Trash2, X, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { SubscriptionLogo } from "./SubscriptionLogo";
 
 export function SubscriptionToggle({
   checked,
@@ -172,7 +173,7 @@ export function AbbonamentiScreen() {
                 className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white border border-[#A7A7A7]/20 shadow-2xs shrink-0 hover:border-[#0B0B0B] active:scale-95 transition-all text-left cursor-pointer group"
               >
                 <div className="h-6 w-6 rounded-lg bg-[#F7F7F5] text-[#0B0B0B] flex items-center justify-center group-hover:bg-[#FDC909] transition-colors">
-                  <Icon className="h-3.5 w-3.5" />
+                  <SubscriptionLogo name={preset.name} size={22} fallback={<Icon className="h-3.5 w-3.5 text-[#111]" />} />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#0B0B0B] leading-tight">{preset.name}</p>
@@ -217,7 +218,7 @@ export function AbbonamentiScreen() {
             >
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center font-bold text-sm shrink-0 text-[#0B0B0B]">
-                  <Icon className="h-4.5 w-4.5" />
+                  <SubscriptionLogo name={sub.name} size={28} fallback={<Icon className="h-4.5 w-4.5 text-[#111]" />} />
                 </div>
                 <div>
                   <h4 className="text-xs font-extrabold text-[#0B0B0B] leading-tight">
@@ -332,7 +333,7 @@ export function AbbonamentiScreen() {
                         : "bg-white border border-[#A7A7A7]/20 text-[#A7A7A7] hover:text-[#0B0B0B]"
                     }`}
                   >
-                    {p.name}
+                    <span className="flex items-center gap-1.5"><SubscriptionLogo name={p.name} size={18} />{p.name}</span>
                   </button>
                 ))}
               </div>

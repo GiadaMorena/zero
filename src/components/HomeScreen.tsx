@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { SubscriptionLogo } from "./SubscriptionLogo";
 import Logo from "@/assets/logo.png";
 import {
   Plus,
@@ -360,7 +361,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
                       key={sub.id || i}
                       className="h-5 w-5 rounded-full bg-[#0B0B0B] text-[#FDC909] text-[8px] font-black flex items-center justify-center ring-2 ring-white uppercase"
                     >
-                      {sub.name.charAt(0)}
+                      <SubscriptionLogo name={sub.name} size={20} />
                     </div>
                   ))}
                   {subscriptions.length > 3 && (

@@ -4,6 +4,7 @@ import React from "react";
 import { Plus, Calendar, Film } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { SubscriptionToggle } from "../AbbonamentiScreen";
+import { SubscriptionLogo } from "../SubscriptionLogo";
 
 export function DesktopAbbonamenti() {
   const { subscriptions, toggleSubscription, totalActiveSubscriptionsCost } = useApp();
@@ -55,7 +56,7 @@ export function DesktopAbbonamenti() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-white shrink-0">
-                  <Film className="h-5 w-5" />
+                  <SubscriptionLogo name={sub.name} size={30} fallback={<Film className="h-5 w-5 text-[#111]" />} />
                 </div>
                 <div>
                   <p className="text-[13px] font-bold text-white">{sub.name}</p>
