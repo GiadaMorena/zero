@@ -39,8 +39,6 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
 
         <section className={styles.hero} aria-labelledby="welcome-title">
           <div className={styles.art} aria-hidden="true">
-            <div className={styles.orbit} />
-            <div className={styles.orbitTwo} />
             <div className={styles.disc}><div className={styles.core}><Image src={Logo} alt="" width={58} height={88} /></div></div>
             <div className={styles.satellite}><Sparkles size={18} /></div>
             <span className={styles.artLabel}>MENO CAOS. PIÙ SPAZIO.</span>
