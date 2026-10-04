@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { Plus, CreditCard, Check, Trash2, X, Star } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { getCardAppearance } from "@/lib/cardAppearance";
+import { CardChip } from "../BankCardDetails";
 
 export function DesktopCarte() {
   const { cards, activeCardIndex, setActiveCardIndex, addCard, deleteCard, profile } = useApp();
@@ -84,6 +86,7 @@ export function DesktopCarte() {
             return (
               <div
                 key={card.id}
+                style={getCardAppearance(card.bankName)}
                 className={`p-6 rounded-[32px] border transition-all duration-300 relative flex flex-col justify-between min-h-[220px] shadow-sm ${
                   card.type === "zero"
                     ? "bg-[#121212] text-white border-[#121212]"
@@ -122,6 +125,7 @@ export function DesktopCarte() {
                 </div>
 
                 {/* Balance */}
+                <div className="mt-4"><CardChip /></div>
                 <div className="my-4">
                   <p className="text-[11px] opacity-70 font-semibold uppercase tracking-wider">Saldo Disponibile</p>
                   <p className="text-3xl font-black tracking-tight mt-0.5">{money(card.balance)}</p>

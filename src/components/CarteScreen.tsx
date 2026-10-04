@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { Plus, Trash2, CreditCard, ArrowRight, X, Wallet, Eye, EyeOff, Layers, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { getCardAppearance } from "@/lib/cardAppearance";
+import { CardChip } from "./BankCardDetails";
 
 /* ─── Add Card Modal ─────────────────────────────────────── */
 function AddCardModal({
@@ -220,6 +222,7 @@ function CardVisual({
   return (
     <div
       onClick={onSelect}
+      style={getCardAppearance(bankName)}
       className={`relative rounded-[24px] bg-[#0B0B0B] text-[#F7F7F5] p-5 overflow-hidden shadow-md transition-all ${
         isSelected ? "ring-2 ring-[#FDC909]" : ""
       }`}
@@ -232,7 +235,7 @@ function CardVisual({
         <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-widest">
+              <p className="text-sm font-extrabold tracking-tight">
                 {bankName}
               </p>
               {isSelected && (
@@ -241,7 +244,7 @@ function CardVisual({
                 </span>
               )}
             </div>
-            <p className="text-2xl font-black tracking-tight mt-0.5 text-[#F7F7F5]">
+            <p className="text-2xl font-black tracking-tight mt-0.5">
               {balance.toLocaleString("it-IT", { style: "currency", currency: "EUR" })}
             </p>
           </div>
@@ -297,23 +300,24 @@ function CardVisual({
         </div>
 
         {/* Card number */}
-        <p className="text-sm font-mono font-bold tracking-widest text-[#F7F7F5] mb-5">
+        <div className="mb-3"><CardChip /></div>
+        <p className="text-sm font-mono font-bold tracking-widest mb-5">
           {number}
         </p>
 
         {/* Bottom row */}
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-[9px] text-[#A7A7A7] uppercase tracking-wider">
+            <p className="text-[9px] opacity-75 uppercase tracking-wider">
               Intestatario
             </p>
-            <p className="text-xs font-bold text-[#F7F7F5]">{holderName}</p>
+            <p className="text-xs font-bold">{holderName}</p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] text-[#A7A7A7] uppercase tracking-wider">
+            <p className="text-[9px] opacity-75 uppercase tracking-wider">
               Scadenza
             </p>
-            <p className="text-xs font-bold text-[#F7F7F5]">{expiry}</p>
+            <p className="text-xs font-bold">{expiry === "00/00" ? "—" : expiry}</p>
           </div>
         </div>
       </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { getCardAppearance } from "@/lib/cardAppearance";
+
 import React from "react";
 import {
   Plus,
@@ -152,6 +154,7 @@ export function DesktopDashboard({
               return (
               <div
                 key={card.id}
+                style={getCardAppearance(card.bankName)}
                 onClick={() => setActiveCardIndex(idx)}
                 className={`p-5 rounded-[28px] cursor-pointer transition-all duration-300 border relative overflow-hidden flex flex-col justify-between min-h-[160px] ${
                   card.type === "zero"
