@@ -55,6 +55,19 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const walletButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
+  const gesture = useRef({ active: false, start: 0, progress: 0 });
+  const setProgress = (value: number) => {
+    gesture.current.progress = Math.max(0, Math.min(1, value));
+    walletButton.current?.style.setProperty("--pull", String(gesture.current.progress));
+  };
+  const finishGesture = (cancelled = false) => {
+    if (!gesture.current.active) return;
+    gesture.current.active = false;
+    walletButton.current?.removeAttribute("data-dragging");
+    const completed = !cancelled && gesture.current.progress >= .8;
+    setProgress(0);
+    if (completed) setOpen(true);
+  };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   useEffect(() => { if (demo) closeButton.current?.focus(); }, [demo]);
   const close = () => {
@@ -68,8 +81,14 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
       <header className={styles.header}><div className={styles.brand}><Image src={Logo} alt="" width={25} height={34}/><span>ZERO</span></div></header>
       <section className={styles.hero} aria-labelledby={titleId}>
         <div className={`${styles.art} ${open ? styles.expanded : ""}`}>
-          <button ref={walletButton} className={styles.walletButton} type="button" aria-label="Esplora il portafoglio ZERO" aria-expanded={open} aria-controls={open && !demo ? exploreId : undefined} disabled={closing} onClick={() => { if (open) close(); else setOpen(true); }}><WalletArtwork open={open}/></button>
-          {!open && !demo && <p className={styles.hint}>Tocca il portafoglio</p>}
+          <button ref={walletButton} className={styles.walletButton} type="button" aria-label="Trascina a destra per esplorare il portafoglio ZERO, oppure premi Invio" aria-expanded={open} aria-controls={open && !demo ? exploreId : undefined} disabled={closing}
+            onPointerDown={e => { if (open || closing || !e.isPrimary || e.button !== 0) return; gesture.current = { active: true, start: e.clientX, progress: 0 }; e.currentTarget.setPointerCapture(e.pointerId); e.currentTarget.setAttribute("data-dragging", "true"); }}
+            onPointerMove={e => { if (gesture.current.active) setProgress((e.clientX - gesture.current.start) / 85); }}
+            onPointerUp={e => { finishGesture(); if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }}
+            onPointerCancel={() => finishGesture(true)} onLostPointerCapture={() => finishGesture(true)}
+            onClick={e => { if (e.detail === 0) { if (open) close(); else setOpen(true); } }}
+            onKeyDown={e => { if (e.key === "ArrowRight" && !open) { e.preventDefault(); setOpen(true); } if (e.key === "Escape" && open) close(); }}><WalletArtwork open={open}/></button>
+          {!open && !demo && <p className={styles.hint}>Trascina il portafoglio verso destra</p>}
           {open && !demo && <div id={exploreId} className={styles.choices} aria-label="Esplora le funzionalità">{(["Spese", "Abbonamenti", "Obiettivi"] as Demo[]).map(label => <button key={label} type="button" onClick={() => setDemo(label)}>{label}</button>)}<button className={styles.closeChoices} onClick={close} aria-label="Chiudi il portafoglio">×</button></div>}
           {demo && <section className={`${styles.preview} ${closing ? styles.previewClosing : ""}`} role="region" aria-label={`Anteprima ${demo}`} onKeyDown={e => {if(e.key === "Escape") close();}}>
             <button ref={closeButton} className={styles.close} onClick={close} disabled={closing} aria-label="Chiudi anteprima">×</button>
@@ -82,7 +101,7 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
         </div>
         <div className={styles.copy}><h1 id={titleId}>Meno caos.<br/>Più controllo.</h1><p className={styles.description}>Dai un posto a ogni spesa.</p></div>
       </section>
-      <footer className={styles.actions}><button type="button" className={styles.primary} onClick={onRegister ?? onStart}>Crea un account</button><p>Hai già un account? <button type="button" className={styles.login} onClick={onLogin ?? onStart}>Accedi</button></p></footer>
+      <footer className={styles.actions}><button type="button" className={styles.primary} onClick={onLogin ?? onStart}>Accedi</button><p>Non hai ancora un account? <button type="button" className={styles.login} onClick={onRegister ?? onStart}>Crea un account</button></p></footer>
     </div>
   </main>;
 }
