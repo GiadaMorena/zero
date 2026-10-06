@@ -27,3 +27,13 @@
 .receiptDark:not(.receiptRaised){transform:translateY(calc(var(--pull)*-40px)) rotate(calc(var(--pull)*5deg))}
 .walletButton[data-dragging] .walletSvg,.walletButton[data-dragging] .walletFront,.walletButton[data-dragging] .walletBack,.walletButton[data-dragging] .clasp,.walletButton[data-dragging] .receiptLight,.walletButton[data-dragging] .receiptDark{transition:none}
 @media(prefers-reduced-motion:reduce){.walletSvg{rotate:none;translate:none}.walletFront:not(.frontOpen),.walletBack:not(.backOpen),.receiptLight:not(.receiptRaised),.receiptDark:not(.receiptRaised){transform:none}}
+.slideTrack{--slide:0;position:relative;width:100%;height:64px;border-radius:999px;background:#151511;color:#fff;display:grid;place-items:center;isolation:isolate}
+.slideLabel{font-size:16px;font-weight:600;opacity:calc(1 - var(--slide)*.8);pointer-events:none;padding-left:42px}
+.slideHandle{position:absolute;left:8px;top:8px;width:48px;height:48px;border:0;border-radius:50%;background:#fbd321;color:#151511;font-size:25px;display:grid;place-items:center;touch-action:none;user-select:none;cursor:grab;left:calc(8px + var(--slide)*(100% - 64px));transition:left .45s cubic-bezier(.22,1,.36,1)}
+.slideTrack[data-dragging] .slideHandle{transition:none;cursor:grabbing}
+.walletFront:not(.frontOpen){transform:translate(calc(var(--pull)*-36px),calc(var(--pull)*13px)) rotate(calc(var(--pull)*-19deg))}
+.walletBack:not(.backOpen){transform:translate(calc(var(--pull)*20px),calc(var(--pull)*-8px)) rotate(calc(var(--pull)*9deg))}
+.clasp:not(.claspOpen){transform:translate(calc(var(--pull)*48px),calc(var(--pull)*-16px)) rotate(calc(var(--pull)*-46deg))}
+.receiptLight:not(.receiptRaised){transform:translateY(calc(var(--pull)*-55px)) rotate(calc(var(--pull)*-13deg))}
+.receiptDark:not(.receiptRaised){transform:translateY(calc(var(--pull)*-65px)) rotate(calc(var(--pull)*13deg))}
+@media(prefers-reduced-motion:reduce){.slideHandle{transition:none}.walletFront:not(.frontOpen),.walletBack:not(.backOpen),.receiptLight:not(.receiptRaised),.receiptDark:not(.receiptRaised){transform:none}}
