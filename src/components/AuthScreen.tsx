@@ -11,6 +11,7 @@ type AuthView = "login" | "register";
 interface AuthScreenProps {
   onAuth: (userData?: { name: string; email: string }) => void;
   defaultView?: AuthView;
+  initialError?: string;
 }
 
 /* ─── Reusable input field ─────────────────────────────── */
@@ -68,11 +69,11 @@ function AuthInput({
 }
 
 /* ─── Main AuthScreen ──────────────────────────────────── */
-export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps) {
+export function AuthScreen({ onAuth, defaultView = "register", initialError = "" }: AuthScreenProps) {
   const [view, setView] = useState<AuthView>(defaultView);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -90,12 +91,17 @@ export function AuthScreen({ onAuth, defaultView = "register" }: AuthScreenProps
     setError("");
     setIsLoading(true);
     try {
-      const { error: authError } = await supabase.auth.signInWithOAuth({
+      const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin + "/" },
+        options: { redirectTo: window.location.origin + "/", skipBrowserRedirect: true },
       });
       if (authError) {
         setError("Accesso Google non disponibile. Riprova più tardi.");
+        setIsLoading(false);
+      } else if (data.url) {
+        window.location.assign(data.url);
+      } else {
+        setError("Google non ha restituito la pagina di accesso. Riprova.");
         setIsLoading(false);
       }
     } catch {

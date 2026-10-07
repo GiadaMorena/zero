@@ -20,11 +20,13 @@ import { ThemeSync } from "@/components/ThemeSync";
 import { DesktopApp } from "@/components/desktop/DesktopApp";
 import { AppProvider } from "@/context/AppContext";
 import { supabase } from "@/lib/supabase";
+import { OnboardingProfile } from "@/components/OnboardingProfile";
 
 export type FlowStep =
   | "welcome"
   | "register"
   | "login"
+  | "profile_setup"
   | "add_card"
   | "create_pin"
   | "confirm_pin"
@@ -56,11 +58,20 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<NavTab>("home");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalType, setAddModalType] = useState<"expense" | "income">("expense");
+  const [setupError, setSetupError] = useState("");
 
   // 1. Initial Load — check Supabase session first, then localStorage PIN data
   useEffect(() => {
     const init = async () => {
       try {
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const query = new URLSearchParams(window.location.search);
+        if (params.has("error") || query.has("error")) {
+          setSetupError("Accesso Google non completato. Riprova oppure accedi con email e password.");
+          window.history.replaceState(null, "", window.location.pathname);
+          setFlowStep("login");
+          return;
+        }
         // Migrate old auth key
         localStorage.removeItem("zero_auth_state_v5");
 
@@ -96,7 +107,13 @@ export default function Home() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
           } catch { /* ignore */ }
 
-          if (updatedState.hasPin && updatedState.pinCode) {
+          const metadata = session.user.user_metadata;
+          const completed = metadata.zero_onboarding_completed || (sameAccount && parsed?.hasPin && session.user.app_metadata?.provider !== "google");
+          if (!completed && !metadata.zero_profile_completed) {
+            setFlowStep("profile_setup");
+          } else if (!completed) {
+            setFlowStep("add_card");
+          } else if (updatedState.hasPin && updatedState.pinCode) {
             setFlowStep("lock");
           } else {
             setFlowStep("create_pin");
@@ -144,19 +161,26 @@ export default function Home() {
       userEmail: data?.email || "",
     };
     saveAuthState(updated);
-    setFlowStep("add_card");
+    setFlowStep("profile_setup");
   };
 
   // Login success → app (no double prompt) or create_pin (if never set)
-  const handleLoginSuccess = (data?: { name: string; email: string }) => {
+  const handleLoginSuccess = async (data?: { name: string; email: string }) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const sameAccount = authState.userEmail === data?.email;
     const updated: AuthState = {
       ...authState,
       userName: data?.name || authState.userName,
       userEmail: data?.email || authState.userEmail,
       isRegistered: true,
+      hasPin: sameAccount && authState.hasPin,
+      pinCode: sameAccount ? authState.pinCode : "",
     };
     saveAuthState(updated);
-    if (updated.hasPin && updated.pinCode) {
+    const metadata = user?.user_metadata ?? {};
+    if (!metadata.zero_onboarding_completed && (!updated.hasPin || user?.app_metadata?.provider === "google")) {
+      setFlowStep(metadata.zero_profile_completed ? "add_card" : "profile_setup");
+    } else if (updated.hasPin && updated.pinCode) {
       setFlowStep("app");
     } else {
       setFlowStep("create_pin");
@@ -183,6 +207,13 @@ export default function Home() {
 
   const handleUnlockSuccess = () => setFlowStep("app");
   const handleForgotPin = () => setFlowStep("login");
+  const finishCard = async () => {
+    setSetupError("");
+    const { error } = await supabase.auth.updateUser({ data: { zero_onboarding_completed: true } });
+    if (error) { setSetupError("Non riesco a completare il benvenuto. Riprova."); return; }
+    setFlowStep(authState.hasPin ? "lock" : "create_pin");
+  };
+  const profileSetup = <OnboardingProfile name={authState.userName} onComplete={name => { saveAuthState({ ...authState, userName: name }); setFlowStep("add_card"); }} />;
 
   // Logout → sign out from Supabase + full local reset
   const handleLogout = async () => {
@@ -209,6 +240,8 @@ export default function Home() {
 
       case "register":
         return <AuthScreen onAuth={handleRegisterSuccess} defaultView="register" />;
+      case "profile_setup":
+        return profileSetup;
 
       case "login":
         return <AuthScreen onAuth={handleLoginSuccess} defaultView="login" />;
@@ -218,8 +251,8 @@ export default function Home() {
           <AddCardScreen
             userName={authState.userName}
             userEmail={authState.userEmail}
-            onSkip={() => setFlowStep("create_pin")}
-            onAdd={() => setFlowStep("create_pin")}
+            onSkip={finishCard}
+            onAdd={finishCard}
           />
         );
 
@@ -307,6 +340,8 @@ export default function Home() {
         );
       case "register":
         return <AuthScreen onAuth={handleRegisterSuccess} defaultView="register" />;
+      case "profile_setup":
+        return profileSetup;
       case "login":
         return <AuthScreen onAuth={handleLoginSuccess} defaultView="login" />;
       case "add_card":
@@ -314,8 +349,8 @@ export default function Home() {
           <AddCardScreen
             userName={authState.userName}
             userEmail={authState.userEmail}
-            onSkip={() => setFlowStep("create_pin")}
-            onAdd={() => setFlowStep("create_pin")}
+            onSkip={finishCard}
+            onAdd={finishCard}
           />
         );
       case "create_pin":
@@ -356,6 +391,7 @@ export default function Home() {
   return (
     <AppProvider>
       <ThemeSync screenBackground="#F7F7F5" />
+      {setupError && <p role="alert" className="p-4 text-red-700">{setupError}</p>}
 
       {/* Mobile Experience (< 768px) */}
       <div className="md:hidden">
@@ -392,3 +428,5 @@ export default function Home() {
     </AppProvider>
   );
 }
+
+
