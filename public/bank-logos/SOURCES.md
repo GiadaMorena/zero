@@ -39,3 +39,8 @@ Monochrome white rendering on dark cards for contrast; sources remain available 
 
 /test-banche is an isolated, read-only fictional profile containing one card per supported brand. It uses the same BankCardDetails and cardAppearance as the app and does not create an authentication identity or write into a user's account.
 SVGs without intrinsic dimensions (UniCredit, PostePay, Mediolanum, Ifis) now explicitly declare width/height to prevent zero-size flex rendering. Credem retains its original left square emblem with native wordmark text beside it.
+
+## Refined Intesa and BancoPosta marks (2026-10-07)
+- Intesa Sanpaolo: https://commons.wikimedia.org/wiki/File:Intesa_Sanpaolo_logo.svg (attributed to Intesa Sanpaolo); https://upload.wikimedia.org/wikipedia/commons/5/51/Intesa_Sanpaolo_logo.svg. White monochrome rendering, no background plate.
+- BancoPosta: original vector paths extracted from the official Poste document https://www.media.poste.it/934cb944-c811-43c6-8180-17743c8a3403/web/bollettini-soggetti-beneficiari (page 1, wordmark at top left). No raster enlargement or crop mask.
+Intesa vector lettering is white; original multicolor arch emblem preserved.
