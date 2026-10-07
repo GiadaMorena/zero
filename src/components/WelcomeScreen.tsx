@@ -69,11 +69,12 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
     gesture.current.active = false;
     walletButton.current?.removeAttribute("data-dragging");
     slider.current?.removeAttribute("data-dragging");
-    const completed = !cancelled && gesture.current.progress >= .94;
+    const completed = !cancelled && gesture.current.progress >= .9;
     if (completed) enter(); else setProgress(0);
   };
   const enter = () => {
     if (entering) return;
+    if (timer.current) clearTimeout(timer.current);
     setEntering(true);
     setProgress(1);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -110,7 +111,7 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
           <span className={styles.slideLabel}>{entering ? "Il tuo portafoglio si apre" : "Scorri per accedere"}</span>
           <button ref={sliderHandle} type="button" className={styles.slideHandle} aria-label="Scorri verso destra per accedere, oppure premi Invio" disabled={entering}
             onPointerDown={e => { if (entering || !e.isPrimary || e.button !== 0) return; setOpen(false); setDemo(null); gesture.current = {active:true,start:e.clientX,progress:0}; e.currentTarget.setPointerCapture(e.pointerId); slider.current?.setAttribute("data-dragging", "true"); walletButton.current?.setAttribute("data-dragging", "true"); }}
-            onPointerMove={e => { if (!gesture.current.active) return; const travel = (slider.current?.clientWidth ?? 300) - e.currentTarget.offsetWidth - 16; setProgress((e.clientX - gesture.current.start) / Math.max(1, travel)); }}
+            onPointerMove={e => { if (!gesture.current.active) return; const travel = (slider.current?.clientWidth ?? 300) - e.currentTarget.offsetWidth - 16; setProgress((e.clientX - gesture.current.start) / Math.max(1, travel)); if (gesture.current.progress >= .98) finishGesture(); }}
             onPointerUp={e => { finishGesture(); if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }}
             onPointerCancel={() => finishGesture(true)} onLostPointerCapture={() => finishGesture(true)}
             onClick={e => { if (e.detail === 0) enter(); }} onKeyDown={e => { if (e.key === "ArrowRight") { e.preventDefault(); enter(); } }}>→</button>
