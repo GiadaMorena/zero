@@ -6,6 +6,7 @@ const bankThemes = [
   { names: ["intesa", "sanpaolo", "isp"], colors: ["#075c48", "#168b68", "#073d33"], ink: "#ffffff" },
   { names: ["unicredit", "uni credit"], colors: ["#a40b22", "#ea2441", "#630718"], ink: "#ffffff" },
   { names: ["fineco"], colors: ["#082b68", "#2459b2", "#061a42"], ink: "#ffffff" },
+  { names: ["allianz"], colors: ["#003781", "#1464a5", "#002455"], ink: "#ffffff" },
   { names: ["n26"], colors: ["#a5d9d0", "#d7ece5", "#70b6ac"], ink: "#143d38" },
   { names: ["postepay", "poste", "bancoposta"], colors: ["#ffe25c", "#ffc928", "#e9b51c"], ink: "#133463" },
   { names: ["ing", "conto arancio"], colors: ["#ec6506", "#ff9b36", "#ba4400"], ink: "#ffffff" },
