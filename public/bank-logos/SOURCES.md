@@ -11,3 +11,4 @@ Original assets retrieved 2026-10-04. Logos identify the bank of a user-entered 
 - Allianz: logo del gruppo, senza inferire una specifica carta Allianz Bank.
   Source: https://commons.wikimedia.org/wiki/File:Allianz_logo.svg (author Allianz)
   Asset: https://upload.wikimedia.org/wikipedia/commons/6/6e/Allianz_logo.svg
+- Wordmark variants: background plates removed and viewBox fitted to the original lettering. Original paths and brand colors preserved.
