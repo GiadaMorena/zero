@@ -27,13 +27,7 @@
 .slideHandle{position:absolute;left:8px;top:8px;width:48px;height:48px;border:0;border-radius:50%;background:#fbd321;color:#151511;font-size:25px;display:grid;place-items:center;touch-action:none;user-select:none;cursor:grab;left:calc(8px + var(--slide)*(100% - 64px));transition:left .45s cubic-bezier(.22,1,.36,1)}
 .slideTrack[data-dragging] .slideHandle{transition:none;cursor:grabbing}
 @media(prefers-reduced-motion:reduce){.slideHandle{transition:none}.walletFront:not(.frontOpen),.walletBack:not(.backOpen),.receiptLight:not(.receiptRaised),.receiptDark:not(.receiptRaised){transform:none}}
-/* One fixed fold: the front pivots at x=268; the body never moves. */
-.walletButton{--hinge:var(--pull,0)}
-.walletButton[aria-expanded="true"]{--hinge:1}
+/* The mouth opens; the silhouette and stitched bottom stay connected. */
 .walletSvg{rotate:none;translate:none}
-.walletButton .walletFront{transform-box:view-box;transform-origin:268px 245px;transform:scaleX(calc(1 - var(--hinge)*.65));transition:transform .42s cubic-bezier(.22,1,.36,1)}
-.walletButton .walletBack,.walletButton .receiptLight,.walletButton .receiptDark{transform:none}
-.walletButton .clasp{transform-box:view-box;transform-origin:311px 230px;transform:scaleX(calc(1 - var(--hinge)*.7));transition:transform .42s cubic-bezier(.22,1,.36,1)}
-.walletButton[data-dragging] .walletFront,.walletButton[data-dragging] .clasp{transition:none}
+.walletButton .walletFront,.walletButton .walletBack,.walletButton .receiptLight,.walletButton .receiptDark,.walletButton .clasp{transform:none!important}
 .slideTrack[aria-busy="true"] .slideLabel{opacity:1;padding-left:0;padding-right:48px}
-@media(prefers-reduced-motion:reduce){.walletButton .walletFront,.walletButton .clasp{transform:none;transition:none}}

@@ -34,9 +34,9 @@ function WalletArtwork({ open }: { open: boolean }) {
         <path d="M216 157 L278 147 Q289 146 290 160 L290 276 Q291 283 282 280" fill="none" stroke="#a78515" strokeWidth="1.5" strokeDasharray="4 5"/>
       </g>
       <g className={`${styles.walletFront} ${open ? styles.frontOpen : ""}`}>
-        <path d="M61 123 Q70 130 91 133 L244 159 Q269 163 268 189 L268 306 Q268 328 247 325 L80 292 Q59 289 59 267 Z" fill={`url(#${id}leather)`} stroke="#edc126" strokeWidth="2" filter={`url(#${id}grain)`}/>
-        <path d="M69 139 L239 169 Q257 172 257 192 L257 303 Q258 316 244 313 L82 282 Q69 280 69 266 Z" fill="none" stroke="#a7881c" strokeWidth="1.5" strokeDasharray="5 5"/>
-        <path d="M72 143 L239 173 M81 280 L240 311" fill="none" stroke="#fff0a2" strokeWidth="1" strokeDasharray="5 5" opacity=".8"/>
+        <path data-wallet-front="body" d="M61 123 Q70 130 91 133 L244 159 Q269 163 268 189 L268 306 Q268 328 247 325 L80 292 Q59 289 59 267 Z" fill={`url(#${id}leather)`} stroke="#edc126" strokeWidth="2" filter={`url(#${id}grain)`}/>
+        <path data-wallet-front="stitch" d="M69 139 L239 169 Q257 172 257 192 L257 303 Q258 316 244 313 L82 282 Q69 280 69 266 Z" fill="none" stroke="#a7881c" strokeWidth="1.5" strokeDasharray="5 5"/>
+        <path data-wallet-front="highlight" d="M72 143 L239 173 M81 280 L240 311" fill="none" stroke="#fff0a2" strokeWidth="1" strokeDasharray="5 5" opacity=".8"/>
       </g>
       <g className={`${styles.clasp} ${open ? styles.claspOpen : ""}`}>
         <path d="M311 207 L255 221 Q231 227 230 246 Q229 267 249 267 L310 253 Z" fill={`url(#${id}leather)`} stroke="#c9a10c" filter={`url(#${id}grain)`}/>
@@ -58,9 +58,34 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
   const slider = useRef<HTMLDivElement>(null);
   const sliderHandle = useRef<HTMLButtonElement>(null);
   const [entering, setEntering] = useState(false);
+  const opening = useRef(0);
+  const foldFrame = useRef(0);
+  const drawOpening = (value: number) => {
+    const d = Math.max(0, Math.min(1, value)) * 48;
+    opening.current = value;
+    const root = walletButton.current;
+    root?.querySelector('[data-wallet-front="body"]')?.setAttribute("d", `M61 ${123+d} Q70 ${130+d} 91 ${133+d} L244 ${159+d} Q269 ${163+d} 268 ${189+d*.5} L268 306 Q268 328 247 325 L80 292 Q59 289 59 267 Z`);
+    root?.querySelector('[data-wallet-front="stitch"]')?.setAttribute("d", `M69 ${139+d} L239 ${169+d} Q257 ${172+d} 257 ${192+d*.5} L257 303 Q258 316 244 313 L82 282 Q69 280 69 266 Z`);
+    root?.querySelector('[data-wallet-front="highlight"]')?.setAttribute("d", `M72 ${143+d} L239 ${173+d} M81 280 L240 311`);
+  };
+  useEffect(() => {
+    const from = opening.current, to = open ? 1 : 0;
+    const start = performance.now();
+    cancelAnimationFrame(foldFrame.current);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { drawOpening(to); return; }
+    const tick = (now: number) => {
+      const p = Math.min(1, (now-start)/420);
+      drawOpening(from+(to-from)*(1-Math.pow(1-p,3)));
+      if (p<1) foldFrame.current=requestAnimationFrame(tick);
+    };
+    foldFrame.current=requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(foldFrame.current);
+  }, [open]);
   const gesture = useRef({ active: false, start: 0, progress: 0 });
   const setProgress = (value: number) => {
     gesture.current.progress = Math.max(0, Math.min(1, value));
+    cancelAnimationFrame(foldFrame.current);
+    drawOpening(Math.max(0, (gesture.current.progress - .45) / .55));
     walletButton.current?.style.setProperty("--pull", String(Math.max(0, (gesture.current.progress - .45) / .55)));
     slider.current?.style.setProperty("--slide", String(gesture.current.progress));
   };
@@ -122,6 +147,7 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
   </main>;
 }
 export default WelcomeScreen;
+
 
 
 
