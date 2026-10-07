@@ -17,6 +17,15 @@ const bankThemes = [
   { names: ["sella"], colors: ["#07306a", "#337ac2", "#041d43"], ink: "#ffffff" },
   { names: ["credit agricole", "crédit agricole"], colors: ["#006b61", "#299689", "#004139"], ink: "#ffffff" },
   { names: ["zero"], colors: ["#171713", "#393524", "#0b0b0b"], ink: "#fff8dc" },
+  { names: ["bpm", "banco popolare"], colors: ["#042f5f", "#297b96", "#021e3e"], ink: "#ffffff" },
+  { names: ["mps", "montepaschi", "monte dei paschi"], colors: ["#781d32", "#b5455c", "#4c1221"], ink: "#ffffff" },
+  { names: ["bnl", "banca nazionale del lavoro"], colors: ["#006b52", "#249b78", "#004132"], ink: "#ffffff" },
+  { names: ["mediolanum"], colors: ["#202967", "#1e96d7", "#141a46"], ink: "#ffffff" },
+  { names: ["credem", "credito emiliano"], colors: ["#00633f", "#3b9564", "#003f29"], ink: "#ffffff" },
+  { names: ["widiba"], colors: ["#681b75", "#bd4fb5", "#401249"], ink: "#ffffff" },
+  { names: ["illimity"], colors: ["#a03039", "#ed715d", "#6d1c2c"], ink: "#ffffff" },
+  { names: ["deutsche bank", "deutschebank"], colors: ["#0018a8", "#2765cf", "#001268"], ink: "#ffffff" },
+  { names: ["ifis"], colors: ["#123a74", "#4bb0fa", "#0a254d"], ink: "#ffffff" },
 ];
 
 const fallbackColors = [

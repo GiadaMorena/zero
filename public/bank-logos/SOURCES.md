@@ -25,3 +25,17 @@ Original assets retrieved 2026-10-04. Logos identify the bank of a user-entered 
 - Sella: https://commons.wikimedia.org/wiki/File:Banca_Sella_Logo.svg; asset https://upload.wikimedia.org/wikipedia/commons/a/a4/Banca_Sella_Logo.svg
 - BancoPosta: https://seeklogo.com/vector-logo/16109/bancoposta; asset https://seeklogo.com/images/B/BancoPosta-logo-E3FC7D4E7A-seeklogo.com.gif
 Monochrome white rendering on dark cards for contrast; sources remain available locally.
+
+## Additional identities (2026-10-07)
+- Banco BPM: https://www.bancobpm.it/media/2022/05/logoBancoBPM.svg
+- MPS: https://www.mps.it/includes/v2021/img/logo-mps-white.png
+- BNL: https://bnl.it/it/persone/public/assets/images/logo_dark_bg.svg
+- Mediolanum: https://www.bancamediolanum.it/static-assets/images/elementi/menu/2022/07/26/logo-bancamediolanum-positivo.svg
+- Credem: https://www.credem.it/content/dam/credem/immagini/loghi/Credem%20Banca_CMYK.svg
+- Widiba: https://www.widiba.it/sf-images/default-source/theme/logo.svg (UTF-8 declaration corrected)
+- illimity: https://illimity.com/assets/img/logo-illimity.png
+- Deutsche Bank: https://www.db.com/application/project/images/logos/identifier_RETINA.png (official wordmark)
+- Banca Ifis: https://www.bancaifis.it/app/uploads/2026/01/BANCAIFIS_Logo_Footer_Blu.svg (bottom empty viewBox space removed)
+
+/test-banche is an isolated, read-only fictional profile containing one card per supported brand. It uses the same BankCardDetails and cardAppearance as the app and does not create an authentication identity or write into a user's account.
+SVGs without intrinsic dimensions (UniCredit, PostePay, Mediolanum, Ifis) now explicitly declare width/height to prevent zero-size flex rendering. Credem retains its original left square emblem with native wordmark text beside it.

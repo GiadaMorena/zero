@@ -14,5 +14,14 @@ export const bankBrands = [
   { match: /\bhype\b/, label: "HYPE", file: "hype.svg", compact: true },
   { match: /\bsella\b/, label: "Banca Sella", file: "sella.svg", white: true },
   { match: /\bcredit agricole\b/, label: "Crédit Agricole", file: "creditagricole.png", white: true },
+  { match: /\b(bpm|banco popolare)\b/, label: "Banco BPM", file: "bpm.svg", white: true },
+  { match: /\b(mps|montepaschi|monte dei paschi)\b/, label: "Monte dei Paschi di Siena", file: "mps.png" },
+  { match: /\b(bnl|banca nazionale del lavoro)\b/, label: "BNL", file: "bnl.svg" },
+  { match: /\bmediolanum\b/, label: "Banca Mediolanum", file: "mediolanum.svg", white: true },
+  { match: /\b(credem|credito emiliano)\b/, label: "Credem", file: "credem.svg", compact: true },
+  { match: /\bwidiba\b/, label: "Widiba", file: "widiba.svg", white: true },
+  { match: /\billimity\b/, label: "illimity", file: "illimity.png", white: true },
+  { match: /\b(deutsche bank|deutschebank)\b/, label: "Deutsche Bank", file: "deutsche.png", white: true },
+  { match: /\bifis\b/, label: "Banca Ifis", file: "ifis.svg", white: true },
 ] as const;
 export function getBankBrand(name: string) { const normalized = normalizeBankName(name); return bankBrands.find(brand => brand.match.test(normalized)); }
