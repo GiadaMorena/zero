@@ -31,3 +31,5 @@
 .walletSvg{rotate:none;translate:none}
 .walletButton .walletFront,.walletButton .walletBack,.walletButton .receiptLight,.walletButton .receiptDark,.walletButton .clasp{transform:none!important}
 .slideTrack[aria-busy="true"] .slideLabel{opacity:1;padding-left:0;padding-right:48px}
+.dragGrip{display:flex;align-items:center;justify-content:center;gap:5px}
+.dragGrip span{width:3px;height:16px;border-radius:999px;background:#151511;opacity:.8}

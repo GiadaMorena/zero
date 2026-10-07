@@ -139,7 +139,7 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
             onPointerMove={e => { if (!gesture.current.active) return; const travel = (slider.current?.clientWidth ?? 300) - e.currentTarget.offsetWidth - 16; setProgress((e.clientX - gesture.current.start) / Math.max(1, travel)); if (gesture.current.progress >= .98) finishGesture(); }}
             onPointerUp={e => { finishGesture(); if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }}
             onPointerCancel={() => finishGesture(true)} onLostPointerCapture={() => finishGesture(true)}
-            onClick={e => { if (e.detail === 0) enter(); }} onKeyDown={e => { if (e.key === "ArrowRight") { e.preventDefault(); enter(); } }}>→</button>
+            onClick={e => { if (e.detail === 0) enter(); }} onKeyDown={e => { if (e.key === "ArrowRight") { e.preventDefault(); enter(); } }}><span className={styles.dragGrip} aria-hidden="true"><span/><span/></span></button>
         </div>
         <p>Non hai ancora un account? <button type="button" className={styles.login} disabled={entering} onClick={onRegister ?? onStart}>Crea un account</button></p>
       </footer>
@@ -147,6 +147,7 @@ export function WelcomeScreen({ onLogin, onRegister, onStart }: WelcomeScreenPro
   </main>;
 }
 export default WelcomeScreen;
+
 
 
 
