@@ -48,7 +48,7 @@ export function WalletCarousel({ onCardSelect, onAddCardClick }: WalletCarouselP
           if (!selected && !previous && !next) return null;
           return (
             <button key={card.id} onClick={() => selectCard(index)} aria-label={`Seleziona carta ${card.bankName}, ${card.number}`} aria-pressed={selected}
-              className={`absolute top-1 flex h-[176px] w-[280px] flex-col justify-between overflow-hidden rounded-[22px] p-5 text-left shadow-xl transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FDC909] ${selected ? "left-1/2 z-20 -translate-x-1/2" : previous ? "left-[calc(50%-205px)] z-10 scale-90 opacity-80" : "left-[calc(50%-75px)] z-10 scale-90 opacity-80"}`}
+              className={`zero-wallet-card absolute top-1 flex h-[176px] w-[280px] flex-col justify-between overflow-hidden rounded-[22px] p-5 text-left shadow-xl transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FDC909] ${selected ? "left-1/2 z-20 -translate-x-1/2" : previous ? "left-[calc(50%-205px)] z-10 scale-90 opacity-80" : "left-[calc(50%-75px)] z-10 scale-90 opacity-80"}`}
               style={getCardAppearance(card.bankName)}>
               <BankCardDetails bankName={card.bankName} number={card.number} expiry={card.expiry} holder={card.name} />
             </button>
@@ -61,3 +61,4 @@ export function WalletCarousel({ onCardSelect, onAddCardClick }: WalletCarouselP
     </div>
   );
 }
+

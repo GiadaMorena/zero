@@ -22,6 +22,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { WalletCarousel } from "./WalletCarousel";
+import { AnimatedMoney } from "./AnimatedMoney";
 import { HomeTrendChart } from "./HomeTrendChart";
 import { useApp } from "@/context/AppContext";
 import { ReceiptScanModal } from "./ReceiptScanModal";
@@ -107,7 +108,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
               <Info className="h-3 w-3 text-[#A7A7A7]" />
             </div>
             <div className="text-2xl font-black text-[#0B0B0B] tracking-tight">
-              {money(balanceView === "total" ? totalCardsBalance : (activeCard?.balance ?? 0))}
+              <AnimatedMoney value={balanceView === "total" ? totalCardsBalance : (activeCard?.balance ?? 0)} />
             </div>
           </div>
 
