@@ -74,6 +74,7 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(initialError);
+  const [notice, setNotice] = useState("");
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -112,6 +113,7 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
 
   const switchView = (to: AuthView) => {
     setError("");
+    setNotice("");
     setIsTransitioning(true);
     setTimeout(() => {
       setView(to);
@@ -207,7 +209,7 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
         password: cleanPassword,
         options: {
           data: { name: cleanName },
-          emailRedirectTo: undefined,
+          emailRedirectTo: window.location.origin + "/",
         },
       });
       if (authError) {
@@ -221,6 +223,12 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
         signUpData.user.identities.length === 0
       ) {
         setError("Questa email è già registrata. Vai su Accedi per entrare.");
+        return;
+      }
+      if (!signUpData.session) {
+        setNotice("Controlla la posta: apri il link di conferma per completare l’iscrizione. Se non trovi la mail, controlla anche Spam.");
+        setRegPassword("");
+        setRegConfirm("");
         return;
       }
       onAuth({ name: cleanName, email: cleanEmail });
@@ -251,6 +259,7 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
         onChange={(v) => { setError(""); setLoginPassword(v); }}
       />
 
+      {notice && <p role="status" className="text-sm text-[#0B0B0B] bg-[#FDC909]/20 p-4 rounded-xl">{notice}</p>}
       {error && (
         <p className="text-xs font-bold text-[#0B0B0B] bg-[#FDC909] px-3 py-1.5 rounded-xl text-center animate-in fade-in">
           {error}
@@ -321,6 +330,7 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
         onChange={(v) => { setError(""); setRegConfirm(v); }}
       />
 
+      {notice && <p role="status" className="text-sm text-[#0B0B0B] bg-[#FDC909]/20 p-4 rounded-xl">{notice}</p>}
       {error && (
         <p className="text-xs font-bold text-[#0B0B0B] bg-[#FDC909] px-3 py-1.5 rounded-xl text-center animate-in fade-in">
           {error}
@@ -474,3 +484,4 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
     </div>
   );
 }
+
