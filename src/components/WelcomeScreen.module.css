@@ -27,11 +27,13 @@
 .slideHandle{position:absolute;left:8px;top:8px;width:48px;height:48px;border:0;border-radius:50%;background:#fbd321;color:#151511;font-size:25px;display:grid;place-items:center;touch-action:none;user-select:none;cursor:grab;left:calc(8px + var(--slide)*(100% - 64px));transition:left .45s cubic-bezier(.22,1,.36,1)}
 .slideTrack[data-dragging] .slideHandle{transition:none;cursor:grabbing}
 @media(prefers-reduced-motion:reduce){.slideHandle{transition:none}.walletFront:not(.frontOpen),.walletBack:not(.backOpen),.receiptLight:not(.receiptRaised),.receiptDark:not(.receiptRaised){transform:none}}
-/* Keep the leather joined at its hinge throughout the opening. */
-.walletFront:not(.frontOpen){transform:rotate(calc(var(--pull)*-6deg)) scaleX(calc(1 - var(--pull)*.08))}
-.walletBack:not(.backOpen){transform:rotate(calc(var(--pull)*2deg))}
-.clasp:not(.claspOpen){transform:translate(0,calc(var(--pull)*-5px)) rotate(calc(var(--pull)*-18deg))}
-.receiptLight:not(.receiptRaised){transform:translateY(calc(var(--pull)*-12px)) rotate(calc(var(--pull)*-2deg))}
-.receiptDark:not(.receiptRaised){transform:translateY(calc(var(--pull)*-16px)) rotate(calc(var(--pull)*2deg))}
+/* One fixed fold: the front pivots at x=268; the body never moves. */
+.walletButton{--hinge:var(--pull,0)}
+.walletButton[aria-expanded="true"]{--hinge:1}
+.walletSvg{rotate:none;translate:none}
+.walletButton .walletFront{transform-box:view-box;transform-origin:268px 245px;transform:scaleX(calc(1 - var(--hinge)*.65));transition:transform .42s cubic-bezier(.22,1,.36,1)}
+.walletButton .walletBack,.walletButton .receiptLight,.walletButton .receiptDark{transform:none}
+.walletButton .clasp{transform-box:view-box;transform-origin:311px 230px;transform:scaleX(calc(1 - var(--hinge)*.7));transition:transform .42s cubic-bezier(.22,1,.36,1)}
+.walletButton[data-dragging] .walletFront,.walletButton[data-dragging] .clasp{transition:none}
 .slideTrack[aria-busy="true"] .slideLabel{opacity:1;padding-left:0;padding-right:48px}
-@media(prefers-reduced-motion:reduce){.walletFront:not(.frontOpen),.walletBack:not(.backOpen),.clasp:not(.claspOpen),.receiptLight:not(.receiptRaised),.receiptDark:not(.receiptRaised){transform:none}}
+@media(prefers-reduced-motion:reduce){.walletButton .walletFront,.walletButton .clasp{transform:none;transition:none}}
