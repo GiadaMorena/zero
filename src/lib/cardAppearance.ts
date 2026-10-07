@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { normalizeBankName } from "./bankBrands";
 
 // Illustrations inspired by each bank's visual identity; no payment network is inferred.
 const bankThemes = [
@@ -7,8 +8,8 @@ const bankThemes = [
   { names: ["unicredit", "uni credit"], colors: ["#a40b22", "#ea2441", "#630718"], ink: "#ffffff" },
   { names: ["fineco"], colors: ["#082b68", "#2459b2", "#061a42"], ink: "#ffffff" },
   { names: ["allianz"], colors: ["#003781", "#1464a5", "#002455"], ink: "#ffffff" },
-  { names: ["n26"], colors: ["#a5d9d0", "#d7ece5", "#70b6ac"], ink: "#143d38" },
-  { names: ["postepay", "poste", "bancoposta"], colors: ["#ffe25c", "#ffc928", "#e9b51c"], ink: "#133463" },
+  { names: ["n26", "n 26"], colors: ["#a5d9d0", "#d7ece5", "#70b6ac"], ink: "#143d38" },
+  { names: ["postepay", "poste pay", "poste", "bancoposta", "banco posta"], colors: ["#ffe25c", "#ffc928", "#e9b51c"], ink: "#133463" },
   { names: ["ing", "conto arancio"], colors: ["#ec6506", "#ff9b36", "#ba4400"], ink: "#ffffff" },
   { names: ["bper"], colors: ["#005c51", "#168778", "#003d38"], ink: "#ffffff" },
   { names: ["bbva"], colors: ["#043b7a", "#147dbe", "#052655"], ink: "#ffffff" },
@@ -26,7 +27,7 @@ const fallbackColors = [
 ];
 
 export function getCardAppearance(bankName: string): CSSProperties {
-  const normalized = bankName.trim().toLocaleLowerCase("it-IT");
+  const normalized = normalizeBankName(bankName);
   const theme = bankThemes.find(({ names }) => names.some((name) =>
     name === "ing" || name === "isp"
       ? normalized.split(/[^\p{L}\p{N}]+/u).includes(name)

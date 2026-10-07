@@ -12,3 +12,16 @@ Original assets retrieved 2026-10-04. Logos identify the bank of a user-entered 
   Source: https://commons.wikimedia.org/wiki/File:Allianz_logo.svg (author Allianz)
   Asset: https://upload.wikimedia.org/wikipedia/commons/6/6e/Allianz_logo.svg
 - Wordmark variants: background plates removed and viewBox fitted to the original lettering. Original paths and brand colors preserved.
+
+## Added bank identities
+- UniCredit: https://www.unicredit.it/etc/designs/ucpublic/it/img/UC-logo-white.svg
+- N26: https://n26.com/logo-112x112.png
+- ING: https://www.ing.it/includes/v2025/img/logo-primary-large.svg
+- BPER: https://www.bper.it/o/bper-2026-theme/images/BPER_Logo_Verde_SITOCOMM.svg (viewBox tightened around lettering)
+- BBVA: https://www.bbva.com/wp-content/themes/coronita-bbvacom/assets/images/logos/bbva-logo-900x269.png
+- HYPE: https://www.datocms-assets.com/81014/1773674622-logo-hype-positive.svg (symbol retained; parent-company tagline excluded)
+- Crédit Agricole: https://www.credit-agricole.it/images/logo.png
+- PostePay: https://commons.wikimedia.org/wiki/File:Logo_Postepay.svg; asset https://upload.wikimedia.org/wikipedia/commons/2/22/Logo_Postepay.svg
+- Sella: https://commons.wikimedia.org/wiki/File:Banca_Sella_Logo.svg; asset https://upload.wikimedia.org/wikipedia/commons/a/a4/Banca_Sella_Logo.svg
+- BancoPosta: https://seeklogo.com/vector-logo/16109/bancoposta; asset https://seeklogo.com/images/B/BancoPosta-logo-E3FC7D4E7A-seeklogo.com.gif
+Monochrome white rendering on dark cards for contrast; sources remain available locally.

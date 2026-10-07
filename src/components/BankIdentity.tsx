@@ -1,22 +1,16 @@
 import Image from "next/image";
-
+import { getBankBrand } from "@/lib/bankBrands";
 export function BankIdentity({ bankName }: { bankName: string }) {
-  const normalized = bankName.trim().toLocaleLowerCase("it-IT").replace(/[^\p{L}\p{N}]+/gu, " ");
-  const intesa = /intesa|sanpaolo|\bisp\b/.test(normalized);
-  const revolut = normalized.includes("revolut");
-  const fineco = /\bfineco(?:bank)?\b/.test(normalized);
-  const allianz = /\ballianz\b/.test(normalized);
-  if (!intesa && !revolut && !fineco && !allianz) return <span className="block max-w-[190px] truncate text-sm font-extrabold tracking-tight">{bankName}</span>;
-  const src = intesa ? "/bank-logos/intesa-sanpaolo.png" : fineco ? "/bank-logos/fineco-wordmark.svg" : allianz ? "/bank-logos/allianz-wordmark.svg" : "/bank-logos/revolut.svg";
-  const label = intesa ? "Intesa Sanpaolo" : fineco ? "Fineco" : allianz ? "Allianz" : "Revolut";
-
-  return (
-    <div className="min-w-0 h-7 flex items-center">
-      <div className={`inline-flex h-7 items-center ${intesa ? "rounded-md bg-white px-2" : ""}`}>
-        <Image src={src}
-          alt={label} width={allianz ? 92 : intesa ? 146 : 92} height={22}
-          unoptimized className="max-h-[22px] w-auto max-w-[146px] object-contain" />
-      </div>
+  const brand = getBankBrand(bankName);
+  if (!brand) return <span className="block max-w-[190px] truncate text-sm font-extrabold tracking-tight">{bankName}</span>;
+  const compact = "compact" in brand && brand.compact;
+  if ("postalCrop" in brand) return <span className="relative block h-6 w-[112px] overflow-hidden" style={{ mixBlendMode: "multiply" }}><Image src={`/bank-logos/${brand.file}`} alt={brand.label} width={224} height={224} unoptimized style={{ position: "absolute", width: 224, height: 224, maxWidth: "none", left: -56, top: -92 }} /></span>;
+  return <div className="min-w-0 h-7 flex items-center gap-2">
+    <div className={`inline-flex h-7 items-center ${"plate" in brand && brand.plate ? "rounded-md bg-white px-2" : ""}`}>
+      <Image src={`/bank-logos/${brand.file}`} alt={brand.label} width={compact ? 24 : 112} height={24} unoptimized
+        style={{ filter: "white" in brand && brand.white ? "brightness(0) invert(1)" : undefined, mixBlendMode: brand.label === "N26" ? "multiply" : undefined }}
+        className={`max-h-[24px] w-auto ${compact ? "max-w-[24px]" : "max-w-[112px]"} object-contain`} />
     </div>
-  );
+    {compact && <span className="text-sm font-bold">{brand.label}</span>}
+  </div>;
 }
