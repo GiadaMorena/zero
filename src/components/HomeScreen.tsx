@@ -66,7 +66,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
       <div className="flex items-center justify-between pt-1 px-1">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[#0B0B0B] flex items-center gap-2">
-            {profile.name ? `Ciao ${profile.name.split(" ")[0]}` : "Benvenuto"} <span className="inline-block text-xl">👋</span>
+            {profile.name ? `Ciao ${profile.name.split(" ")[0]}` : "Ciao!"} <span className="inline-block text-xl">👋</span>
           </h1>
           <p className="text-xs text-[#A7A7A7] font-medium mt-0.5">
             Un passo alla volta, grandi obiettivi.

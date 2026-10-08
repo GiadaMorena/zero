@@ -382,7 +382,7 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
       />
       <div className="text-center">
         <h1 className="text-2xl font-black tracking-tight text-[#0B0B0B] leading-tight">
-          {view === "login" ? "Bentornata." : "Creiamo il tuo ZERO."}
+          {view === "login" ? "Ciao, di nuovo." : "Creiamo il tuo ZERO."}
         </h1>
         <p className="text-xs text-[#A7A7A7] font-semibold mt-1">
           {view === "login"

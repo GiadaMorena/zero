@@ -108,7 +108,7 @@ export function PinScreen({
       case "lock":
       default:
         return {
-          title: userName ? `Bentornato, ${userName.split(" ")[0]}.` : "Bentornato.",
+          title: userName ? `Ciao, ${userName.split(" ")[0]}.` : "Ciao!",
           subtitle: "Inserisci il tuo codice per continuare.",
         };
     }
