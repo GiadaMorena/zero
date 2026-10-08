@@ -21,6 +21,7 @@ import { DesktopApp } from "@/components/desktop/DesktopApp";
 import { AppProvider } from "@/context/AppContext";
 import { supabase } from "@/lib/supabase";
 import { OnboardingProfile } from "@/components/OnboardingProfile";
+import { nextLoginStep, sameLoginAccount } from "@/lib/pinFlow";
 
 export type FlowStep =
   | "welcome"
@@ -59,9 +60,12 @@ export default function Home() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalType, setAddModalType] = useState<"expense" | "income">("expense");
   const [setupError, setSetupError] = useState("");
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isResettingPin, setIsResettingPin] = useState(false);
 
   // 1. Initial Load — check Supabase session first, then localStorage PIN data
   useEffect(() => {
+    let cancelled = false;
     const init = async () => {
       try {
         const params = new URLSearchParams(window.location.hash.slice(1));
@@ -76,17 +80,19 @@ export default function Home() {
         localStorage.removeItem("zero_auth_state_v5");
 
         const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
         const saved = localStorage.getItem(STORAGE_KEY);
         const parsed: AuthState | null = saved ? JSON.parse(saved) : null;
 
         if (session?.user) {
-          const sameAccount = parsed?.userEmail === session.user.email;
+          const sameAccount = sameLoginAccount(parsed?.userEmail, session.user.email);
           // User is authenticated with Supabase - fetch fresh profile name
           const { data: prof } = await supabase
             .from("profiles")
             .select("name")
             .eq("id", session.user.id)
             .single();
+          if (cancelled) return;
 
           const name =
             prof?.name ||
@@ -107,30 +113,22 @@ export default function Home() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
           } catch { /* ignore */ }
 
-          const metadata = session.user.user_metadata;
-          const completed = metadata.zero_onboarding_completed || (sameAccount && parsed?.hasPin && session.user.app_metadata?.provider !== "google");
-          if (!completed && !metadata.zero_profile_completed) {
-            setFlowStep("profile_setup");
-          } else if (!completed) {
-            setFlowStep("add_card");
-          } else if (updatedState.hasPin && updatedState.pinCode) {
-            setFlowStep("lock");
-          } else {
-            setFlowStep("create_pin");
-          }
-        } else if (parsed?.isRegistered) {
-          // Has local data but no Supabase session — ask to log in again
-          setAuthState(parsed);
-          setFlowStep("login");
+          setFlowStep(nextLoginStep(session.user.user_metadata, updatedState));
         } else {
-          setFlowStep("welcome");
+          // Restore device PIN settings even after an explicit sign-out.
+          if (parsed) setAuthState(parsed);
+          setFlowStep(parsed?.isRegistered ? "login" : "welcome");
         }
       } catch (e) {
+        if (cancelled) return;
         console.error("Failed to initialize auth:", e);
         setFlowStep("welcome");
+      } finally {
+        if (!cancelled) setIsInitializing(false);
       }
     };
     init();
+    return () => { cancelled = true; };
   }, []);
 
   const saveAuthState = (newState: AuthState) => {
@@ -145,18 +143,18 @@ export default function Home() {
   // 2. Background Re-Lock Handler
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && authState.isRegistered && authState.hasPin) {
+      if (document.hidden && flowStep === "app" && authState.isRegistered && authState.hasPin) {
         setFlowStep("lock");
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [authState.isRegistered, authState.hasPin]);
+  }, [flowStep, authState.isRegistered, authState.hasPin]);
 
   // Registration success → add_card step
   const handleRegisterSuccess = (data?: { name: string; email: string }) => {
     const updated: AuthState = {
-      ...authState,
+      ...DEFAULT_AUTH_STATE,
       userName: data?.name || "",
       userEmail: data?.email || "",
     };
@@ -164,27 +162,21 @@ export default function Home() {
     setFlowStep("profile_setup");
   };
 
-  // Login success → app (no double prompt) or create_pin (if never set)
+  // Login success → verify the saved PIN once; creation is only for a new PIN.
   const handleLoginSuccess = async (data?: { name: string; email: string }) => {
     const { data: { user } } = await supabase.auth.getUser();
-    const sameAccount = authState.userEmail === data?.email;
+    const sameAccount = sameLoginAccount(authState.userEmail, user?.email || data?.email);
     const updated: AuthState = {
       ...authState,
       userName: data?.name || authState.userName,
-      userEmail: data?.email || authState.userEmail,
+      userEmail: user?.email || data?.email || authState.userEmail,
       isRegistered: true,
       hasPin: sameAccount && authState.hasPin,
       pinCode: sameAccount ? authState.pinCode : "",
     };
     saveAuthState(updated);
     const metadata = user?.user_metadata ?? {};
-    if (!metadata.zero_onboarding_completed && (!updated.hasPin || user?.app_metadata?.provider === "google")) {
-      setFlowStep(metadata.zero_profile_completed ? "add_card" : "profile_setup");
-    } else if (updated.hasPin && updated.pinCode) {
-      setFlowStep("app");
-    } else {
-      setFlowStep("create_pin");
-    }
+    setFlowStep(nextLoginStep(metadata, updated, isResettingPin));
   };
 
   // Keep the new PIN temporary until the second entry confirms it.
@@ -202,11 +194,12 @@ export default function Home() {
       pinCode: tempPin,
     };
     saveAuthState(updated);
+    setIsResettingPin(false);
     setFlowStep("app");
   };
 
   const handleUnlockSuccess = () => setFlowStep("app");
-  const handleForgotPin = () => setFlowStep("login");
+  const handleForgotPin = () => { setIsResettingPin(true); setFlowStep("login"); };
   const finishCard = async () => {
     setSetupError("");
     const { error } = await supabase.auth.updateUser({ data: { zero_onboarding_completed: true } });
@@ -215,10 +208,11 @@ export default function Home() {
   };
   const profileSetup = <OnboardingProfile name={authState.userName} onComplete={name => { saveAuthState({ ...authState, userName: name }); setFlowStep("add_card"); }} />;
 
-  // Logout → sign out from Supabase + full local reset
+  // Sign out while retaining this account's device PIN for its next login.
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    saveAuthState(DEFAULT_AUTH_STATE);
+    saveAuthState({ ...authState, isRegistered: false });
+    setIsResettingPin(false);
     setFlowStep("welcome");
   };
 
@@ -387,6 +381,8 @@ export default function Home() {
   };
 
   const isAppUnlocked = flowStep === "app";
+
+  if (isInitializing) return <main role="status" className="flex min-h-dvh items-center justify-center bg-[#F7F7F5] text-sm font-semibold text-[#777]">Apertura di ZERO…</main>;
 
   return (
     <AppProvider>

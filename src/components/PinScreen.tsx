@@ -75,7 +75,7 @@ export function PinScreen({
         }, 800);
       }
     } else if (currentMode === "lock") {
-      if (code === expectedPin || expectedPin === "" || code === "123456") {
+      if (/^\d{6}$/.test(expectedPin) && code === expectedPin) {
         if (onSuccess) onSuccess();
       } else {
         triggerError("Codice non corretto");
