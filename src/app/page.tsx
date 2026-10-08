@@ -22,6 +22,7 @@ import { AppProvider } from "@/context/AppContext";
 import { supabase } from "@/lib/supabase";
 import { OnboardingProfile } from "@/components/OnboardingProfile";
 import { nextLoginStep, sameLoginAccount } from "@/lib/pinFlow";
+import { consumeUpdateResume } from "@/lib/updateResume";
 
 export type FlowStep =
   | "welcome"
@@ -113,7 +114,12 @@ export default function Home() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
           } catch { /* ignore */ }
 
-          setFlowStep(nextLoginStep(session.user.user_metadata, updatedState));
+          const nextStep = nextLoginStep(session.user.user_metadata, updatedState);
+          let resumeAfterUpdate = false;
+          try {
+            resumeAfterUpdate = consumeUpdateResume(window.sessionStorage, email, process.env.NEXT_PUBLIC_APP_VERSION || "development", query.get("zero_update"));
+          } catch { /* A normal PIN check is used when session storage is unavailable. */ }
+          setFlowStep(nextStep === "lock" && resumeAfterUpdate ? "app" : nextStep);
         } else {
           // Restore device PIN settings even after an explicit sign-out.
           if (parsed) setAuthState(parsed);
@@ -382,7 +388,7 @@ export default function Home() {
 
   const isAppUnlocked = flowStep === "app";
 
-  if (isInitializing) return <main role="status" className="flex min-h-dvh items-center justify-center bg-[#F7F7F5] text-sm font-semibold text-[#777]">Apertura di ZERO…</main>;
+  if (isInitializing) return <main role="status" data-app-update-block="true" className="flex min-h-dvh items-center justify-center bg-[#F7F7F5] text-sm font-semibold text-[#777]">Apertura di ZERO…</main>;
 
   return (
     <AppProvider>
@@ -390,7 +396,7 @@ export default function Home() {
       {setupError && <p role="alert" className="p-4 text-red-700">{setupError}</p>}
 
       {/* Mobile Experience (< 768px) */}
-      <div className="md:hidden">
+      <div className="md:hidden" data-app-session-unlocked={isAppUnlocked ? "true" : undefined} data-account-email={isAppUnlocked ? authState.userEmail : undefined} data-app-update-block={flowStep !== "app" && flowStep !== "lock" && flowStep !== "welcome" ? "true" : undefined}>
         <main className={`w-full min-h-[100dvh] flex flex-col bg-[#F7F7F5] selection:bg-[#FDC909] ${isAppUnlocked ? "zero-motion" : ""}`}>
           <div className="flex-1 flex flex-col w-full bg-[#F7F7F5]">
             <div
@@ -418,7 +424,7 @@ export default function Home() {
       </div>
 
       {/* Desktop Experience (≥ 768px) */}
-      <div className="hidden md:block">
+      <div className="hidden md:block" data-app-session-unlocked={isAppUnlocked ? "true" : undefined} data-account-email={isAppUnlocked ? authState.userEmail : undefined} data-app-update-block={flowStep !== "app" && flowStep !== "lock" && flowStep !== "welcome" ? "true" : undefined}>
         {renderDesktopScreen()}
       </div>
     </AppProvider>

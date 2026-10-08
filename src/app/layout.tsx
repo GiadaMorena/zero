@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { AutoUpdater } from "@/components/AutoUpdater";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -39,10 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" className={plusJakarta.variable}>
-      <body className="font-sans antialiased m-0 p-0 selection:bg-[#FDC909]">
+      <body data-app-version={process.env.NEXT_PUBLIC_APP_VERSION || "development"} className="font-sans antialiased m-0 p-0 selection:bg-[#FDC909]">
         {children}
+        <AutoUpdater />
       </body>
     </html>
   );
 }
-

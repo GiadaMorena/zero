@@ -117,7 +117,7 @@ export function PinScreen({
   const { title, subtitle } = getHeaderInfo();
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#F7F7F5] flex flex-col justify-between items-center px-6 select-none overflow-y-auto">
+    <div data-app-update-block={currentMode !== "lock" || pinDigits.length > 0 ? "true" : undefined} className="fixed inset-0 z-50 bg-[#F7F7F5] flex flex-col justify-between items-center px-6 select-none overflow-y-auto">
       {/* Safe Area Top */}
       <div style={{ height: "env(safe-area-inset-top, 24px)" }} />
 
