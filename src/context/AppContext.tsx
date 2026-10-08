@@ -97,7 +97,7 @@ interface AppContextType {
     note?: string;
     date?: string;
     cardId?: string;
-  }) => void;
+  }) => Promise<{ error?: string }>;
   deleteTransaction: (id: string) => void;
   toggleSubscription: (id: string) => void;
   addSubscription: (data: {
@@ -233,6 +233,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [protections, setProtections] = useState<ProtectionItem[]>([]);
   const [profile, setProfile] = useState<UserProfile>(EMPTY_PROFILE);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // ── Load data from Supabase when user session is available ────────
   useEffect(() => {
@@ -274,6 +275,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.error("Failed to load from Supabase, falling back to localStorage:", e);
         loadFromLocalStorage();
+      } finally {
+        setIsHydrated(true);
       }
     };
 
@@ -293,6 +296,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (e) {
         console.error("Failed to load state from localStorage:", e);
+      } finally {
+        setIsHydrated(true);
       }
     };
 
@@ -304,7 +309,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else {
         loadFromLocalStorage();
       }
-    });
+    }).catch(() => loadFromLocalStorage());
 
     // Listen for auth changes
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -321,6 +326,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Persist to localStorage as cache ──────────────────────────────
   useEffect(() => {
+    // Do not replace the saved draft/account cache with initial empty state.
+    if (!isHydrated) return;
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -329,7 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error("Failed to save state to localStorage:", e);
     }
-  }, [cards, activeCardIndex, transactions, subscriptions, goals, protections, profile]);
+  }, [isHydrated, cards, activeCardIndex, transactions, subscriptions, goals, protections, profile]);
 
   // ── Helper to always get valid user ID from Supabase session ──────
   const getEffectiveUserId = async (): Promise<string | null> => {
@@ -430,6 +437,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }) => {
     const targetCardId = data.cardId || activeCard?.id || "";
     const finalAmount = data.type === "expense" ? -Math.abs(data.amount) : Math.abs(data.amount);
+    const originalBalance = cards.find(card => card.id === targetCardId)?.balance;
+    const appliedBalance = originalBalance === undefined ? undefined : Math.max(0, originalBalance + finalAmount);
     const dateStr =
       data.date ||
       "Oggi, " +
@@ -454,36 +463,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       )
     );
 
-    // Persist to Supabase
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      const { data: inserted } = await supabase.from("transactions").insert({
-        user_id: uid,
-        title: data.title,
-        category: data.category,
-        amount: finalAmount,
-        date: dateStr,
-        card_id: targetCardId || null,
-        type: data.type,
-        note: data.note || null,
-      }).select().single();
-
-      // Replace temp ID with real UUID
-      if (inserted) {
-        setTransactions((prev) =>
-          prev.map((t) => (t.id === tempId ? dbToTransaction(inserted) : t))
-        );
+    const rollback = () => {
+      setTransactions(prev => prev.filter(tx => tx.id !== tempId));
+      if (originalBalance !== undefined && appliedBalance !== undefined) {
+        setCards(prev => prev.map(card => card.id === targetCardId
+          ? { ...card, balance: Math.max(0, originalBalance + card.balance - appliedBalance) } : card));
       }
+    };
+    // Persist to Supabase. A failed insert must not leave a phantom transaction.
+    let persisted = false;
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { data: inserted, error } = await supabase.from("transactions").insert({
+          user_id: uid,
+          title: data.title,
+          category: data.category,
+          amount: finalAmount,
+          date: dateStr,
+          card_id: targetCardId || null,
+          type: data.type,
+          note: data.note || null,
+        }).select().single();
 
-      // Update card balance in DB
-      if (targetCardId) {
-        const card = cards.find((c) => c.id === targetCardId);
-        if (card) {
-          await supabase.from("cards").update({
-            balance: Math.max(0, card.balance + finalAmount),
-          }).eq("id", targetCardId).eq("user_id", uid);
+        if (error || !inserted) {
+          rollback();
+          return { error: "Non è stato possibile salvare. Riprova: i dati inseriti sono ancora qui." };
+        }
+        persisted = true;
+
+        // Replace temp ID with real UUID
+        if (inserted) {
+          setTransactions((prev) =>
+            prev.map((t) => (t.id === tempId ? dbToTransaction(inserted) : t))
+          );
+        }
+
+        // Update card balance in DB
+        if (targetCardId) {
+          const card = cards.find((c) => c.id === targetCardId);
+          if (card) {
+            await supabase.from("cards").update({
+              balance: Math.max(0, card.balance + finalAmount),
+            }).eq("id", targetCardId).eq("user_id", uid);
+          }
         }
       }
+      return {};
+    } catch {
+      // The movement is already saved; do not prompt a duplicate retry if a later balance refresh fails.
+      if (persisted) return {};
+      rollback();
+      return { error: "Connessione non disponibile. Riprova: i dati inseriti sono ancora qui." };
     }
   };
 

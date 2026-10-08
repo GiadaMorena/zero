@@ -1,281 +1,111 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  X,
-  Home,
-  Utensils,
-  Fuel,
-  ShoppingBag,
-  Smile,
-  Heart,
-  RefreshCw,
-  MoreHorizontal,
-  DollarSign,
-  TrendingUp,
-  CreditCard,
-  Briefcase,
-  Gift,
-  Award,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, Home, Utensils, Fuel, ShoppingBag, Smile, Heart, RefreshCw, MoreHorizontal, DollarSign, TrendingUp, CreditCard, Briefcase, Gift, Award, ChevronDown, LoaderCircle } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { parseTransactionAmount, preferredTransactionCard, recentTransactionCategories } from "@/lib/quickTransaction";
 
-interface AddSpesaModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  defaultType?: "expense" | "income";
-}
+const expenseCategories = [
+  { name: "Casa", icon: Home }, { name: "Cibo", icon: Utensils }, { name: "Trasporti", icon: Fuel }, { name: "Shopping", icon: ShoppingBag },
+  { name: "Svago", icon: Smile }, { name: "Salute", icon: Heart }, { name: "Abbonamenti", icon: RefreshCw }, { name: "Altro", icon: MoreHorizontal },
+];
+const incomeCategories = [
+  { name: "Entrata", icon: DollarSign }, { name: "Stipendio", icon: Briefcase }, { name: "Rimborso", icon: TrendingUp },
+  { name: "Regalo", icon: Gift }, { name: "Bonus", icon: Award }, { name: "Altro", icon: MoreHorizontal },
+];
+
+interface AddSpesaModalProps { isOpen: boolean; onClose: () => void; defaultType?: "expense" | "income" }
 
 export function AddSpesaModal({ isOpen, onClose, defaultType = "expense" }: AddSpesaModalProps) {
-  const { addTransaction, cards, activeCard } = useApp();
-  const [type, setType] = useState<"expense" | "income">(defaultType);
-  const [title, setTitle] = useState<string>("");
-  const [amount, setAmount] = useState<string>("0");
-  const [selectedCategory, setSelectedCategory] = useState<string>("Cibo");
-  const [selectedCardId, setSelectedCardId] = useState<string>(activeCard?.id || (cards[0]?.id ?? ""));
-  const [note, setNote] = useState<string>("");
-  const [date, setDate] = useState<string>("Oggi");
-
-  useEffect(() => {
-    if (isOpen) {
-      setType(defaultType);
-      setTitle("");
-      setAmount("0");
-      setSelectedCategory(defaultType === "income" ? "Entrata" : "Cibo");
-      setNote("");
-      if (activeCard?.id) {
-        setSelectedCardId(activeCard.id);
-      } else if (cards.length > 0) {
-        setSelectedCardId(cards[0].id);
-      }
-    }
-  }, [isOpen, defaultType, activeCard?.id, cards]);
-
-  if (!isOpen) return null;
-
-  const expenseCategories = [
-    { name: "Casa", icon: Home },
-    { name: "Cibo", icon: Utensils },
-    { name: "Trasporti", icon: Fuel },
-    { name: "Shopping", icon: ShoppingBag },
-    { name: "Svago", icon: Smile },
-    { name: "Salute", icon: Heart },
-    { name: "Abbonamenti", icon: RefreshCw },
-    { name: "Altro", icon: MoreHorizontal },
-  ];
-
-  const incomeCategories = [
-    { name: "Entrata", icon: DollarSign },
-    { name: "Stipendio", icon: Briefcase },
-    { name: "Rimborso", icon: TrendingUp },
-    { name: "Regalo", icon: Gift },
-    { name: "Bonus", icon: Award },
-    { name: "Altro", icon: MoreHorizontal },
-  ];
-
-  const currentCategories = type === "expense" ? expenseCategories : incomeCategories;
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    const numAmount = parseFloat(amount.replace(",", ".")) || 0;
-    if (numAmount > 0) {
-      addTransaction({
-        title: title.trim() || (type === "expense" ? "Nuova Spesa" : "Nuova Entrata"),
-        category: selectedCategory,
-        amount: numAmount,
-        type,
-        note,
-        date: date === "Oggi" ? "Oggi, " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) : date,
-        cardId: selectedCardId,
-      });
-    }
-    setTitle("");
-    setAmount("0");
-    onClose();
-  };
-
-  return (
-    <div className="zero-backdrop fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0B0B0B]/60 backdrop-blur-md p-0 sm:p-4 select-none">
-      <div
-        className="zero-panel w-full max-w-md bg-[#F7F7F5] rounded-t-[32px] sm:rounded-[32px] border border-[#A7A7A7]/30 p-6 shadow-2xl animate-in slide-in-from-bottom duration-300 min-h-[75dvh] max-h-[92dvh] overflow-y-auto no-scrollbar flex flex-col justify-between"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 24px) + 2.5rem)" }}
-      >
-        <div>
-          {/* Header */}
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#A7A7A7]/15">
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-full bg-white border border-[#A7A7A7]/30 text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="text-center">
-              <h2 className="text-sm font-black text-[#0B0B0B] tracking-tight">
-                {type === "expense" ? "Aggiungi spesa" : "Nuova entrata"}
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-3.5 py-1.5 rounded-full bg-[#0B0B0B] text-white text-xs font-black hover:bg-black active:scale-95 transition-all shadow-xs cursor-pointer"
-            >
-              Salva
-            </button>
-          </div>
-
-        {/* Type Toggle (Uscita / Entrata) */}
-        <div className="grid grid-cols-2 gap-2 bg-white p-1.5 rounded-2xl mb-4 border border-[#A7A7A7]/20">
-          <button
-            type="button"
-            onClick={() => {
-              setType("expense");
-              setSelectedCategory("Cibo");
-            }}
-            className={`py-2 rounded-xl text-xs font-bold transition-all ${
-              type === "expense"
-                ? "bg-[#0B0B0B] text-white shadow-xs"
-                : "text-[#A7A7A7] hover:text-[#0B0B0B]"
-            }`}
-          >
-            − Uscita / Spesa
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setType("income");
-              setSelectedCategory("Entrata");
-            }}
-            className={`py-2 rounded-xl text-xs font-bold transition-all ${
-              type === "income"
-                ? "bg-[#FDC909] text-[#0B0B0B] font-black shadow-xs"
-                : "text-[#A7A7A7] hover:text-[#0B0B0B]"
-            }`}
-          >
-            + Nuova Entrata
-          </button>
-        </div>
-
-        {/* Amount Input */}
-        <div className="text-center my-3 py-3 rounded-2xl bg-white border border-[#A7A7A7]/30 flex flex-col items-center justify-center">
-          <label className="text-[10px] font-bold text-[#A7A7A7] uppercase tracking-wider mb-1">
-            Importo in Euro (€)
-          </label>
-          <div className="flex items-center justify-center gap-1">
-            <span className="text-2xl font-black text-[#0B0B0B]">
-              {type === "income" ? "+" : "-"}
-            </span>
-            <input
-              type="text"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className="w-40 text-center text-3xl font-black tracking-tight text-[#0B0B0B] focus:outline-none bg-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Title Input */}
-        <div className="mb-4">
-          <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-            Descrizione / Esercente
-          </label>
-          <input
-            type="text"
-            placeholder={type === "expense" ? "Es. Esselunga, Bar, Amazon..." : "Es. Stipendio, Rimborso, Transfer..."}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-bold text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
-          />
-        </div>
-
-        {/* Card Selector */}
-        <div className="mb-4">
-          <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-            Carta / Conto Utilizzato
-          </label>
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            {cards.length === 0 ? (
-              <span className="text-xs text-[#A7A7A7] font-medium py-1">Nessuna carta registrata</span>
-            ) : (
-              cards.map((card) => (
-                <button
-                  key={card.id}
-                  type="button"
-                  onClick={() => setSelectedCardId(card.id)}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 border transition-all ${
-                    selectedCardId === card.id
-                      ? "bg-[#0B0B0B] text-white border-[#0B0B0B]"
-                      : "bg-white text-[#A7A7A7] border-[#A7A7A7]/30"
-                  }`}
-                >
-                  <CreditCard className="h-3.5 w-3.5" />
-                  <span>{card.bankName}</span>
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Category Selection */}
-        <div className="mb-4">
-          <label className="block text-xs font-bold text-[#A7A7A7] mb-2">
-            Categoria
-          </label>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {currentCategories.map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = selectedCategory === cat.name;
-              return (
-                <button
-                  key={cat.name}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.name)}
-                  className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border transition-all ${
-                    isSelected
-                      ? type === "income"
-                        ? "bg-[#FDC909] border-[#FDC909] text-[#0B0B0B] font-black shadow-xs scale-105"
-                        : "bg-[#0B0B0B] border-[#0B0B0B] text-white font-bold shadow-xs scale-105"
-                      : "bg-white border-[#A7A7A7]/30 text-[#A7A7A7] hover:border-[#0B0B0B]"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 mb-1" />
-                  <span className="text-[10px] leading-tight">{cat.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Note Field */}
-        <div className="mb-5">
-          <label className="block text-xs font-bold text-[#A7A7A7] mb-1">
-            Nota (opzionale)
-          </label>
-          <input
-            type="text"
-            placeholder="Aggiungi una nota..."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full p-3 rounded-2xl bg-white border border-[#A7A7A7]/30 text-xs font-medium text-[#0B0B0B] focus:outline-none focus:border-[#FDC909]"
-          />
-        </div>
-
-        </div>
-
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          className={`w-full py-3.5 mt-4 rounded-full font-black text-sm shadow-xl transition-all active:scale-[0.98] cursor-pointer ${
-            type === "income"
-              ? "bg-[#FDC909] text-[#0B0B0B] hover:bg-[#0B0B0B] hover:text-[#FDC909]"
-              : "bg-[#0B0B0B] text-white hover:bg-black"
-          }`}
-        >
-          {type === "expense" ? "Salva Spesa" : "Salva Entrata"}
-        </button>
-      </div>
-    </div>
-  );
+  // A new form mounts on opening; account/card refreshes cannot erase a draft.
+  return isOpen ? <TransactionForm onClose={onClose} defaultType={defaultType} /> : null;
 }
 
+function TransactionForm({ onClose, defaultType }: Omit<AddSpesaModalProps, "isOpen"> & { defaultType: "expense" | "income" }) {
+  const { addTransaction, cards, activeCard, transactions } = useApp();
+  const [type, setType] = useState(defaultType);
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState(() => recentTransactionCategories(transactions, defaultType, (defaultType === "expense" ? expenseCategories : incomeCategories).map(item => item.name))[0] ?? (defaultType === "expense" ? "Cibo" : "Entrata"));
+  const [selectedCardId, setSelectedCardId] = useState(() => preferredTransactionCard(cards, transactions, activeCard?.id));
+  const [note, setNote] = useState("");
+  const [allCategories, setAllCategories] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const saveGuard = useRef(false);
+  const dialogRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !saving) { event.preventDefault(); onClose(); }
+      if (event.key !== "Tab") return;
+      const items = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary") ?? []).filter(item => item.getClientRects().length > 0);
+      const first = items[0], last = items[items.length - 1];
+      if (!first) return;
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [saving, onClose]);
+  const currentCategories = type === "expense" ? expenseCategories : incomeCategories;
+  const recentCategories = recentTransactionCategories(transactions, type, currentCategories.map(item => item.name));
+  const visibleCategories = allCategories || !recentCategories.length ? currentCategories : currentCategories.filter(item => recentCategories.includes(item.name));
+  const cardId = cards.some(card => card.id === selectedCardId) ? selectedCardId : preferredTransactionCard(cards, transactions, activeCard?.id);
+  const numericAmount = parseTransactionAmount(amount);
+
+  const switchType = (nextType: "expense" | "income") => {
+    setType(nextType);
+    const allowed = (nextType === "expense" ? expenseCategories : incomeCategories).map(item => item.name);
+    setCategory(recentTransactionCategories(transactions, nextType, allowed)[0] ?? (nextType === "expense" ? "Cibo" : "Entrata"));
+    setAllCategories(false);
+    setError("");
+  };
+
+  const handleSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (saveGuard.current) return;
+    if (numericAmount === null) { setError("Inserisci un importo maggiore di zero, con al massimo due decimali."); return; }
+    saveGuard.current = true;
+    setSaving(true);
+    setError("");
+    try {
+      const result = await addTransaction({ title: title.trim() || category, category, amount: numericAmount, type, note: note.trim(), cardId });
+      if (result?.error) { setError(result.error); return; }
+      onClose();
+    } catch {
+      setError("Non è stato possibile salvare. Riprova: i dati inseriti sono ancora qui.");
+    } finally { saveGuard.current = false; setSaving(false); }
+  };
+
+  return <div className="zero-backdrop fixed inset-0 z-50 flex items-end justify-center bg-[#0B0B0B]/60 p-0 backdrop-blur-md sm:items-center sm:p-4">
+    <form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="transaction-title" onSubmit={handleSave} className="zero-panel flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[32px] border border-[#A7A7A7]/30 bg-[#F7F7F5] shadow-2xl sm:rounded-[32px]">
+      <header className="flex shrink-0 items-center justify-between px-6 pb-4 pt-5">
+        <h2 id="transaction-title" className="text-lg font-black tracking-tight">{type === "expense" ? "Aggiungi spesa" : "Nuova entrata"}</h2>
+        <button type="button" onClick={onClose} disabled={saving} aria-label="Chiudi" className="rounded-full bg-white p-2.5 disabled:opacity-40"><X className="h-4 w-4" /></button>
+      </header>
+      <fieldset disabled={saving} className="min-h-0 overflow-y-auto px-6 pb-2">
+        <div className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-white p-1">
+          {(["expense", "income"] as const).map(item => <button key={item} type="button" aria-pressed={type === item} onClick={() => switchType(item)} className={`rounded-full py-2.5 text-xs font-bold ${type === item ? "bg-[#0B0B0B] text-white" : "text-[#777]"}`}>{item === "expense" ? "− Spesa" : "+ Entrata"}</button>)}
+        </div>
+        <label htmlFor="transaction-amount" className="block text-center text-xs font-bold text-[#777]">Importo</label>
+        <div className="mb-5 mt-1 flex items-center justify-center gap-2">
+          <input id="transaction-amount" inputMode="decimal" autoComplete="off" autoFocus value={amount} onFocus={event => event.currentTarget.select()} onChange={event => {setAmount(event.target.value); setError("");}} placeholder="0,00" aria-invalid={!!error && numericAmount === null} aria-describedby={error ? "transaction-error" : undefined} className="w-48 min-w-0 bg-transparent py-1 text-center text-5xl font-black tracking-tight outline-none" />
+          <span className="text-3xl font-bold text-[#888]">€</span>
+        </div>
+        <label htmlFor="transaction-description" className="mb-1.5 block text-xs font-bold text-[#777]">{type === "expense" ? "Per cosa?" : "Da dove?"} <span className="font-normal">(facoltativo)</span></label>
+        <input id="transaction-description" value={title} onChange={event => setTitle(event.target.value)} placeholder={type === "expense" ? "Es. Spesa al supermercato" : "Es. Stipendio"} className="mb-5 w-full rounded-2xl border border-black/10 bg-white px-4 py-3.5 text-sm outline-none focus:border-[#FDC909]" />
+        <div className="mb-2 flex items-center justify-between"><p className="text-xs font-bold text-[#777]">{recentCategories.length && !allCategories ? "Categorie recenti" : "Categoria"}</p>{recentCategories.length > 0 && <button type="button" onClick={() => setAllCategories(!allCategories)} className="text-xs font-bold underline underline-offset-2">{allCategories ? "Mostra recenti" : "Tutte le categorie"}</button>}</div>
+        <div className="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {visibleCategories.map(item => {const Icon = item.icon; return <button type="button" key={item.name} aria-pressed={category === item.name} onClick={() => setCategory(item.name)} className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] font-semibold transition-colors ${category === item.name ? "border-[#0B0B0B] bg-[#0B0B0B] text-white" : "border-black/10 bg-white text-[#666]"}`}><Icon className="h-4 w-4" />{item.name}</button>;})}
+        </div>
+        <label htmlFor="transaction-card" className="mb-1.5 block text-xs font-bold text-[#777]">Carta / conto</label>
+        {cards.length ? <div className="relative mb-4"><CreditCard aria-hidden="true" className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-[#777]" /><select id="transaction-card" value={cardId} onChange={event => setSelectedCardId(event.target.value)} className="w-full appearance-none rounded-2xl border border-black/10 bg-white py-3.5 pl-11 pr-9 text-sm font-bold">{cards.map(card => <option key={card.id} value={card.id}>{card.bankName} · {card.number}</option>)}</select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-4 h-4 w-4" /></div> : <p className="mb-4 text-sm text-[#777]">Movimento senza carta associata</p>}
+        <details className="mb-3"><summary className="cursor-pointer py-1 text-xs font-bold text-[#777]">Altri dettagli</summary><label htmlFor="transaction-note" className="mb-1 mt-3 block text-xs font-bold text-[#777]">Nota (facoltativa)</label><textarea id="transaction-note" value={note} onChange={event => setNote(event.target.value)} rows={2} className="w-full resize-none rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-[#FDC909]" /></details>
+      </fieldset>
+      <footer className="shrink-0 border-t border-black/5 px-6 pt-4" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 1.25rem)"}}>
+        {error && <p id="transaction-error" role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
+        <button type="submit" disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FDC909] py-4 text-sm font-black text-[#0B0B0B] transition-transform active:scale-[0.98] disabled:opacity-60">{saving ? <><LoaderCircle className="h-4 w-4 animate-spin" />Salvataggio…</> : `Salva ${type === "expense" ? "spesa" : "entrata"}${numericAmount !== null ? ` · ${numericAmount.toLocaleString("it-IT", {style:"currency",currency:"EUR"})}` : ""}`}</button>
+      </footer>
+    </form>
+  </div>;
+}
