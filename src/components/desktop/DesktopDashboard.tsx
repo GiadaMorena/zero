@@ -22,6 +22,8 @@ import {
 import { useApp } from "@/context/AppContext";
 import { HomeTrendChart } from "../HomeTrendChart";
 import { SubscriptionToggle } from "../AbbonamentiScreen";
+import { MonthlyBudgetCard } from "../MonthlyBudgetCard";
+import { monthlySummary } from "@/lib/monthlyBudget";
 
 interface DesktopDashboardProps {
   onNavigate: (section: string) => void;
@@ -44,8 +46,6 @@ export function DesktopDashboard({
     toggleSubscription,
     totalActiveSubscriptionsCost,
     goals,
-    totalMonthlySpending,
-    totalMonthlyIncome,
   } = useApp();
 
   const money = (val: number) =>
@@ -53,6 +53,9 @@ export function DesktopDashboard({
 
   const nextGoal = goals[0] || null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
+  const monthly = monthlySummary(transactions);
+  const totalMonthlySpending = monthly.spent;
+  const totalMonthlyIncome = monthly.income;
 
   return (
     <div className="p-8 max-w-[1500px] mx-auto w-full flex flex-col gap-6 select-none">
@@ -124,6 +127,8 @@ export function DesktopDashboard({
           <p className="text-[10px] text-[#73736E] font-medium text-center">Registrazione istantanea</p>
         </div>
       </div>
+
+      <div className="w-full max-w-xl"><MonthlyBudgetCard /></div>
 
       {/* ── 2. Wallet Cards Grid ── */}
       <div>

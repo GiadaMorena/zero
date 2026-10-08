@@ -27,6 +27,8 @@ import { HomeTrendChart } from "./HomeTrendChart";
 import { useApp } from "@/context/AppContext";
 import { ReceiptScanModal } from "./ReceiptScanModal";
 import { AltroMenuSheet } from "./AltroMenuSheet";
+import { MonthlyBudgetCard } from "./MonthlyBudgetCard";
+import { monthlySummary } from "@/lib/monthlyBudget";
 
 interface HomeScreenProps {
   onOpenAddModal: (type?: "expense" | "income") => void;
@@ -56,6 +58,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
   const totalCardsBalance = cards.reduce((acc, c) => acc + (c.balance || 0), 0);
   const nextGoal = goals[0] || null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
+  const monthlyCount = monthlySummary(transactions).transactions.length;
 
   return (
     <div
@@ -116,7 +119,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
           <div className="px-3 py-1.5 rounded-2xl bg-[#FDC909] border border-[#FDC909] flex flex-col items-end">
             <div className="flex items-center gap-0.5 text-xs font-black text-[#0B0B0B]">
               <TrendingUp className="h-3.5 w-3.5 text-[#0B0B0B]" />
-              <span>{transactions.length > 0 ? `${transactions.length} mov.` : "Attivo"}</span>
+              <span>{monthlyCount > 0 ? `${monthlyCount} mov.` : "Attivo"}</span>
             </div>
             <span className="text-[9px] text-[#0B0B0B] font-medium leading-tight">
               questo mese
@@ -207,6 +210,8 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
           </span>
         </button>
       </div>
+
+      <MonthlyBudgetCard />
 
       {/* ── 5. ULTIMI MOVIMENTI ── */}
       <div>

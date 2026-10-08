@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { validMonthlyBudget } from "@/lib/monthlyBudget";
 
 const STORAGE_KEY = "zero_app_state_v6";
 
@@ -24,6 +25,7 @@ export interface TransactionItem {
   cardId: string;
   type: "expense" | "income";
   note?: string;
+  createdAt?: string;
 }
 
 export interface SubscriptionItem {
@@ -70,6 +72,8 @@ export interface UserProfile {
 }
 
 interface AppContextType {
+  monthlyBudget: number | null;
+  updateMonthlyBudget: (value: number | null) => Promise<{ error?: string }>;
   cards: CardItem[];
   activeCardIndex: number;
   setActiveCardIndex: (index: number) => void;
@@ -178,6 +182,7 @@ function dbToTransaction(row: any): TransactionItem {
     cardId: row.card_id || "",
     type: row.type as TransactionItem["type"],
     note: row.note,
+    createdAt: row.created_at,
   };
 }
 
@@ -234,6 +239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(EMPTY_PROFILE);
   const [userId, setUserId] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [monthlyBudget, setMonthlyBudget] = useState<number | null>(null);
 
   // ── Load data from Supabase when user session is available ────────
   useEffect(() => {
@@ -274,13 +280,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (e) {
         console.error("Failed to load from Supabase, falling back to localStorage:", e);
-        loadFromLocalStorage();
+        loadFromLocalStorage(false);
       } finally {
         setIsHydrated(true);
       }
     };
 
-    const loadFromLocalStorage = () => {
+    const loadFromLocalStorage = (restoreBudget = true) => {
       try {
         localStorage.removeItem("zero_app_state_v3");
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -293,6 +299,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (parsed.goals) setGoals(parsed.goals);
           if (parsed.protections) setProtections(parsed.protections);
           if (parsed.profile) setProfile(parsed.profile);
+          if (restoreBudget) setMonthlyBudget(validMonthlyBudget(parsed.monthlyBudget));
         }
       } catch (e) {
         console.error("Failed to load state from localStorage:", e);
@@ -305,6 +312,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUserId(session.user.id);
+        setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
         loadFromDB(session.user.id);
       } else {
         loadFromLocalStorage();
@@ -315,6 +323,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUserId(session.user.id);
+        setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
         loadFromDB(session.user.id);
       } else {
         setUserId(null);
@@ -331,12 +340,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ cards, activeCardIndex, transactions, subscriptions, goals, protections, profile })
+        JSON.stringify({ cards, activeCardIndex, transactions, subscriptions, goals, protections, profile, monthlyBudget })
       );
     } catch (e) {
       console.error("Failed to save state to localStorage:", e);
     }
-  }, [isHydrated, cards, activeCardIndex, transactions, subscriptions, goals, protections, profile]);
+  }, [isHydrated, cards, activeCardIndex, transactions, subscriptions, goals, protections, profile, monthlyBudget]);
 
   // ── Helper to always get valid user ID from Supabase session ──────
   const getEffectiveUserId = async (): Promise<string | null> => {
@@ -455,6 +464,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       cardId: targetCardId,
       type: data.type,
       note: data.note,
+      createdAt: new Date().toISOString(),
     };
     setTransactions((prev) => [newTx, ...prev]);
     setCards((prevCards) =>
@@ -854,6 +864,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ── Reset all data ─────────────────────────────────────────────────
+  const updateMonthlyBudget = async (value: number | null): Promise<{ error?: string }> => {
+    const budget = validMonthlyBudget(value);
+    if (value !== null && budget === null) return { error: "Inserisci un limite maggiore di zero." };
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { error } = await supabase.auth.updateUser({ data: { zero_monthly_budget: budget } });
+        if (error) return { error: "Non è stato possibile salvare il budget. Riprova." };
+      }
+      setMonthlyBudget(budget);
+      return {};
+    } catch { return { error: "Connessione non disponibile. Il budget non è stato modificato." }; }
+  };
+
   const resetAllData = async () => {
     setCards([]);
     setActiveCardIndex(0);
@@ -862,6 +886,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setGoals([]);
     setProtections([]);
     setProfile(EMPTY_PROFILE);
+    setMonthlyBudget(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem("zero_auth_state_v5");
     localStorage.removeItem("zero_auth_state_v6");
@@ -919,6 +944,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
+        monthlyBudget,
+        updateMonthlyBudget,
         cards,
         activeCardIndex,
         setActiveCardIndex,

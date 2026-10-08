@@ -3,9 +3,13 @@
 import React, { useState } from "react";
 import { ArrowDown, ArrowUp, BarChart2, ChevronDown } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { monthlySummary, transactionDate } from "@/lib/monthlyBudget";
 
 export function HomeTrendChart() {
-  const { transactions, totalMonthlySpending, totalMonthlyIncome, totalMonthlySavings } = useApp();
+  const { transactions, totalMonthlySavings } = useApp();
+  const monthly = monthlySummary(transactions);
+  const totalMonthlySpending = monthly.spent;
+  const totalMonthlyIncome = monthly.income;
   const [selectedMonth] = useState("Mese in corso");
 
   const money = (val: number) =>
@@ -20,13 +24,14 @@ export function HomeTrendChart() {
     { label: "29-31", expense: 0, income: 0 },
   ];
 
-  transactions.forEach((tx) => {
-    // Distribute among buckets
+  monthly.transactions.forEach((tx) => {
+    const day = transactionDate(tx)!.getDate();
+    const bucket = buckets[Math.min(4, Math.floor((day - 1) / 7))];
     const amt = Math.abs(tx.amount);
     if (tx.amount < 0) {
-      buckets[0].expense += amt;
+      bucket.expense += amt;
     } else {
-      buckets[0].income += amt;
+      bucket.income += amt;
     }
   });
 
@@ -35,7 +40,7 @@ export function HomeTrendChart() {
     100
   );
 
-  const hasData = transactions.length > 0;
+  const hasData = monthly.transactions.length > 0;
 
   return (
     <div className="rounded-[26px] bg-white border border-[#A7A7A7]/20 p-5 shadow-xs flex flex-col gap-4 select-none">
