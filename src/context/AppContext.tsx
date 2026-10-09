@@ -7,6 +7,7 @@ import { changedBalances, persistTransactionChange, type TransactionEdit } from 
 import { goalProgress, validGoal } from "@/lib/goalProgress";
 import { notifySaved } from "@/lib/saveFeedback";
 import { SaveFeedback } from "@/components/SaveFeedback";
+import { validSubscription } from "@/lib/subscriptionFields";
 
 const STORAGE_KEY = "zero_app_state_v6";
 
@@ -42,6 +43,7 @@ export interface SubscriptionItem {
   category: string;
   color: string;
 }
+export type SubscriptionInput = Pick<SubscriptionItem,"name"|"cost"|"frequency"|"date"|"category">;
 
 export interface GoalItem {
   id: string;
@@ -111,15 +113,10 @@ interface AppContextType {
   }) => Promise<{ error?: string }>;
   deleteTransaction: (id: string) => void;
   updateTransaction: (id: string, data: TransactionEdit) => Promise<{ error?: string }>;
-  toggleSubscription: (id: string) => void;
-  addSubscription: (data: {
-    name: string;
-    cost: number;
-    frequency: "mese" | "anno";
-    date: string;
-    category: string;
-  }) => void;
-  deleteSubscription: (id: string) => void;
+  toggleSubscription: (id: string) => Promise<{ error?: string }>;
+  addSubscription: (data: SubscriptionInput, requestId?: string) => Promise<{ error?: string }>;
+  updateSubscription: (id: string, data: SubscriptionInput) => Promise<{ error?: string }>;
+  deleteSubscription: (id: string) => Promise<{ error?: string }>;
   addMoneyToGoal: (id: string, amount: number) => Promise<{ error?: string }>;
   addGoal: (data: { title: string; target: number }) => Promise<{ error?: string }>;
   deleteGoal: (id: string) => Promise<{ error?: string }>;
@@ -253,6 +250,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [deleting, setDeleting] = useState(false);
   const [primaryGoalId, setPrimaryGoalId] = useState<string | null>(null);
   const goalBusy = useRef(false);
+  const subscriptionBusy = useRef(false);
   const movementBusy = useRef(false);
   const deletionCommit = useRef<(id: string) => Promise<{ error?: string }>>(async () => ({}));
   useEffect(() => { setPendingDelete(null); setMovementNotice(""); }, [userId]);
@@ -594,65 +592,213 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setPendingDelete(id);
   };
 
-  // ── Subscriptions ──────────────────────────────────────────────────
-  const toggleSubscription = async (id: string) => {
-    setSubscriptions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
-    );
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      const sub = subscriptions.find((s) => s.id === id);
-      if (sub) {
-        await supabase.from("subscriptions").update({ active: !sub.active }).eq("id", id).eq("user_id", uid);
+  // Subscription changes are confirmed by persistence before altering the local list.
+  const subscriptionError = {
+    error:
+      "Salvataggio non riuscito. I dati inseriti sono ancora qui: puoi riprovare.",
+  };
+  const recoveredSubscription = async (
+    uid: string,
+    id: string,
+    expected: Partial<SubscriptionItem>,
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (
+        !error &&
+        data &&
+        Object.entries(expected).every(([key, value]) => data[key] === value)
+      )
+        return dbToSubscription(data);
+    } catch {
+      /* A failed read cannot establish that the write succeeded. */
+    }
+    return null;
+  };
+  const toggleSubscription = async (id: string): Promise<{ error?: string }> => {
+    const original = subscriptions.find((item) => item.id === id);
+    if (!original || subscriptionBusy.current)
+      return { error: "Attendi il salvataggio in corso e riprova." };
+    subscriptionBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId(),
+        active = !original.active;
+      let next = { ...original, active };
+      if (uid) {
+        try {
+          const { data, error } = await supabase
+            .from("subscriptions")
+            .update({ active })
+            .eq("id", id)
+            .eq("user_id", uid)
+            .eq("active", original.active)
+            .select("*")
+            .single();
+          if (error || !data) {
+            const recovered = await recoveredSubscription(uid, id, { active });
+            if (!recovered) return subscriptionError;
+            next = recovered;
+          } else next = dbToSubscription(data);
+        } catch {
+          const recovered = await recoveredSubscription(uid, id, { active });
+          if (!recovered) return subscriptionError;
+          next = recovered;
+        }
       }
+      setSubscriptions((previous) =>
+        previous.map((item) => (item.id === id ? next : item)),
+      );
+      notifySaved(
+        active
+          ? "Abbonamento incluso nel riepilogo"
+          : "Abbonamento escluso dal riepilogo",
+      );
+      return {};
+    } catch {
+      return subscriptionError;
+    } finally {
+      subscriptionBusy.current = false;
     }
   };
-
-  const addSubscription = async (data: {
-    name: string;
-    cost: number;
-    frequency: "mese" | "anno";
-    date: string;
-    category: string;
-  }) => {
-    const tempId = "sub-" + Date.now();
-    const newSub: SubscriptionItem = {
-      id: tempId,
-      name: data.name,
-      cost: data.cost,
-      frequency: data.frequency,
-      date: data.date,
-      active: true,
-      category: data.category,
-      color: "#FDC909",
-    };
-    setSubscriptions((prev) => [...prev, newSub]);
-
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      const { data: inserted } = await supabase.from("subscriptions").insert({
-        user_id: uid,
-        name: data.name,
-        cost: data.cost,
+  const addSubscription = async (
+    data: SubscriptionInput,
+    requestId?: string,
+  ): Promise<{ error?: string }> => {
+    if (subscriptionBusy.current)
+      return { error: "Attendi il salvataggio in corso." };
+    if (!validSubscription(data))
+      return { error: "Controlla nome, costo e giorno del rinnovo." };
+    subscriptionBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      const id = requestId || (uid ? crypto.randomUUID() : "sub-" + Date.now());
+      const payload = {
+        name: data.name.trim(),
+        cost: Math.round(data.cost * 100) / 100,
         frequency: data.frequency,
         date: data.date,
+        category: data.category.trim(),
         active: true,
-        category: data.category,
         color: "#FDC909",
-      }).select().single();
-      if (inserted) {
-        setSubscriptions((prev) =>
-          prev.map((s) => (s.id === tempId ? dbToSubscription(inserted) : s))
-        );
+      };
+      let next: SubscriptionItem = { id, ...payload };
+      if (uid) {
+        try {
+          const { data: saved, error } = await supabase
+            .from("subscriptions")
+            .insert({ id, user_id: uid, ...payload })
+            .select("*")
+            .single();
+          if (error || !saved) {
+            const recovered = await recoveredSubscription(uid, id, payload);
+            if (!recovered) return subscriptionError;
+            next = recovered;
+          } else next = dbToSubscription(saved);
+        } catch {
+          const recovered = await recoveredSubscription(uid, id, payload);
+          if (!recovered) return subscriptionError;
+          next = recovered;
+        }
       }
+      setSubscriptions((previous) =>
+        previous.some((item) => item.id === next.id)
+          ? previous.map((item) => (item.id === next.id ? next : item))
+          : [...previous, next],
+      );
+      notifySaved("Abbonamento salvato");
+      return {};
+    } catch {
+      return subscriptionError;
+    } finally {
+      subscriptionBusy.current = false;
     }
   };
-
-  const deleteSubscription = async (id: string) => {
-    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      await supabase.from("subscriptions").delete().eq("id", id).eq("user_id", uid);
+  const updateSubscription = async (
+    id: string,
+    data: SubscriptionInput,
+  ): Promise<{ error?: string }> => {
+    const original = subscriptions.find((item) => item.id === id);
+    if (!original || !validSubscription(data))
+      return { error: "Controlla nome, costo e giorno del rinnovo." };
+    if (subscriptionBusy.current)
+      return { error: "Attendi il salvataggio in corso." };
+    const payload = {
+      name: data.name.trim(),
+      cost: Math.round(data.cost * 100) / 100,
+      frequency: data.frequency,
+      date: data.date,
+      category: data.category.trim(),
+    };
+    subscriptionBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      let next = { ...original, ...payload };
+      if (uid) {
+        try {
+          const { data: saved, error } = await supabase
+            .from("subscriptions")
+            .update(payload)
+            .eq("id", id)
+            .eq("user_id", uid)
+            .eq("name", original.name)
+            .eq("cost", original.cost)
+            .eq("frequency", original.frequency)
+            .eq("date", original.date)
+            .eq("active", original.active)
+            .select("*")
+            .single();
+          if (error || !saved) {
+            const recovered = await recoveredSubscription(uid, id, payload);
+            if (!recovered) return subscriptionError;
+            next = recovered;
+          } else next = dbToSubscription(saved);
+        } catch {
+          const recovered = await recoveredSubscription(uid, id, payload);
+          if (!recovered) return subscriptionError;
+          next = recovered;
+        }
+      }
+      setSubscriptions((previous) =>
+        previous.map((item) => (item.id === id ? next : item)),
+      );
+      notifySaved("Abbonamento aggiornato");
+      return {};
+    } catch {
+      return subscriptionError;
+    } finally {
+      subscriptionBusy.current = false;
+    }
+  };
+  const deleteSubscription = async (id: string): Promise<{ error?: string }> => {
+    if (subscriptionBusy.current)
+      return { error: "Attendi il salvataggio in corso." };
+    if (!subscriptions.some((item) => item.id === id))
+      return { error: "Questo abbonamento non è più presente." };
+    subscriptionBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { data, error } = await supabase
+          .from("subscriptions")
+          .delete()
+          .eq("id", id)
+          .eq("user_id", uid)
+          .select("id")
+          .single();
+        if (error || !data) return subscriptionError;
+      }
+      setSubscriptions((previous) => previous.filter((item) => item.id !== id));
+      notifySaved("Abbonamento rimosso da ZERO");
+      return {};
+    } catch {
+      return subscriptionError;
+    } finally {
+      subscriptionBusy.current = false;
     }
   };
 
@@ -1008,6 +1154,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateTransaction,
         toggleSubscription,
         addSubscription,
+        updateSubscription,
         deleteSubscription,
         addMoneyToGoal,
         addGoal,
@@ -1043,3 +1190,5 @@ export function useApp() {
   }
   return context;
 }
+
+

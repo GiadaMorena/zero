@@ -8,8 +8,8 @@ function renewal(year: number, month: number, day: number) {
   return new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()), 12);
 }
 
-export function nextRenewal(sub: Pick<SubscriptionItem, "date" | "frequency">, now = new Date()): Date | null {
-  const text = sub.date.trim().toLowerCase();
+export function renewalParts(value: string): { day: number; month: number } | null {
+  const text = value.trim().toLowerCase();
   let day: number, month: number;
   const italian = text.match(/^(\d{1,2})\s+([a-z]+)(?:\s+\d{4})?$/);
   const numeric = text.match(/^(\d{1,2})\/(\d{1,2})(?:\/\d{4})?$/);
@@ -19,6 +19,12 @@ export function nextRenewal(sub: Pick<SubscriptionItem, "date" | "frequency">, n
   else if (iso) { day = Number(iso[2]); month = Number(iso[1]) - 1; }
   else return null;
   if (day < 1 || day > 31 || month < 0 || month > 11) return null;
+  return { day, month };
+}
+
+export function nextRenewal(sub: Pick<SubscriptionItem, "date" | "frequency">, now = new Date()): Date | null {
+  const parts = renewalParts(sub.date); if (!parts) return null;
+  const { day, month } = parts;
   let result = renewal(now.getFullYear(), sub.frequency === "mese" ? now.getMonth() : month, day);
   if (dayNumber(result) < dayNumber(now)) {
     result = sub.frequency === "mese"

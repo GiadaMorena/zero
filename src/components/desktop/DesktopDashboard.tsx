@@ -23,7 +23,7 @@ import { useApp, type TransactionItem } from "@/context/AppContext";
 import { AddSpesaModal } from "../AddSpesaModal";
 import { Pencil } from "lucide-react";
 import { HomeTrendChart } from "../HomeTrendChart";
-import { SubscriptionToggle } from "../AbbonamentiScreen";
+import { SubscriptionToggle } from "../SubscriptionToggle";
 import { MonthlyBudgetCard } from "../MonthlyBudgetCard";
 import { monthlySummary } from "@/lib/monthlyBudget";
 import { mainGoal, goalProgress } from "@/lib/goalProgress";
@@ -352,6 +352,7 @@ export function DesktopDashboard({
                   <SubscriptionToggle
                     key={sub.id}
                     checked={sub.active}
+                    label={`Includi ${sub.name} nel riepilogo`}
                     onChange={() => toggleSubscription(sub.id)}
                   />
                 ))}
