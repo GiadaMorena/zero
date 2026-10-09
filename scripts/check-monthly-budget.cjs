@@ -11,7 +11,7 @@ assert.equal(transactionDate(tx('31/02/2026',-1)),null);assert.equal(transaction
 assert.equal(transactionDate(tx('8 ottobre',-1,'2026-10-09T12:00:00Z')).getFullYear(),2026);
 assert.equal(validMonthlyBudget(100.129),100.13);for(const value of [0,-1,Infinity,NaN,'100',null])assert.equal(validMonthlyBudget(value),null);
 function harness(mode){let states=[],cursor=0,payload;
- const react={createContext:()=>({Provider:'provider'}),useContext:()=>null,useEffect:()=>{},useState:initial=>{const i=cursor++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],v=>states[i]=typeof v==='function'?v(states[i]):v];},createElement:(tag,props)=>({tag,props})};
+ const react={createContext:()=>({Provider:'provider'}),useContext:()=>null,useEffect:()=>{},useRef:value=>({current:value}),useState:initial=>{const i=cursor++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],v=>states[i]=typeof v==='function'?v(states[i]):v];},createElement:(tag,props)=>({tag,props})};
  const supabase={auth:{getSession:async()=>({data:{session:null}}),getUser:async()=>({data:{user:null}}),updateUser:async p=>{payload=p;if(mode==='network')throw Error('offline');return {error:mode==='error'?{message:'fail'}:null};}}};
  const scope={exports:{},console,require:name=>name==='react'?react:name==='@/lib/monthlyBudget'?helpers.exports:{supabase}};vm.runInNewContext(compile('src/context/AppContext.tsx'),scope);
  const render=()=>{cursor=0;return scope.exports.AppProvider({children:null}).props.value};render();states[9]=100;if(mode!=='local')states[7]='fake-user';return{app:render(),states,payload:()=>payload};

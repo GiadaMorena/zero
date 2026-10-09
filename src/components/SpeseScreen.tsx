@@ -2,7 +2,9 @@
 
 import React, { useState } from "react";
 import { Search, Plus, ShoppingCart, Utensils, Fuel, ShoppingBag, Trash2, DollarSign } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { useApp, type TransactionItem } from "@/context/AppContext";
+import { AddSpesaModal } from "./AddSpesaModal";
+import { Pencil } from "lucide-react";
 
 interface SpeseScreenProps {
   onOpenAddModal: (type?: "expense" | "income") => void;
@@ -10,6 +12,7 @@ interface SpeseScreenProps {
 
 export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
   const { transactions, deleteTransaction } = useApp();
+  const [editing, setEditing] = useState<TransactionItem | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("Tutte");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
@@ -91,7 +94,7 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
 
       {/* Total Month Card Header */}
       <div className="flex items-center justify-between px-1 pt-0.5">
-        <span className="text-xs font-semibold text-[#A7A7A7]">Settembre 2026</span>
+        <span className="text-xs font-semibold text-[#A7A7A7]">Tutti i movimenti</span>
         <span className="text-xs font-extrabold text-[#0B0B0B]">
           - {money(totalSpending)}
         </span>
@@ -106,7 +109,7 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
               key={item.id}
               className="flex items-center justify-between p-3.5 rounded-[22px] bg-white border border-[#A7A7A7]/20 shadow-xs group"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="h-9 w-9 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 flex items-center justify-center text-[#0B0B0B] shrink-0">
                   {item.category === "Cibo" ? (
                     <ShoppingCart className="h-4 w-4" />
@@ -118,23 +121,24 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
                     <ShoppingBag className="h-4 w-4" />
                   )}
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-[#0B0B0B] leading-tight">
+                <div className="min-w-0">
+                  <h4 className="truncate text-xs font-bold text-[#0B0B0B] leading-tight">
                     {item.title}
                   </h4>
-                  <p className="text-[10px] text-[#A7A7A7] font-medium mt-0.5">
+                  <p className="truncate text-[10px] text-[#A7A7A7] font-medium mt-0.5">
                     {item.category} · {item.date}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setEditing(item)} aria-label={`Modifica ${item.title}`} className="flex h-11 w-11 items-center justify-center text-[#73736E]"><Pencil className="h-4 w-4" /></button>
                 <span className="text-xs font-black text-[#0B0B0B]">
                   {isIncome ? "+ " : "- "} {money(Math.abs(item.amount))}
                 </span>
                 <button
                   onClick={() => deleteTransaction(item.id)}
-                  className="p-1 text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors"
+                  className="flex h-11 w-11 items-center justify-center text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors"
                   title="Elimina"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -150,6 +154,7 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
           </div>
         )}
       </div>
+      <AddSpesaModal isOpen={!!editing} transaction={editing || undefined} onClose={() => setEditing(null)} />
     </div>
   );
 }

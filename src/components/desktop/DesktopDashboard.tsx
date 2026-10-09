@@ -3,7 +3,7 @@
 import { getCardAppearance } from "@/lib/cardAppearance";
 import { BankIdentity } from "../BankIdentity";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Plus,
   ArrowUpRight,
@@ -19,7 +19,9 @@ import {
   ShoppingBag,
   Trash2,
 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { useApp, type TransactionItem } from "@/context/AppContext";
+import { AddSpesaModal } from "../AddSpesaModal";
+import { Pencil } from "lucide-react";
 import { HomeTrendChart } from "../HomeTrendChart";
 import { SubscriptionToggle } from "../AbbonamentiScreen";
 import { MonthlyBudgetCard } from "../MonthlyBudgetCard";
@@ -49,6 +51,7 @@ export function DesktopDashboard({
     goals,
   } = useApp();
 
+  const [editing, setEditing] = useState<TransactionItem | null>(null);
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
@@ -251,6 +254,7 @@ export function DesktopDashboard({
                       <span className={`text-xs font-black ${isIncome ? "text-[#166534]" : "text-[#121212]"}`}>
                         {isIncome ? "+" : "-"} {money(Math.abs(tx.amount))}
                       </span>
+                      <button type="button" onClick={() => setEditing(tx)} aria-label={`Modifica ${tx.title}`} className="p-2 text-[#73736E]"><Pencil className="h-4 w-4" /></button>
                       <button
                         onClick={() => deleteTransaction(tx.id)}
                         className="p-1 text-[#A3A39E] hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100"
@@ -358,6 +362,7 @@ export function DesktopDashboard({
           </div>
         </div>
       </div>
+      <AddSpesaModal isOpen={!!editing} transaction={editing || undefined} onClose={() => setEditing(null)} />
     </div>
   );
 }

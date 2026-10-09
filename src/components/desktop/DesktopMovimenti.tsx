@@ -21,7 +21,9 @@ import {
   RefreshCw,
   MoreHorizontal,
 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { useApp, type TransactionItem } from "@/context/AppContext";
+import { AddSpesaModal } from "../AddSpesaModal";
+import { Pencil } from "lucide-react";
 
 interface DesktopMovimentiProps {
   onOpenAddExpense: () => void;
@@ -35,6 +37,7 @@ export function DesktopMovimenti({
   searchQuery = "",
 }: DesktopMovimentiProps) {
   const { transactions, deleteTransaction, cards } = useApp();
+  const [editing, setEditing] = useState<TransactionItem | null>(null);
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [selectedCategory, setSelectedCategory] = useState<string>("Tutte");
   const [selectedCardId, setSelectedCardId] = useState<string>("Tutte");
@@ -238,6 +241,7 @@ export function DesktopMovimenti({
 
                     {/* Azioni */}
                     <td className="py-4 px-6 text-center">
+                      <button type="button" onClick={() => setEditing(tx)} aria-label={`Modifica ${tx.title}`} className="p-2 rounded-xl text-[#73736E] hover:bg-[#F7F7F5]"><Pencil className="h-4 w-4" /></button>
                       <button
                         onClick={() => deleteTransaction(tx.id)}
                         className="p-2 rounded-xl text-[#A3A39E] hover:text-rose-600 hover:bg-rose-50 transition-all"
@@ -260,6 +264,7 @@ export function DesktopMovimenti({
           </div>
         )}
       </div>
+      <AddSpesaModal isOpen={!!editing} transaction={editing || undefined} onClose={() => setEditing(null)} />
     </div>
   );
 }

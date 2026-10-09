@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { validMonthlyBudget } from "@/lib/monthlyBudget";
+import { changedBalances, persistTransactionChange, type TransactionEdit } from "@/lib/transactionChanges";
 
 const STORAGE_KEY = "zero_app_state_v6";
 
@@ -103,6 +104,7 @@ interface AppContextType {
     cardId?: string;
   }) => Promise<{ error?: string }>;
   deleteTransaction: (id: string) => void;
+  updateTransaction: (id: string, data: TransactionEdit) => Promise<{ error?: string }>;
   toggleSubscription: (id: string) => void;
   addSubscription: (data: {
     name: string;
@@ -240,6 +242,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const [monthlyBudget, setMonthlyBudget] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [movementNotice, setMovementNotice] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const movementBusy = useRef(false);
+  const deletionCommit = useRef<(id: string) => Promise<{ error?: string }>>(async () => ({}));
+  useEffect(() => { setPendingDelete(null); setMovementNotice(""); }, [userId]);
+  useEffect(() => {
+    if (!pendingDelete) return;
+    const timer = window.setTimeout(async () => {
+      setDeleting(true);
+      const result = await deletionCommit.current(pendingDelete);
+      setPendingDelete(null);
+      setDeleting(false);
+      setMovementNotice(result.error || "Movimento eliminato.");
+    }, 8000);
+    return () => window.clearTimeout(timer);
+  }, [pendingDelete]);
 
   // ── Load data from Supabase when user session is available ────────
   useEffect(() => {
@@ -444,6 +463,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     date?: string;
     cardId?: string;
   }) => {
+    if (movementBusy.current) return { error: "Attendi il salvataggio in corso, poi riprova." };
+    movementBusy.current = true;
     const targetCardId = data.cardId || activeCard?.id || "";
     const finalAmount = data.type === "expense" ? -Math.abs(data.amount) : Math.abs(data.amount);
     const originalBalance = cards.find(card => card.id === targetCardId)?.balance;
@@ -525,35 +546,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (persisted) return {};
       rollback();
       return { error: "Connessione non disponibile. Riprova: i dati inseriti sono ancora qui." };
-    }
+    } finally { movementBusy.current = false; }
   };
 
-  // ── Delete Transaction ─────────────────────────────────────────────
-  const deleteTransaction = async (id: string) => {
-    const targetTx = transactions.find((t) => t.id === id);
-    if (!targetTx) return;
-
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-    setCards((prevCards) =>
-      prevCards.map((c) =>
-        c.id === targetTx.cardId
-          ? { ...c, balance: Math.max(0, c.balance - targetTx.amount) }
-          : c
-      )
-    );
-
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      await supabase.from("transactions").delete().eq("id", id).eq("user_id", uid);
-      if (targetTx.cardId) {
-        const card = cards.find((c) => c.id === targetTx.cardId);
-        if (card) {
-          await supabase.from("cards").update({
-            balance: Math.max(0, card.balance - targetTx.amount),
-          }).eq("id", targetTx.cardId).eq("user_id", uid);
-        }
-      }
-    }
+  const changeTransaction = async (id: string, data: TransactionEdit | null): Promise<{ error?: string }> => {
+    if (movementBusy.current) return { error: "Attendi il salvataggio in corso, poi riprova." };
+    const original = transactions.find(tx => tx.id === id);
+    if (!original) return { error: "Questo movimento non è più disponibile." };
+    if (data && (!Number.isFinite(data.amount) || data.amount <= 0 || !data.title.trim() || !data.category.trim() || !data.date.trim())) return { error: "Controlla importo, descrizione, categoria e data." };
+    if (data?.cardId && data.cardId !== original.cardId && !cards.some(card => card.id === data.cardId)) return { error: "Scegli una carta disponibile." };
+    const replacement: TransactionItem | null = data ? { ...original, ...data, amount: Math.round(Math.abs(data.amount) * 100) / 100 * (data.type === "expense" ? -1 : 1) } : null;
+    movementBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const result = await persistTransactionChange(supabase, uid, original, replacement);
+        if (result.error) return result;
+        setCards(prev => prev.map(card => {
+          const changed = result.balances?.find(item => item.id === card.id);
+          return changed ? { ...card, balance: changed.balance } : card;
+        }));
+      } else setCards(prev => changedBalances(prev, original, replacement));
+      setTransactions(prev => replacement ? prev.map(tx => tx.id === id ? replacement : tx) : prev.filter(tx => tx.id !== id));
+      return {};
+    } catch { return { error: "Connessione non disponibile. Il movimento è ancora qui." }; }
+    finally { movementBusy.current = false; }
+  };
+  const updateTransaction = (id: string, data: TransactionEdit) => changeTransaction(id, data);
+  deletionCommit.current = id => changeTransaction(id, null);
+  const deleteTransaction = (id: string) => {
+    if (pendingDelete || movementBusy.current) { setMovementNotice("Attendi l’eliminazione in corso oppure premi Annulla."); return; }
+    if (!transactions.some(tx => tx.id === id)) return;
+    setMovementNotice("");
+    setPendingDelete(id);
   };
 
   // ── Subscriptions ──────────────────────────────────────────────────
@@ -950,7 +975,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeCardIndex,
         setActiveCardIndex,
         activeCard,
-        transactions,
+        transactions: transactions.filter(tx => tx.id !== pendingDelete),
         subscriptions,
         goals,
         protections,
@@ -958,6 +983,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         initializeProfile,
         addTransaction,
         deleteTransaction,
+        updateTransaction,
         toggleSubscription,
         addSubscription,
         deleteSubscription,
@@ -979,6 +1005,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+      {(pendingDelete || movementNotice) && <div role="status" aria-live="polite" data-app-update-block={pendingDelete ? "true" : undefined} className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] left-1/2 z-[70] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 rounded-2xl bg-[#0B0B0B] px-4 py-3 text-sm text-white shadow-lg">
+        <span>{pendingDelete ? deleting ? "Eliminazione…" : "Movimento rimosso" : movementNotice}</span>
+        {pendingDelete ? <button type="button" disabled={deleting} onClick={() => { setPendingDelete(null); setMovementNotice("Eliminazione annullata."); }} className="shrink-0 py-2 font-bold text-[#FDC909] disabled:opacity-40">Annulla</button> : <button type="button" onClick={() => setMovementNotice("")} className="shrink-0 py-2 font-bold text-[#FDC909]">Chiudi</button>}
+      </div>}
     </AppContext.Provider>
   );
 }
