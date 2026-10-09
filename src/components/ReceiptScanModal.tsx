@@ -20,6 +20,7 @@ import {
 import { useApp } from "@/context/AppContext";
 import { parseTransactionAmount } from "@/lib/quickTransaction";
 import { readReceipt } from "@/lib/readReceipt";
+import { ReceiptPhotoViewer } from "./ReceiptPhotoViewer";
 
 type ScanStep =
   | "idle"       // mostra viewfinder (con camera o placeholder)
@@ -60,6 +61,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   const [cameraError, setCameraError]   = useState<"denied" | "unavailable" | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [photoOpen, setPhotoOpen] = useState(false);
   const [readProgress, setReadProgress] = useState(0);
   const [readText, setReadText] = useState("");
   const [readNotice, setReadNotice] = useState("");
@@ -106,6 +108,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   }, [isOpen, stopStream]);
 
   const resetFlow = () => {
+    setPhotoOpen(false);
     readingRef.current?.abort();
     readingRef.current = null;
     setReadText(""); setReadNotice(""); setReadProgress(0);
@@ -257,7 +260,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
   /* ═══════════════════════════════════════════════════════ */
   return (
-    <div role="dialog" aria-modal="true" aria-label="Foto scontrino" data-app-update-block className="fixed inset-0 z-50 flex flex-col bg-[#0B0B0B]"
+    <div role="dialog" aria-modal="true" aria-label="Foto scontrino" data-app-update-block className="fixed inset-0 z-[150] flex flex-col bg-[#0B0B0B]"
          style={{ paddingTop: "env(safe-area-inset-top, 44px)", paddingBottom: "env(safe-area-inset-bottom, 20px)" }}>
 
       {/* Hidden elements */}
@@ -437,9 +440,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           {/* Captured image thumbnail */}
           {capturedImage && (
             <div className="mx-5 mb-3 shrink-0">
-              <div className="h-20 rounded-2xl overflow-hidden border border-[#A7A7A7]">
-                <img src={capturedImage} alt="scontrino" className="w-full h-full object-contain bg-white" />
-              </div>
+              <button type="button" onClick={()=>setPhotoOpen(true)} aria-label="Apri foto dello scontrino" className="flex w-full items-center gap-4 rounded-2xl border border-white/20 bg-white/10 p-3 text-left text-white">
+                <img src={capturedImage} alt="" className="h-20 w-16 shrink-0 rounded-lg object-cover object-top bg-white" />
+                <span><span className="block text-sm font-bold">Leggi lo scontrino</span><span className="mt-1 block text-xs text-white/70">Apri a schermo intero e ingrandisci la foto</span></span>
+              </button>
             </div>
           )}
 
@@ -589,6 +593,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           `}</style>
         </div>
       )}
+      {photoOpen && capturedImage && <ReceiptPhotoViewer src={capturedImage} onClose={()=>setPhotoOpen(false)} />}
     </div>
   );
 }
