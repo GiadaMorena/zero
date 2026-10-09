@@ -19,10 +19,12 @@ import {
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { parseTransactionAmount } from "@/lib/quickTransaction";
+import { readReceipt } from "@/lib/readReceipt";
 
 type ScanStep =
   | "idle"       // mostra viewfinder (con camera o placeholder)
   | "acquiring"  // shutter flash
+  | "analyzing"  // reading the actual image on device
   | "confirm"    // dati estratti modificabili
   | "saving"     // breve spinner salvataggio
   | "success";   // feedback ✓
@@ -58,6 +60,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   const [cameraError, setCameraError]   = useState<"denied" | "unavailable" | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [readProgress, setReadProgress] = useState(0);
+  const [readText, setReadText] = useState("");
+  const [readNotice, setReadNotice] = useState("");
+  const readingRef = useRef<AbortController | null>(null);
   const savingRef = useRef(false);
   const openRef = useRef(isOpen);
   const cameraRequest = useRef(0);
@@ -87,6 +93,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
   useEffect(() => () => {
     cameraRequest.current++;
+    readingRef.current?.abort();
     streamRef.current?.getTracks().forEach(track => track.stop());
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
@@ -99,6 +106,9 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   }, [isOpen, stopStream]);
 
   const resetFlow = () => {
+    readingRef.current?.abort();
+    readingRef.current = null;
+    setReadText(""); setReadNotice(""); setReadProgress(0);
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setError("");
     setStep("idle");
@@ -137,6 +147,9 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+      if (!openRef.current || request !== cameraRequest.current) {
+        stream.getTracks().forEach(track => track.stop()); return;
+      }
       setCameraActive(true);
     } catch (err: any) {
       if (!openRef.current || request !== cameraRequest.current) return;
@@ -152,6 +165,24 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   }, []);
 
   /* ── Capture frame from camera ─────────────────────────── */
+  const analyze = async (image: string) => {
+    readingRef.current?.abort();
+    const controller = new AbortController(); readingRef.current = controller;
+    setError(""); setReadNotice(""); setReadText(""); setReadProgress(0); setStep("analyzing");
+    try {
+      const result = await readReceipt(image, controller.signal, value => setReadProgress(previous => Math.max(previous, value)));
+      if (!openRef.current || readingRef.current !== controller || controller.signal.aborted) return;
+      setTitle(result.fields.title); setAmount(result.fields.amount); setDate(result.fields.date); setCategory(result.fields.category);
+      setReadText(result.text);
+      setReadNotice(result.fields.amount ? "Dati letti dalla foto. Controlla importo, esercente e data prima di salvare." : "Totale non riconosciuto con certezza. Inseriscilo dalla foto prima di salvare.");
+      setStep("confirm");
+    } catch {
+      if (!openRef.current || readingRef.current !== controller || controller.signal.aborted) return;
+      setTitle(""); setAmount(""); setDate(""); setCategory("Altro");
+      setReadNotice("Non riesco a leggere questa foto. Puoi compilare i dati manualmente o scegliere un’immagine più nitida."); setStep("confirm");
+    } finally { if (readingRef.current === controller) readingRef.current = null; }
+  };
+
   const captureFromCamera = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video  = videoRef.current;
@@ -164,8 +195,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCapturedImage(dataUrl);
     stopStream();
-    setError("");
-    setStep("confirm");
+    void analyze(dataUrl);
   };
 
   /* ── Load from file input ───────────────────────────────── */
@@ -182,8 +212,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
       if (!openRef.current || request !== cameraRequest.current) return;
       setCapturedImage(ev.target?.result as string);
       stopStream();
-      setError("");
-      setStep("confirm");
+      void analyze(ev.target?.result as string);
     };
     reader.onerror = () => { if (openRef.current) setError("Non riesco ad aprire questa immagine. Prova un’altra foto."); };
     reader.readAsDataURL(file);
@@ -208,7 +237,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         type: "expense",
         date: date || todayIT(),
         cardId: activeCard?.id || "",
-        note: capturedImage ? "Inserito manualmente da foto scontrino" : "Inserito manualmente",
+        note: capturedImage ? "Registrato da foto scontrino: dati confermati" : "Inserito manualmente",
       });
       if (result.error) { setError(result.error); setStep("confirm"); return; }
       setStep("success");
@@ -264,10 +293,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         <AlertCircle className="h-4 w-4 text-[#FDC909] shrink-0 mt-0.5" />
         <div>
           <p className="text-xs font-black text-[#FDC909] leading-tight">
-            Compila i dati dalla foto
+            Lettura sul tuo dispositivo
           </p>
           <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5 leading-snug">
-            La lettura automatica non è ancora disponibile. La foto resta su questo dispositivo: inserisci esercente, importo e data prima di salvare.
+            La foto resta su questo dispositivo. ZERO prova a leggere i dati; controllali sempre prima di salvare la spesa.
           </p>
         </div>
       </div>
@@ -386,6 +415,14 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         </div>
       )}
 
+      {step === "analyzing" && <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-5 px-6 text-center" role="status" aria-live="polite">
+        {capturedImage && <img src={capturedImage} alt="Scontrino da leggere" className="h-44 w-36 object-contain rounded-2xl bg-white" />}
+        <Loader2 className="h-8 w-8 text-[#FDC909] animate-spin motion-reduce:animate-none" />
+        <div><h3 className="text-base font-bold text-white">{readProgress < 20 ? "Preparo la lettura…" : "Leggo lo scontrino…"}</h3><p className="mt-2 text-xs text-[#A7A7A7]">Al primo utilizzo può richiedere qualche secondo.</p></div>
+        <div role="progressbar" aria-label="Lettura scontrino" aria-valuemin={0} aria-valuemax={100} aria-valuenow={readProgress} className="h-1.5 w-48 overflow-hidden rounded-full bg-white/20"><div className="h-full bg-[#FDC909] transition-[width] motion-reduce:transition-none" style={{width:`${readProgress}%`}} /></div>
+        <button type="button" onClick={()=>{readingRef.current?.abort();readingRef.current=null;setReadNotice("Lettura annullata. Compila i dati dalla foto.");setDate("");setCategory("Altro");setStep("confirm");}} className="px-5 py-3 text-xs font-bold text-white underline underline-offset-4">Compila manualmente</button>
+      </div>}
+
       {/* ══ STEP: CONFIRM ═════════════════════════════════════ */}
       {step === "confirm" && (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -393,7 +430,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           <div className="mx-5 mb-4 shrink-0">
             <div className="flex items-center gap-2 bg-[#FDC909] text-[#0B0B0B] p-3 rounded-2xl text-xs font-bold">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>{capturedImage ? "Foto pronta — inserisci i dati e salva" : "Inserisci i dati della spesa"}</span>
+              <span>{capturedImage ? readNotice || "Foto pronta — inserisci i dati e salva" : "Inserisci i dati della spesa"}</span>
             </div>
           </div>
 
@@ -401,7 +438,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           {capturedImage && (
             <div className="mx-5 mb-3 shrink-0">
               <div className="h-20 rounded-2xl overflow-hidden border border-[#A7A7A7]">
-                <img src={capturedImage} alt="scontrino" className="w-full h-full object-cover" />
+                <img src={capturedImage} alt="scontrino" className="w-full h-full object-contain bg-white" />
               </div>
             </div>
           )}
@@ -481,6 +518,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
                   {activeCard ? `${activeCard.bankName} ${activeCard.number}` : "Nessuna carta"}
                 </span>
               </div>
+              {readText && <details className="rounded-xl border border-black/10 bg-white p-3 text-xs text-[#73736E]"><summary className="cursor-pointer font-bold text-[#0B0B0B]">Testo letto dalla foto</summary><pre className="mt-3 whitespace-pre-wrap break-words font-sans">{readText}</pre></details>}
             </div>
           </div>
 

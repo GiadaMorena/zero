@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const root=process.argv[2]||path.resolve(__dirname,'..'),ts=require(root+'/node_modules/typescript'),scope={exports:{}};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(root+'/src/lib/receiptFields.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,scope);
+const read=scope.exports.receiptFields;
+const sample=read('ESSELUNGA\nDOCUMENTO COMMERCIALE\nVia Roma 10\nPane 2,40\nPasta 20,00\nTOTALE COMPLESSIVO 22,40\nTOTALE IVA 4,04\nCONTANTI 30,00\nRESTO 7,60\n09/10/2026 13:30');
+assert.equal(sample.title,'ESSELUNGA');assert.equal(sample.amount,'22,40');assert.equal(sample.date,'2026-10-09');assert.equal(sample.category,'Cibo');
+assert.equal(read('Totale 1.234,56').amount,'1234,56');assert.equal(read('TOTALE\n12.50').amount,'12,50');
+assert.equal(read('TOTALE 12,50\nTOTALE 18,50').amount,'');assert.equal(read('SUBTOTALE 10,50\nTOTALE IVA 2,50\nCONTANTI 20,00').amount,'');
+assert.equal(read('Pane 5,00\nLatte 2,50').amount,'');assert.equal(read('TOTAL 10,001').amount,'');assert.equal(read('TOTALE -12,50').amount,'');
+assert.equal(read('31/02/2026').date,'');assert.equal(read('29/02/2024').date,'2024-02-29');assert.equal(read('09/10/26').date,'2026-10-09');assert.equal(read('09/10/2026\n10/10/2026').date,'');assert.equal(read('2026-10-09').date,'2026-10-09');
+assert.equal(read('DOCUMENTO COMMERCIALE\nFarmacia di prova').title,'Farmacia di prova');assert.equal(read('Farmacia di prova').category,'Salute');
+console.log('Labelled totals, thousands/cents, ambiguity, subtotal/IVA/change exclusion and real calendar dates passed');
