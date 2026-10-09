@@ -1,43 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-import { TrendingUp, TrendingDown, PiggyBank, PieChart, Calendar, ChevronDown } from "lucide-react";
+import { TrendingUp, TrendingDown, PiggyBank, PieChart } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { financialAnalysis, type AnalysisPeriod } from "@/lib/financialAnalysis";
+import { AnalysisPeriodControls } from "../AnalysisPeriodControls";
 
 export function DesktopAnalisi() {
-  const { transactions, activeCard } = useApp();
-  const [period, setPeriod] = useState<"Settimana" | "Mese" | "3 Mesi" | "Anno">("Mese");
+  const { transactions } = useApp();
+  const [period, setPeriod] = useState<AnalysisPeriod>("Mese");
 
+  const [anchor, setAnchor] = useState(() => new Date());
+  const data = financialAnalysis(transactions, period, anchor);
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
-  // Compute metrics from AppContext transactions
-  const totalIncome = transactions
-    .filter((t) => t.amount > 0)
-    .reduce((acc, t) => acc + t.amount, 0);
-
-  const totalExpense = transactions
-    .filter((t) => t.amount < 0)
-    .reduce((acc, t) => acc + Math.abs(t.amount), 0);
-
-  const netSavings = totalIncome - totalExpense;
-  const savingsRate = totalIncome > 0 ? Math.max(0, Math.round((netSavings / totalIncome) * 100)) : 0;
-
-  // Category Breakdown Calculation
-  const categoryTotals: Record<string, number> = {};
-  transactions
-    .filter((t) => t.amount < 0)
-    .forEach((t) => {
-      categoryTotals[t.category] = (categoryTotals[t.category] || 0) + Math.abs(t.amount);
-    });
-
-  const categoryList = Object.entries(categoryTotals)
-    .map(([cat, val]) => ({
-      name: cat,
-      amount: val,
-      percent: totalExpense > 0 ? Math.round((val / totalExpense) * 100) : 0,
-    }))
-    .sort((a, b) => b.amount - a.amount);
+  const totalIncome = data.income;
+  const totalExpense = data.spent;
+  const netSavings = data.net;
+  const savingsRate = totalIncome > 0 ? Math.round(netSavings / totalIncome * 100) : null;
+  const categoryList = data.categories;
+  const chartMax = Math.max(1, ...data.buckets.flatMap(bucket => [bucket.expense, bucket.income]));
 
   return (
     <div className="p-8 max-w-[1500px] mx-auto w-full flex flex-col gap-6 select-none">
@@ -52,23 +35,9 @@ export function DesktopAnalisi() {
           </p>
         </div>
 
-        {/* Period Selector Pills */}
-        <div className="grid grid-cols-4 gap-2 bg-white p-1.5 rounded-2xl border border-[#EBEBE5] shadow-xs">
-          {(["Settimana", "Mese", "3 Mesi", "Anno"] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                period === p
-                  ? "bg-[#121212] text-white shadow-xs"
-                  : "text-[#73736E] hover:text-[#121212]"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+        <div className="w-full sm:max-w-md"><AnalysisPeriodControls period={period} anchor={anchor} onPeriod={setPeriod} onAnchor={setAnchor} includeWeek /></div>
       </div>
+      {data.undated > 0 && <p className="text-xs text-[#73736E]">{data.undated} movimenti senza data valida esclusi dai totali. Correggi la data nei movimenti.</p>}
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -128,7 +97,7 @@ export function DesktopAnalisi() {
           </div>
           <div className="my-2">
             <span className="text-3xl font-black text-[#121212] tracking-tight">
-              {savingsRate}%
+              {savingsRate === null ? "—" : `${savingsRate}%`}
             </span>
           </div>
           <p className="text-[10px] text-[#121212] font-semibold">Delle tue entrate risparmiate</p>
@@ -144,10 +113,11 @@ export function DesktopAnalisi() {
               Ripartizione per Categoria
             </h3>
             <p className="text-xs text-[#73736E] font-medium mb-4">
-              Dove sono finiti i tuoi soldi questo {period.toLowerCase()}
+              Uscite del periodo selezionato
             </p>
 
             <div className="flex flex-col gap-3">
+              {categoryList.length === 0 && <p className="py-6 text-xs text-[#73736E]">Nessuna spesa nel periodo selezionato.</p>}
               {categoryList.map((c) => (
                 <div key={c.name} className="flex flex-col gap-1">
                   <div className="flex items-center justify-between text-xs font-bold text-[#121212]">
@@ -175,29 +145,24 @@ export function DesktopAnalisi() {
               Trend Temporale Entrate vs Spese
             </h3>
             <p className="text-xs text-[#73736E] font-medium mb-4">
-              Confronto bilanciato su scala temporale
+              Entrate e uscite registrate nel periodo selezionato
             </p>
 
-            <div className="h-64 flex items-end justify-between gap-3 pt-6 pb-2 border-b border-[#EBEBE5]">
-              {[
-                { label: "Sett 1", exp: 420, inc: 1800 },
-                { label: "Sett 2", exp: 280, inc: 200 },
-                { label: "Sett 3", exp: 510, inc: 150 },
-                { label: "Sett 4", exp: 350, inc: 400 },
-              ].map((bar, idx) => (
+            <div role="img" aria-label={`Grafico ${data.label}: uscite ${money(totalExpense)}, entrate ${money(totalIncome)}`} className="h-64 flex items-end justify-between gap-1 pt-6 pb-2 border-b border-[#EBEBE5]">
+              {data.buckets.map((bar, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                  <div className="w-full flex justify-center items-end gap-1.5 h-full">
+                  <div className="w-full flex justify-center items-end gap-1 h-full">
                     {/* Expense bar */}
                     <div
-                      className="w-5 bg-[#121212] rounded-t-lg transition-all duration-500 hover:opacity-80"
-                      style={{ height: `${(bar.exp / 1800) * 100}%` }}
-                      title={`Spesa: €${bar.exp}`}
+                      className="w-2.5 sm:w-3 bg-[#121212] rounded-t-lg transition-all duration-500 motion-reduce:transition-none hover:opacity-80"
+                      style={{ height: `${(bar.expense / chartMax) * 100}%` }}
+                      title={`Spesa: ${money(bar.expense)}`}
                     />
                     {/* Income bar */}
                     <div
-                      className="w-5 bg-[#F5E050] rounded-t-lg transition-all duration-500 hover:opacity-80"
-                      style={{ height: `${(bar.inc / 1800) * 100}%` }}
-                      title={`Entrata: €${bar.inc}`}
+                      className="w-2.5 sm:w-3 bg-[#F5E050] rounded-t-lg transition-all duration-500 motion-reduce:transition-none hover:opacity-80"
+                      style={{ height: `${(bar.income / chartMax) * 100}%` }}
+                      title={`Entrata: ${money(bar.income)}`}
                     />
                   </div>
                   <span className="text-[10px] font-bold text-[#73736E]">{bar.label}</span>

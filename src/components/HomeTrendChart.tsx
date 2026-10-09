@@ -1,39 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
-import { ArrowDown, ArrowUp, BarChart2, ChevronDown } from "lucide-react";
+import React from "react";
+import { ArrowDown, ArrowUp, BarChart2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { monthlySummary, transactionDate } from "@/lib/monthlyBudget";
+import { financialAnalysis } from "@/lib/financialAnalysis";
 
 export function HomeTrendChart() {
-  const { transactions, totalMonthlySavings } = useApp();
-  const monthly = monthlySummary(transactions);
+  const { transactions } = useApp();
+  const monthly = financialAnalysis(transactions, "Mese", new Date());
+  const totalMonthlySavings = monthly.net;
   const totalMonthlySpending = monthly.spent;
   const totalMonthlyIncome = monthly.income;
-  const [selectedMonth] = useState("Mese in corso");
+  const selectedMonth = new Date().toLocaleDateString("it-IT", { month: "long" });
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
-  // Compute dynamic 5-bucket distribution for the current month
-  const buckets = [
-    { label: "1-7", expense: 0, income: 0 },
-    { label: "8-14", expense: 0, income: 0 },
-    { label: "15-21", expense: 0, income: 0 },
-    { label: "22-28", expense: 0, income: 0 },
-    { label: "29-31", expense: 0, income: 0 },
-  ];
-
-  monthly.transactions.forEach((tx) => {
-    const day = transactionDate(tx)!.getDate();
-    const bucket = buckets[Math.min(4, Math.floor((day - 1) / 7))];
-    const amt = Math.abs(tx.amount);
-    if (tx.amount < 0) {
-      bucket.expense += amt;
-    } else {
-      bucket.income += amt;
-    }
-  });
+  const buckets = monthly.buckets;
 
   const maxVal = Math.max(
     ...buckets.map((b) => Math.max(b.expense, b.income)),
@@ -49,12 +32,11 @@ export function HomeTrendChart() {
         <h3 className="text-base font-extrabold text-[#0B0B0B] tracking-tight">
           Come stanno andando le cose?
         </h3>
-        <button
+        <span
           className="flex items-center gap-1 text-xs text-[#A7A7A7] font-medium hover:text-[#0B0B0B] transition-colors"
         >
           <span>{selectedMonth}</span>
-          <ChevronDown className="h-3.5 w-3.5" />
-        </button>
+        </span>
       </div>
 
       {/* Main Grid: Left Metrics (3 items) | Right Dual Bar Chart */}
@@ -93,7 +75,7 @@ export function HomeTrendChart() {
               <BarChart2 className="h-3.5 w-3.5 stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-[10px] text-[#A7A7A7] font-semibold">Messo da parte</p>
+              <p className="text-[10px] text-[#A7A7A7] font-semibold">Saldo del mese</p>
               <p className="text-sm font-black text-[#0B0B0B] leading-tight">
                 {money(totalMonthlySavings)}
               </p>
@@ -106,11 +88,11 @@ export function HomeTrendChart() {
           <div className="h-28 w-full flex items-end justify-between px-1 relative pb-1">
             {buckets.map((bar, idx) => {
               const blackHeight = hasData
-                ? Math.max(6, Math.round((bar.expense / maxVal) * 80))
-                : 4;
+                ? Math.round((bar.expense / maxVal) * 80)
+                : 0;
               const yellowHeight = hasData
-                ? Math.max(6, Math.round((bar.income / maxVal) * 80))
-                : 4;
+                ? Math.round((bar.income / maxVal) * 80)
+                : 0;
 
               return (
                 <div key={idx} className="flex flex-col items-center gap-1.5 relative">

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { validMonthlyBudget } from "@/lib/monthlyBudget";
+import { validMonthlyBudget, monthlySummary } from "@/lib/monthlyBudget";
 import { changedBalances, persistTransactionChange, type TransactionEdit } from "@/lib/transactionChanges";
 
 const STORAGE_KEY = "zero_app_state_v6";
@@ -952,15 +952,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ── Computed values ────────────────────────────────────────────────
-  const totalMonthlySpending = transactions
-    .filter((t) => t.amount < 0)
-    .reduce((acc, t) => acc + Math.abs(t.amount), 0);
-
-  const totalMonthlyIncome = transactions
-    .filter((t) => t.amount > 0)
-    .reduce((acc, t) => acc + t.amount, 0);
-
-  const totalMonthlySavings = activeCard?.balance ?? 0;
+  const currentMonth = monthlySummary(transactions.filter(tx => tx.id !== pendingDelete));
+  const totalMonthlySpending = currentMonth.spent;
+  const totalMonthlyIncome = currentMonth.income;
+  const totalMonthlySavings = Math.round((currentMonth.income - currentMonth.spent) * 100) / 100;
 
   const totalActiveSubscriptionsCost = subscriptions
     .filter((s) => s.active)

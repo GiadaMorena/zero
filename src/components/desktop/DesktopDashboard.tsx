@@ -91,7 +91,7 @@ export function DesktopDashboard({
             </span>
           </div>
           <p className="text-[10px] text-rose-600 font-semibold">
-            Calcolato su {transactions.filter((t) => t.amount < 0).length} uscite
+            Calcolato su {monthly.transactions.filter((t) => t.type === "expense").length} uscite
           </p>
         </div>
 
