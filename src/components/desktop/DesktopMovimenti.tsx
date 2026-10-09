@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -24,6 +24,8 @@ import {
 import { useApp, type TransactionItem } from "@/context/AppContext";
 import { AddSpesaModal } from "../AddSpesaModal";
 import { Pencil } from "lucide-react";
+import { filterMovements, sortMovements, movementDateLabel, type MovementFilters } from "@/lib/movementLedger";
+import { MovementTools } from "../MovementTools";
 
 interface DesktopMovimentiProps {
   onOpenAddExpense: () => void;
@@ -43,8 +45,11 @@ export function DesktopMovimenti({
   const [selectedCardId, setSelectedCardId] = useState<string>("Tutte");
   const [sortField, setSortField] = useState<"date" | "amount">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [period, setPeriod] = useState<MovementFilters["period"]>("all");
+  const [movementType, setMovementType] = useState<MovementFilters["type"]>("all");
+  useEffect(()=>setLocalSearch(searchQuery),[searchQuery]);
 
-  const categories = [
+  const categories = [...new Set([
     "Tutte",
     "Casa",
     "Cibo",
@@ -55,31 +60,24 @@ export function DesktopMovimenti({
     "Abbonamenti",
     "Entrata",
     "Altro",
-  ];
+    ...transactions.map(item=>item.category),
+  ])];
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
   // Filtering
-  const filtered = transactions.filter((t) => {
-    const q = (localSearch || searchQuery).toLowerCase();
-    const matchesSearch = t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
-    const matchesCategory = selectedCategory === "Tutte" || t.category === selectedCategory;
-    const matchesCard = selectedCardId === "Tutte" || t.cardId === selectedCardId;
-    return matchesSearch && matchesCategory && matchesCard;
-  });
+  const filters:MovementFilters={query:localSearch,category:selectedCategory,cardId:selectedCardId,period,type:movementType};
+  const filtered = filterMovements(transactions,cards,filters);
+  const changeFilters=(data:Partial<MovementFilters>)=>{if(data.period)setPeriod(data.period);if(data.type)setMovementType(data.type);if(data.cardId)setSelectedCardId(data.cardId);};
+  const resetFilters=()=>{setLocalSearch("");setSelectedCategory("Tutte");setSelectedCardId("Tutte");setPeriod("all");setMovementType("all");};
 
   // Sorting
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortField === "amount") {
-      return sortOrder === "desc" ? Math.abs(b.amount) - Math.abs(a.amount) : Math.abs(a.amount) - Math.abs(b.amount);
-    }
-    return sortOrder === "desc" ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id);
-  });
+  const sorted = sortMovements(filtered,sortField,sortOrder);
 
   const getCardName = (cardId: string) => {
     const card = cards.find((c) => c.id === cardId);
-    return card ? card.bankName : "ZERO";
+    return card ? card.bankName : cardId ? "Carta non più presente" : "Nessuna carta";
   };
 
   return (
@@ -121,6 +119,7 @@ export function DesktopMovimenti({
           <input
             type="text"
             placeholder="Filtra per descrizione o nota..."
+            aria-label="Cerca movimenti"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
@@ -133,6 +132,7 @@ export function DesktopMovimenti({
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
+              aria-pressed={selectedCategory===cat}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                 selectedCategory === cat
                   ? "bg-[#121212] text-white shadow-xs"
@@ -144,24 +144,9 @@ export function DesktopMovimenti({
           ))}
         </div>
 
-        {/* Card Selector Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#73736E]">Carta:</span>
-          <select
-            value={selectedCardId}
-            onChange={(e) => setSelectedCardId(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-[#F8F8F5] border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none"
-          >
-            <option value="Tutte">Tutte le carte</option>
-            {cards.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.bankName}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
+      <MovementTools filters={filters} onChange={changeFilters} onReset={resetFilters} cards={cards} results={sorted}/>
       {/* Transactions Table */}
       <div className="rounded-[28px] bg-white border border-[#EBEBE5] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
@@ -171,18 +156,15 @@ export function DesktopMovimenti({
                 <th className="py-4 px-6">Movimento / Descrizione</th>
                 <th className="py-4 px-6">Categoria</th>
                 <th className="py-4 px-6">Carta / Conto</th>
-                <th className="py-4 px-6">Data</th>
+                <th className="py-4 px-6" aria-sort={sortField === "date" ? sortOrder === "asc" ? "ascending" : "descending" : "none"}><button type="button" onClick={()=>{setSortField("date");setSortOrder(sortField === "date" && sortOrder === "desc" ? "asc" : "desc");}} className="flex items-center gap-1"><span>Data</span><ArrowUpDown className="h-3 w-3"/></button></th>
                 <th
-                  className="py-4 px-6 cursor-pointer hover:text-[#121212] text-right"
-                  onClick={() => {
-                    setSortField("amount");
-                    setSortOrder(sortOrder === "desc" ? "asc" : "desc");
-                  }}
+                  className="py-4 px-6 hover:text-[#121212] text-right"
+                  aria-sort={sortField === "amount" ? sortOrder === "asc" ? "ascending" : "descending" : "none"}
                 >
-                  <div className="flex items-center justify-end gap-1">
+                  <button type="button" onClick={()=>{setSortField("amount");setSortOrder(sortField === "amount" && sortOrder === "desc" ? "asc" : "desc");}} className="ml-auto flex items-center justify-end gap-1">
                     <span>Importo</span>
                     <ArrowUpDown className="h-3 w-3" />
-                  </div>
+                  </button>
                 </th>
                 <th className="py-4 px-6 text-center">Azioni</th>
               </tr>
@@ -230,7 +212,7 @@ export function DesktopMovimenti({
                     </td>
 
                     {/* Data */}
-                    <td className="py-4 px-6 text-[#73736E] font-medium">{tx.date}</td>
+                    <td className="py-4 px-6 text-[#73736E] font-medium">{movementDateLabel(tx)}</td>
 
                     {/* Importo */}
                     <td className="py-4 px-6 text-right">
@@ -268,3 +250,4 @@ export function DesktopMovimenti({
     </div>
   );
 }
+

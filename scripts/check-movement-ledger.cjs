@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const root=process.argv[2]||path.resolve(__dirname,'..'),ts=require(root+'/node_modules/typescript');
+function load(file,imports={}){const scope={exports:{},require:name=>imports[name]};vm.runInNewContext(ts.transpileModule(fs.readFileSync(root+'/src/lib/'+file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,scope);return scope.exports}
+const monthly=load('monthlyBudget.ts'),analysis=load('financialAnalysis.ts',{'./monthlyBudget':monthly}),ledger=load('movementLedger.ts',{'./monthlyBudget':monthly,'./financialAnalysis':analysis});
+const now=new Date(2026,0,15,12),cards=[{id:'a',bankName:'Fineco'}],defaults={query:'',category:'Tutte',cardId:'Tutte',period:'all',type:'all'};
+const items=[{id:'zzz',title:'Caffè',note:'Pranzo ufficio',category:'Cibo',cardId:'a',amount:-12.5,date:'2025-12-31',createdAt:'2025-12-31T12:00:00Z'},{id:'aaa',title:'Stipendio',category:'Stipendio',cardId:'',amount:100,date:'2026-01-01',createdAt:'2026-01-01T12:00:00Z'},{id:'unknown',title:'Senza data',category:'Altro',cardId:'deleted',amount:-.1,date:'da verificare'}];
+const filter=overrides=>ledger.filterMovements(items,cards,{...defaults,...overrides},now);
+assert.equal(filter({query:'caffe fineco ufficio'})[0].id,'zzz');assert.equal(filter({query:'12,50'})[0].id,'zzz');assert.equal(filter({period:'month'}).length,1);assert.equal(filter({period:'previous-month'})[0].id,'zzz');assert.equal(filter({period:'year'}).length,1);
+assert.equal(filter({type:'income'})[0].id,'aaa');assert.equal(filter({cardId:'none'}).length,1);assert.equal(filter({type:'expense',cardId:'a',category:'Cibo'}).length,1);assert.equal(filter({query:'non presente'}).length,0);
+assert.equal(ledger.sortMovements(items)[0].id,'aaa');assert.equal(ledger.sortMovements(items,'date','asc')[0].id,'zzz');assert.equal(ledger.sortMovements(items,'date','asc')[2].id,'unknown');assert.equal(ledger.sortMovements(items,'amount','desc')[0].id,'aaa');
+assert.equal(ledger.movementTotals(items).expense,12.6);assert.equal(ledger.movementTotals(items).net,87.4);
+const csv=ledger.movementsCsv([{...items[0],title:'=HYPERLINK("malicious")',note:'  @SUM(1;2)\nnota'}],cards);assert.ok(csv.startsWith('\uFEFF'));assert.ok(csv.includes('"\'=HYPERLINK(""malicious"")"'));assert.ok(csv.includes('"\'  @SUM(1;2)\nnota"'));assert.ok(csv.includes(';-12,50;'));assert.ok(csv.includes('"2025-12-31"'));assert.ok(!csv.includes('undefined'));
+console.log('Movement date sorting, year boundaries, note/bank/accent search, combined filters, cents totals and safe CSV export passed');

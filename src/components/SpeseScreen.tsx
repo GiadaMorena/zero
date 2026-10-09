@@ -5,29 +5,27 @@ import { Search, Plus, ShoppingCart, Utensils, Fuel, ShoppingBag, Trash2, Dollar
 import { useApp, type TransactionItem } from "@/context/AppContext";
 import { AddSpesaModal } from "./AddSpesaModal";
 import { Pencil } from "lucide-react";
+import { filterMovements, sortMovements, movementDateLabel, type MovementFilters } from "@/lib/movementLedger";
+import { MovementTools } from "./MovementTools";
 
 interface SpeseScreenProps {
   onOpenAddModal: (type?: "expense" | "income") => void;
 }
 
 export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
-  const { transactions, deleteTransaction } = useApp();
+  const { transactions, deleteTransaction, cards } = useApp();
   const [editing, setEditing] = useState<TransactionItem | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("Tutte");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [extraFilters, setExtraFilters] = useState<Pick<MovementFilters,"period"|"type"|"cardId">>({period:"all",type:"all",cardId:"Tutte"});
 
-  const categories = ["Tutte", "Casa", "Cibo", "Trasporti", "Shopping", "Abbonamenti", "Svago", "Altro"];
+  const categories = ["Tutte", ...new Set(["Casa", "Cibo", "Trasporti", "Shopping", "Abbonamenti", "Svago", "Salute", "Tecnologia", ...transactions.map(item=>item.category), "Altro"])];
 
-  const filtered = transactions.filter((item) => {
-    const matchesCat = activeCategory === "Tutte" || item.category === activeCategory;
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
-
-  const totalSpending = filtered
-    .filter((t) => t.amount < 0)
-    .reduce((acc, curr) => acc + Math.abs(curr.amount), 0);
+  const filters:MovementFilters = {...extraFilters,query:searchQuery,category:activeCategory};
+  const filtered = sortMovements(filterMovements(transactions,cards,filters));
+  const changeFilters=(data:Partial<MovementFilters>)=>setExtraFilters(previous=>({...previous,...data}));
+  const resetFilters=()=>{setExtraFilters({period:"all",type:"all",cardId:"Tutte"});setActiveCategory("Tutte");setSearchQuery("");};
 
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
@@ -44,13 +42,16 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
         </h1>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowSearch(!showSearch)}
+            onClick={() => {if(showSearch)setSearchQuery("");setShowSearch(!showSearch);}}
+            aria-label={showSearch ? "Nascondi ricerca" : "Cerca movimenti"}
+            aria-expanded={showSearch}
             className="h-9 w-9 rounded-full bg-white border border-[#A7A7A7]/20 text-[#0B0B0B] flex items-center justify-center hover:bg-[#F7F7F5] shadow-xs transition-colors"
           >
             <Search className="h-4 w-4" />
           </button>
           <button
             onClick={() => onOpenAddModal("expense")}
+            aria-label="Aggiungi spesa"
             className="h-9 w-9 rounded-full bg-[#0B0B0B] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
@@ -64,7 +65,8 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#A7A7A7]" />
           <input
             type="text"
-            placeholder="Cerca spesa..."
+            placeholder="Cerca nome, nota o banca…"
+            aria-label="Cerca movimenti"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-[20px] bg-white border border-[#A7A7A7]/30 text-xs focus:outline-none focus:border-[#FDC909]"
@@ -80,6 +82,7 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
+              aria-pressed={isActive}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
                 isActive
                   ? "bg-[#FDC909] text-[#0B0B0B] shadow-xs"
@@ -92,12 +95,11 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
         })}
       </div>
 
+      <MovementTools filters={filters} onChange={changeFilters} onReset={resetFilters} cards={cards} results={filtered}/>
+
       {/* Total Month Card Header */}
       <div className="flex items-center justify-between px-1 pt-0.5">
-        <span className="text-xs font-semibold text-[#A7A7A7]">Tutti i movimenti</span>
-        <span className="text-xs font-extrabold text-[#0B0B0B]">
-          - {money(totalSpending)}
-        </span>
+        <span className="text-xs font-semibold text-[#A7A7A7]">Movimenti dal più recente</span>
       </div>
 
       {/* Transaction List */}
@@ -126,23 +128,27 @@ export function SpeseScreen({ onOpenAddModal }: SpeseScreenProps) {
                     {item.title}
                   </h4>
                   <p className="truncate text-[10px] text-[#A7A7A7] font-medium mt-0.5">
-                    {item.category} · {item.date}
+                    {item.category} · {movementDateLabel(item)}
                   </p>
+                  {item.note && <p title={item.note} className="mt-0.5 truncate text-[10px] text-[#73736E]">{item.note}</p>}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setEditing(item)} aria-label={`Modifica ${item.title}`} className="flex h-11 w-11 items-center justify-center text-[#73736E]"><Pencil className="h-4 w-4" /></button>
+              <div className="flex shrink-0 flex-col items-end gap-1">
                 <span className="text-xs font-black text-[#0B0B0B]">
                   {isIncome ? "+ " : "- "} {money(Math.abs(item.amount))}
                 </span>
+                <div className="flex items-center">
+                <button type="button" onClick={() => setEditing(item)} aria-label={`Modifica ${item.title}`} className="flex h-11 w-11 items-center justify-center text-[#73736E]"><Pencil className="h-4 w-4" /></button>
                 <button
                   onClick={() => deleteTransaction(item.id)}
                   className="flex h-11 w-11 items-center justify-center text-[#A7A7A7] hover:text-[#0B0B0B] transition-colors"
                   title="Elimina"
+                  aria-label={`Elimina ${item.title}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
+                </div>
               </div>
             </div>
           );
