@@ -29,6 +29,8 @@ import { ReceiptScanModal } from "./ReceiptScanModal";
 import { AltroMenuSheet } from "./AltroMenuSheet";
 import { MonthlyBudgetCard } from "./MonthlyBudgetCard";
 import { monthlySummary } from "@/lib/monthlyBudget";
+import { UpcomingPaymentsCard } from "./UpcomingPaymentsCard";
+import { upcomingPayments } from "@/lib/upcomingPayments";
 
 interface HomeScreenProps {
   onOpenAddModal: (type?: "expense" | "income") => void;
@@ -58,6 +60,8 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
   const totalCardsBalance = cards.reduce((acc, c) => acc + (c.balance || 0), 0);
   const nextGoal = goals[0] || null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
+  const activeSubs = subscriptions.filter((s) => s.active);
+  const nextPayment = upcomingPayments(subscriptions).payments[0];
   const monthlyCount = monthlySummary(transactions).transactions.length;
 
   return (
@@ -212,6 +216,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
       </div>
 
       <MonthlyBudgetCard />
+      <UpcomingPaymentsCard onNavigate={onNavigate} />
 
       {/* ── 5. ULTIMI MOVIMENTI ── */}
       <div>
@@ -359,10 +364,10 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
             </div>
 
             {/* App Icons — Real Dynamic Badges */}
-            {subscriptions.length > 0 ? (
+            {activeSubs.length > 0 ? (
               <>
                 <div className="flex items-center -space-x-1.5 my-1.5">
-                  {subscriptions.slice(0, 3).map((sub, i) => (
+                  {activeSubs.slice(0, 3).map((sub, i) => (
                     <div
                       key={sub.id || i}
                       className="h-5 w-5 rounded-full bg-[#0B0B0B] text-[#FDC909] text-[8px] font-black flex items-center justify-center ring-2 ring-white uppercase"
@@ -370,15 +375,15 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
                       <SubscriptionLogo name={sub.name} size={20} />
                     </div>
                   ))}
-                  {subscriptions.length > 3 && (
+                  {activeSubs.length > 3 && (
                     <div className="h-5 w-5 rounded-full bg-[#F7F7F5] text-[#A7A7A7] text-[8px] font-extrabold flex items-center justify-center ring-2 ring-white border border-[#A7A7A7]/20">
-                      +{subscriptions.length - 3}
+                      +{activeSubs.length - 3}
                     </div>
                   )}
                 </div>
 
                 <div className="text-[9px] text-[#A7A7A7] font-medium pt-1 border-t border-[#A7A7A7]/10 truncate">
-                  Prossimo: <span className="font-bold text-[#0B0B0B]">{subscriptions[0].name} · {subscriptions[0].date}</span>
+                  {nextPayment ? <>Prossimo: <span className="font-bold text-[#0B0B0B]">{nextPayment.sub.name} · {nextPayment.date.toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</span></> : "Completa le date dei rinnovi"}
                 </div>
               </>
             ) : (

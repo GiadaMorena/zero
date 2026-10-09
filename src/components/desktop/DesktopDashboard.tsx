@@ -24,6 +24,7 @@ import { HomeTrendChart } from "../HomeTrendChart";
 import { SubscriptionToggle } from "../AbbonamentiScreen";
 import { MonthlyBudgetCard } from "../MonthlyBudgetCard";
 import { monthlySummary } from "@/lib/monthlyBudget";
+import { UpcomingPaymentsCard } from "../UpcomingPaymentsCard";
 
 interface DesktopDashboardProps {
   onNavigate: (section: string) => void;
@@ -128,7 +129,7 @@ export function DesktopDashboard({
         </div>
       </div>
 
-      <div className="w-full max-w-xl"><MonthlyBudgetCard /></div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><MonthlyBudgetCard /><UpcomingPaymentsCard onNavigate={onNavigate} /></div>
 
       {/* ── 2. Wallet Cards Grid ── */}
       <div>
