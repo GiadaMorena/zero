@@ -472,9 +472,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     date?: string;
     cardId?: string;
   }) => {
+    if (!data.title.trim() || !Number.isFinite(data.amount) || data.amount < .01 || !Number.isSafeInteger(Math.round(data.amount * 100))) {
+      return { error: "Inserisci una descrizione e un importo valido maggiore di zero." };
+    }
+    const targetCardId = data.cardId ?? activeCard?.id ?? "";
+    if (targetCardId && !cards.some(card => card.id === targetCardId)) {
+      return { error: "La carta selezionata non è più disponibile. Scegline un’altra o Nessuna carta." };
+    }
     if (movementBusy.current) return { error: "Attendi il salvataggio in corso, poi riprova." };
     movementBusy.current = true;
-    const targetCardId = data.cardId || activeCard?.id || "";
     const finalAmount = data.type === "expense" ? -Math.abs(data.amount) : Math.abs(data.amount);
     const originalBalance = cards.find(card => card.id === targetCardId)?.balance;
     const appliedBalance = originalBalance === undefined ? undefined : Math.max(0, originalBalance + finalAmount);
