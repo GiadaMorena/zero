@@ -4,6 +4,9 @@ import React, { createContext, useContext, useState, useEffect, useRef } from "r
 import { supabase } from "@/lib/supabase";
 import { validMonthlyBudget, monthlySummary } from "@/lib/monthlyBudget";
 import { changedBalances, persistTransactionChange, type TransactionEdit } from "@/lib/transactionChanges";
+import { goalProgress, validGoal } from "@/lib/goalProgress";
+import { notifySaved } from "@/lib/saveFeedback";
+import { SaveFeedback } from "@/components/SaveFeedback";
 
 const STORAGE_KEY = "zero_app_state_v6";
 
@@ -82,6 +85,9 @@ interface AppContextType {
   transactions: TransactionItem[];
   subscriptions: SubscriptionItem[];
   goals: GoalItem[];
+  primaryGoalId: string | null;
+  setPrimaryGoal: (id: string) => Promise<{ error?: string }>;
+  updateGoal: (id: string, data: { title: string; target: number; current: number }) => Promise<{ error?: string }>;
   protections: ProtectionItem[];
   profile: UserProfile;
   initializeProfile: (data: {
@@ -114,9 +120,9 @@ interface AppContextType {
     category: string;
   }) => void;
   deleteSubscription: (id: string) => void;
-  addMoneyToGoal: (id: string, amount: number) => void;
-  addGoal: (data: { title: string; target: number }) => void;
-  deleteGoal: (id: string) => void;
+  addMoneyToGoal: (id: string, amount: number) => Promise<{ error?: string }>;
+  addGoal: (data: { title: string; target: number }) => Promise<{ error?: string }>;
+  deleteGoal: (id: string) => Promise<{ error?: string }>;
   addProtection: (data: {
     title: string;
     provider: string;
@@ -245,6 +251,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [movementNotice, setMovementNotice] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [primaryGoalId, setPrimaryGoalId] = useState<string | null>(null);
+  const goalBusy = useRef(false);
   const movementBusy = useRef(false);
   const deletionCommit = useRef<(id: string) => Promise<{ error?: string }>>(async () => ({}));
   useEffect(() => { setPendingDelete(null); setMovementNotice(""); }, [userId]);
@@ -319,6 +327,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (parsed.protections) setProtections(parsed.protections);
           if (parsed.profile) setProfile(parsed.profile);
           if (restoreBudget) setMonthlyBudget(validMonthlyBudget(parsed.monthlyBudget));
+          if (restoreBudget) setPrimaryGoalId(typeof parsed.primaryGoalId === "string" ? parsed.primaryGoalId : null);
         }
       } catch (e) {
         console.error("Failed to load state from localStorage:", e);
@@ -332,6 +341,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setUserId(session.user.id);
         setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
+        setPrimaryGoalId(typeof session.user.user_metadata?.zero_primary_goal_id === "string" ? session.user.user_metadata.zero_primary_goal_id : null);
         loadFromDB(session.user.id);
       } else {
         loadFromLocalStorage();
@@ -343,6 +353,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setUserId(session.user.id);
         setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
+        setPrimaryGoalId(typeof session.user.user_metadata?.zero_primary_goal_id === "string" ? session.user.user_metadata.zero_primary_goal_id : null);
         loadFromDB(session.user.id);
       } else {
         setUserId(null);
@@ -359,12 +370,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ cards, activeCardIndex, transactions, subscriptions, goals, protections, profile, monthlyBudget })
+        JSON.stringify({ cards, activeCardIndex, transactions, subscriptions, goals, protections, profile, monthlyBudget, primaryGoalId })
       );
     } catch (e) {
       console.error("Failed to save state to localStorage:", e);
     }
-  }, [isHydrated, cards, activeCardIndex, transactions, subscriptions, goals, protections, profile, monthlyBudget]);
+  }, [isHydrated, cards, activeCardIndex, transactions, subscriptions, goals, protections, profile, monthlyBudget, primaryGoalId]);
 
   // ── Helper to always get valid user ID from Supabase session ──────
   const getEffectiveUserId = async (): Promise<string | null> => {
@@ -540,6 +551,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
+      notifySaved(data.type === "expense" ? "Spesa salvata" : "Entrata salvata");
       return {};
     } catch {
       // The movement is already saved; do not prompt a duplicate retry if a later balance refresh fails.
@@ -568,6 +580,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
       } else setCards(prev => changedBalances(prev, original, replacement));
       setTransactions(prev => replacement ? prev.map(tx => tx.id === id ? replacement : tx) : prev.filter(tx => tx.id !== id));
+      if (replacement) notifySaved("Movimento aggiornato");
       return {};
     } catch { return { error: "Connessione non disponibile. Il movimento è ancora qui." }; }
     finally { movementBusy.current = false; }
@@ -643,69 +656,79 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ── Goals ──────────────────────────────────────────────────────────
-  const addMoneyToGoal = async (id: string, amount: number) => {
-    setGoals((prev) =>
-      prev.map((g) => {
-        if (g.id !== id) return g;
-        const newCurrent = g.current + amount;
-        const newPercent = Math.min(100, Math.round((newCurrent / g.target) * 100));
-        return { ...g, current: newCurrent, percent: newPercent, completed: newCurrent >= g.target };
-      })
-    );
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      const goal = goals.find((g) => g.id === id);
-      if (goal) {
-        const newCurrent = goal.current + amount;
-        const newPercent = Math.min(100, Math.round((newCurrent / goal.target) * 100));
-        await supabase.from("goals").update({
-          current: newCurrent,
-          percent: newPercent,
-          completed: newCurrent >= goal.target,
-        }).eq("id", id).eq("user_id", uid);
+  // Goals are persisted before their progress changes on screen.
+  const goalError = { error: "Non è stato possibile salvare l’obiettivo. Riprova: i dati inseriti sono ancora qui." };
+  const setPrimaryGoal = async (id: string): Promise<{ error?: string }> => {
+    const goal = goals.find(item => item.id === id);
+    if (!goal || goalProgress(goal).completed) return { error: "Scegli un obiettivo ancora in corso." };
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { error } = await supabase.auth.updateUser({ data: { zero_primary_goal_id: id } });
+        if (error) return goalError;
       }
-    }
+      setPrimaryGoalId(id);
+      notifySaved("Obiettivo principale aggiornato");
+      return {};
+    } catch { return goalError; }
   };
-
-  const addGoal = async (data: { title: string; target: number }) => {
-    const tempId = "g-" + Date.now();
-    const newGoal: GoalItem = {
-      id: tempId,
-      title: data.title,
-      current: 0,
-      target: data.target,
-      percent: 0,
-      completed: false,
-    };
-    setGoals((prev) => [...prev, newGoal]);
-
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      const { data: inserted } = await supabase.from("goals").insert({
-        user_id: uid,
-        title: data.title,
-        current: 0,
-        target: data.target,
-        percent: 0,
-        completed: false,
-      }).select().single();
-      if (inserted) {
-        setGoals((prev) =>
-          prev.map((g) => (g.id === tempId ? dbToGoal(inserted) : g))
-        );
+  const updateGoal = async (id: string, data: { title: string; target: number; current: number }): Promise<{ error?: string }> => {
+    if (goalBusy.current) return { error: "Attendi il salvataggio in corso." };
+    const original = goals.find(item => item.id === id);
+    if (!original || !validGoal(data.title, data.target, data.current)) return { error: "Controlla titolo e importi dell’obiettivo." };
+    const next = { ...original, title: data.title.trim(), target: Math.round(data.target * 100) / 100, current: Math.round(data.current * 100) / 100 };
+    Object.assign(next, goalProgress(next));
+    goalBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { data: saved, error } = await supabase.from("goals").update({ title: next.title, target: next.target, current: next.current, percent: next.percent, completed: next.completed }).eq("id", id).eq("user_id", uid).eq("current", original.current).eq("target", original.target).eq("title", original.title).select("*").single();
+        if (error || !saved) return goalError;
       }
-    }
+      setGoals(prev => prev.map(item => item.id === id ? next : item));
+      notifySaved(next.completed && !goalProgress(original).completed ? "Obiettivo raggiunto!" : "Obiettivo aggiornato");
+      return {};
+    } catch { return goalError; }
+    finally { goalBusy.current = false; }
   };
-
-  const deleteGoal = async (id: string) => {
-    setGoals((prev) => prev.filter((g) => g.id !== id));
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      await supabase.from("goals").delete().eq("id", id).eq("user_id", uid);
-    }
+  const addMoneyToGoal = async (id: string, amount: number): Promise<{ error?: string }> => {
+    const goal = goals.find(item => item.id === id);
+    if (!goal || !Number.isFinite(amount) || amount < .01) return { error: "Inserisci un importo valido maggiore di zero." };
+    return updateGoal(id, { title: goal.title, target: goal.target, current: (Math.round(goal.current * 100) + Math.round(amount * 100)) / 100 });
   };
-
+  const addGoal = async (data: { title: string; target: number }): Promise<{ error?: string }> => {
+    if (goalBusy.current) return { error: "Attendi il salvataggio in corso." };
+    if (!validGoal(data.title, data.target, 0)) return { error: "Inserisci un titolo e un importo valido maggiore di zero." };
+    const newGoal: GoalItem = { id: "g-" + Date.now(), title: data.title.trim(), target: Math.round(data.target * 100) / 100, current: 0, percent: 0, completed: false };
+    goalBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { data: saved, error } = await supabase.from("goals").insert({ user_id: uid, title: newGoal.title, target: newGoal.target, current: 0, percent: 0, completed: false }).select("*").single();
+        if (error || !saved) return goalError;
+        Object.assign(newGoal, dbToGoal(saved));
+      }
+      setGoals(prev => [...prev, newGoal]);
+      notifySaved("Obiettivo creato");
+      return {};
+    } catch { return goalError; }
+    finally { goalBusy.current = false; }
+  };
+  const deleteGoal = async (id: string): Promise<{ error?: string }> => {
+    if (goalBusy.current) return { error: "Attendi il salvataggio in corso." };
+    goalBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { data: removed, error } = await supabase.from("goals").delete().eq("id", id).eq("user_id", uid).select("id").single();
+        if (error || !removed) return goalError;
+      }
+      setGoals(prev => prev.filter(item => item.id !== id));
+      if (primaryGoalId === id) setPrimaryGoalId(null);
+      return {};
+    } catch { return goalError; }
+    finally { goalBusy.current = false; }
+  };
   // ── Assicurazioni, Previdenza & PAC (Non calcolate sul totale) ────
   const addProtection = async (data: {
     title: string;
@@ -912,6 +935,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProtections([]);
     setProfile(EMPTY_PROFILE);
     setMonthlyBudget(null);
+    setPrimaryGoalId(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem("zero_auth_state_v5");
     localStorage.removeItem("zero_auth_state_v6");
@@ -973,6 +997,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         transactions: transactions.filter(tx => tx.id !== pendingDelete),
         subscriptions,
         goals,
+        primaryGoalId,
+        setPrimaryGoal,
+        updateGoal,
         protections,
         profile,
         initializeProfile,
@@ -1000,6 +1027,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+      <SaveFeedback hidden={!!pendingDelete} />
       {(pendingDelete || movementNotice) && <div role="status" aria-live="polite" data-app-update-block={pendingDelete ? "true" : undefined} className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+7rem)] left-1/2 z-[70] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center justify-between gap-3 rounded-2xl bg-[#0B0B0B] px-4 py-3 text-sm text-white shadow-lg">
         <span>{pendingDelete ? deleting ? "Eliminazione…" : "Movimento rimosso" : movementNotice}</span>
         {pendingDelete ? <button type="button" disabled={deleting} onClick={() => { setPendingDelete(null); setMovementNotice("Eliminazione annullata."); }} className="shrink-0 py-2 font-bold text-[#FDC909] disabled:opacity-40">Annulla</button> : <button type="button" onClick={() => setMovementNotice("")} className="shrink-0 py-2 font-bold text-[#FDC909]">Chiudi</button>}

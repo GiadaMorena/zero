@@ -29,6 +29,7 @@ import { ReceiptScanModal } from "./ReceiptScanModal";
 import { AltroMenuSheet } from "./AltroMenuSheet";
 import { MonthlyBudgetCard } from "./MonthlyBudgetCard";
 import { monthlySummary } from "@/lib/monthlyBudget";
+import { mainGoal, goalProgress } from "@/lib/goalProgress";
 import { UpcomingPaymentsCard } from "./UpcomingPaymentsCard";
 import { upcomingPayments } from "@/lib/upcomingPayments";
 
@@ -44,6 +45,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
     setActiveCardIndex,
     transactions,
     goals,
+    primaryGoalId,
     subscriptions,
     totalActiveSubscriptionsCost,
     protections,
@@ -58,7 +60,8 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
   const totalCardsBalance = cards.reduce((acc, c) => acc + (c.balance || 0), 0);
-  const nextGoal = goals[0] || null;
+  const selectedGoal = mainGoal(goals, primaryGoalId);
+  const nextGoal = selectedGoal ? { ...selectedGoal, ...goalProgress(selectedGoal) } : null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
   const activeSubs = subscriptions.filter((s) => s.active);
   const nextPayment = upcomingPayments(subscriptions).payments[0];
@@ -294,7 +297,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-[#A7A7A7]">
-                Il tuo prossimo obiettivo
+                Obiettivo principale
               </span>
               <ChevronRight className="h-3.5 w-3.5 text-[#A7A7A7]" />
             </div>
@@ -319,17 +322,17 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
                   <div className="w-full h-2 rounded-full bg-[#F7F7F5] border border-[#A7A7A7]/20 overflow-hidden mb-1">
                     <div
                       className="h-full bg-[#FDC909] rounded-full transition-all duration-500"
-                      style={{ width: `${nextGoal.percent}%` }}
+                      style={{ width: `${nextGoal.percent}% · Mancano {money(nextGoal.remaining)}` }}
                     />
                   </div>
                   <div className="text-right text-[10px] font-black text-[#0B0B0B]">
-                    {nextGoal.percent}%
+                    {nextGoal.percent}% · Mancano {money(nextGoal.remaining)}
                   </div>
                 </div>
               </>
             ) : (
               <div className="py-2 text-center">
-                <p className="text-xs font-bold text-[#0B0B0B]">Nessun obiettivo</p>
+                <p className="text-xs font-bold text-[#0B0B0B]">{goals.length ? "Tutti gli obiettivi raggiunti" : "Nessun obiettivo"}</p>
                 <p className="text-[10px] text-[#A7A7A7] mt-0.5">Tocca per creare</p>
               </div>
             )}
@@ -454,3 +457,4 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
     </div>
   );
 }
+

@@ -18,11 +18,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { parseTransactionAmount } from "@/lib/quickTransaction";
 
 type ScanStep =
   | "idle"       // mostra viewfinder (con camera o placeholder)
   | "acquiring"  // shutter flash
-  | "analyzing"  // spinner OCR
   | "confirm"    // dati estratti modificabili
   | "saving"     // breve spinner salvataggio
   | "success";   // feedback ✓
@@ -31,18 +31,6 @@ interface ReceiptScanModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-/* ─── Dati simulati OCR ─────────────────────────────────── */
-const OCR_SAMPLES = [
-  { title: "Esselunga", amount: "42.80", category: "Cibo", date: "12 settembre 2026" },
-  { title: "Carrefour Market", amount: "18.45", category: "Cibo", date: "12 settembre 2026" },
-  { title: "McDonald's", amount: "11.90", category: "Cibo", date: "12 settembre 2026" },
-  { title: "Farmacia Comunale", amount: "22.30", category: "Salute", date: "12 settembre 2026" },
-  { title: "Zara", amount: "59.95", category: "Shopping", date: "12 settembre 2026" },
-  { title: "IKEA", amount: "134.00", category: "Casa", date: "12 settembre 2026" },
-  { title: "Q8 Benzina", amount: "65.00", category: "Trasporti", date: "12 settembre 2026" },
-  { title: "Libreria Feltrinelli", amount: "28.00", category: "Svago", date: "12 settembre 2026" },
-];
 
 const CATEGORIES = [
   "Cibo",
@@ -57,11 +45,7 @@ const CATEGORIES = [
 
 const todayIT = () => {
   const now = new Date();
-  const months = [
-    "gennaio","febbraio","marzo","aprile","maggio","giugno",
-    "luglio","agosto","settembre","ottobre","novembre","dicembre",
-  ];
-  return `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
 };
 
 /* ─────────────────────────────────────────────────────────── */
@@ -73,8 +57,14 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError]   = useState<"denied" | "unavailable" | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const savingRef = useRef(false);
+  const openRef = useRef(isOpen);
+  const cameraRequest = useRef(0);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  openRef.current = isOpen;
 
-  // OCR result fields (editable)
+  // Receipt fields entered by the user
   const [title,    setTitle]    = useState("");
   const [amount,   setAmount]   = useState("");
   const [category, setCategory] = useState("Cibo");
@@ -87,11 +77,18 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
   /* ── cleanup stream on unmount / close ─────────────────── */
   const stopStream = useCallback(() => {
+    cameraRequest.current++;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
     setCameraActive(false);
+  }, []);
+
+  useEffect(() => () => {
+    cameraRequest.current++;
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
 
   useEffect(() => {
@@ -102,6 +99,8 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   }, [isOpen, stopStream]);
 
   const resetFlow = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setError("");
     setStep("idle");
     setCameraError(null);
     setCapturedImage(null);
@@ -112,6 +111,8 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   };
 
   const handleClose = () => {
+    if (savingRef.current) return;
+    openRef.current = false;
     stopStream();
     resetFlow();
     onClose();
@@ -119,12 +120,18 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
   /* ── Start camera ──────────────────────────────────────── */
   const startCamera = useCallback(async () => {
+    if (!openRef.current || streamRef.current) return;
+    const request = ++cameraRequest.current;
     setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
+      if (!openRef.current || request !== cameraRequest.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -132,6 +139,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
       }
       setCameraActive(true);
     } catch (err: any) {
+      if (!openRef.current || request !== cameraRequest.current) return;
+      streamRef.current?.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+      setCameraActive(false);
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
         setCameraError("denied");
       } else {
@@ -139,13 +150,6 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
       }
     }
   }, []);
-
-  /* auto-start camera when modal opens */
-  useEffect(() => {
-    if (isOpen && step === "idle" && !cameraActive && !cameraError) {
-      startCamera();
-    }
-  }, [isOpen, step, cameraActive, cameraError, startCamera]);
 
   /* ── Capture frame from camera ─────────────────────────── */
   const captureFromCamera = () => {
@@ -160,58 +164,59 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setCapturedImage(dataUrl);
     stopStream();
-    runOCR();
+    setError("");
+    setStep("confirm");
   };
 
   /* ── Load from file input ───────────────────────────────── */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 15 * 1024 * 1024) {
+      setError("Scegli un’immagine di dimensioni inferiori a 15 MB."); return;
+    }
+    const request = ++cameraRequest.current;
     const reader = new FileReader();
     reader.onload = (ev) => {
+      if (!openRef.current || request !== cameraRequest.current) return;
       setCapturedImage(ev.target?.result as string);
       stopStream();
-      runOCR();
+      setError("");
+      setStep("confirm");
     };
+    reader.onerror = () => { if (openRef.current) setError("Non riesco ad aprire questa immagine. Prova un’altra foto."); };
     reader.readAsDataURL(file);
   };
 
-  /* ── OCR simulation ─────────────────────────────────────── */
-  const runOCR = () => {
-    setStep("acquiring");
-    setTimeout(() => {
-      setStep("analyzing");
-      setTimeout(() => {
-        const sample = OCR_SAMPLES[Math.floor(Math.random() * OCR_SAMPLES.length)];
-        setTitle(sample.title);
-        setAmount(sample.amount);
-        setCategory(sample.category);
-        setDate(sample.date);
-        setStep("confirm");
-      }, 2200);
-    }, 400);
-  };
-
   /* ── Save transaction ───────────────────────────────────── */
-  const handleSave = () => {
-    const num = parseFloat(amount.replace(",", ".")) || 0;
-    if (!title.trim() || num <= 0) return;
+  const handleSave = async () => {
+    if (savingRef.current) return;
+    const num = parseTransactionAmount(amount);
+    const receiptDate = new Date(`${date}T12:00:00`);
+    if (!title.trim() || num === null || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(receiptDate.getTime()) || `${receiptDate.getFullYear()}-${String(receiptDate.getMonth()+1).padStart(2,"0")}-${String(receiptDate.getDate()).padStart(2,"0")}` !== date) {
+      setError("Inserisci l’esercente, una data valida e un importo maggiore di zero con al massimo due decimali."); return;
+    }
+    savingRef.current = true;
+    setError("");
     setStep("saving");
-    setTimeout(() => {
-      addTransaction({
+    try {
+      const result = await addTransaction({
         title: title.trim(),
         category,
         amount: num,
         type: "expense",
         date: date || todayIT(),
         cardId: activeCard?.id || "",
-        note: "Acquisito da scansione scontrino",
+        note: capturedImage ? "Inserito manualmente da foto scontrino" : "Inserito manualmente",
       });
+      if (result.error) { setError(result.error); setStep("confirm"); return; }
       setStep("success");
-      setTimeout(() => {
+      closeTimer.current = setTimeout(() => {
         handleClose();
       }, 2200);
-    }, 600);
+    } catch { setError("Salvataggio non riuscito. I dati inseriti sono ancora qui."); setStep("confirm"); }
+    finally { savingRef.current = false; }
   };
 
   if (!isOpen) return null;
@@ -223,7 +228,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
   /* ═══════════════════════════════════════════════════════ */
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#0B0B0B] select-none"
+    <div role="dialog" aria-modal="true" aria-label="Foto scontrino" data-app-update-block className="fixed inset-0 z-50 flex flex-col bg-[#0B0B0B]"
          style={{ paddingTop: "env(safe-area-inset-top, 44px)", paddingBottom: "env(safe-area-inset-bottom, 20px)" }}>
 
       {/* Hidden elements */}
@@ -240,6 +245,8 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
       <div className="flex items-center justify-between px-5 pt-2 pb-3 shrink-0">
         <button
           onClick={handleClose}
+          aria-label="Chiudi scontrino"
+          disabled={step === "saving"}
           className="h-9 w-9 rounded-full bg-[#F7F7F5] flex items-center justify-center hover:bg-[#A7A7A7] transition-colors"
         >
           <X className="h-4 w-4 text-[#0B0B0B]" />
@@ -247,7 +254,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         <h2 className="text-sm font-black text-white tracking-tight">
           {step === "confirm" ? "Controlla la spesa" :
            step === "success" ? "Spesa salvata" :
-           "Scansione scontrino"}
+           "Foto scontrino"}
         </h2>
         <div className="w-9" />
       </div>
@@ -257,17 +264,18 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         <AlertCircle className="h-4 w-4 text-[#FDC909] shrink-0 mt-0.5" />
         <div>
           <p className="text-xs font-black text-[#FDC909] leading-tight">
-            Funzionalità in sviluppo (IA in test)
+            Compila i dati dalla foto
           </p>
           <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5 leading-snug">
-            La lettura automatica degli scontrini è in fase di calibrazione. Puoi testare la scansione o salvare la spesa manualmente.
+            La lettura automatica non è ancora disponibile. La foto resta su questo dispositivo: inserisci esercente, importo e data prima di salvare.
           </p>
         </div>
       </div>
+      {error && <p role="alert" className="mx-5 mb-3 text-xs text-red-300">{error}</p>}
 
       {/* ══ STEP: IDLE / CAMERA VIEWFINDER ════════════════════ */}
       {(step === "idle" || step === "acquiring") && (
-        <div className="flex-1 flex flex-col gap-4 px-5 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-4 px-5 overflow-hidden">
 
           {/* Viewfinder */}
           <div className="relative flex-1 rounded-[28px] overflow-hidden bg-[#0B0B0B] border border-[#A7A7A7]">
@@ -286,7 +294,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-6">
                 <Scan className="h-10 w-10 text-[#FDC909] animate-pulse" />
                 <p className="text-xs text-[#A7A7A7] font-medium leading-snug">
-                  Avvio fotocamera…
+                  Scatta una foto o carica uno scontrino dalla galleria.
                 </p>
               </div>
             )}
@@ -353,7 +361,7 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
                 className="w-full py-4 rounded-full bg-[#FDC909] text-[#0B0B0B] font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
               >
                 <Camera className="h-5 w-5 stroke-[2.5]" />
-                <span>Scatta e analizza</span>
+                <span>Scatta foto</span>
               </button>
             ) : !cameraError ? (
               <button
@@ -373,50 +381,19 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
               <ImagePlus className="h-4.5 w-4.5 stroke-[2.5]" />
               <span>Carica dalla galleria</span>
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* ══ STEP: ANALYZING ═══════════════════════════════════ */}
-      {step === "analyzing" && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 text-center">
-          {capturedImage && (
-            <div className="w-32 h-40 rounded-2xl overflow-hidden border-2 border-[#FDC909] shrink-0">
-              <img src={capturedImage} alt="scontrino" className="w-full h-full object-cover" />
-            </div>
-          )}
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-16 w-16 rounded-full bg-[#FDC909] flex items-center justify-center">
-              <Loader2 className="h-8 w-8 text-[#0B0B0B] animate-spin" />
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold text-white">Sto leggendo lo scontrino…</h3>
-              <p className="text-xs text-[#A7A7A7] font-medium mt-1">
-                Estraggo esercente, importo e categoria
-              </p>
-            </div>
-          </div>
-          {/* Progress dots */}
-          <div className="flex gap-2">
-            {[0,1,2].map((i) => (
-              <div
-                key={i}
-                className="h-2 w-2 rounded-full bg-[#FDC909] animate-bounce"
-                style={{ animationDelay: `${i * 0.15}s` }}
-              />
-            ))}
+            <button type="button" onClick={() => { stopStream(); setError(""); setStep("confirm"); }} className="py-2 text-xs font-bold text-white underline underline-offset-4">Compila senza foto</button>
           </div>
         </div>
       )}
 
       {/* ══ STEP: CONFIRM ═════════════════════════════════════ */}
       {step === "confirm" && (
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {/* Success banner */}
           <div className="mx-5 mb-4 shrink-0">
             <div className="flex items-center gap-2 bg-[#FDC909] text-[#0B0B0B] p-3 rounded-2xl text-xs font-bold">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>Scontrino analizzato — controlla e salva</span>
+              <span>{capturedImage ? "Foto pronta — inserisci i dati e salva" : "Inserisci i dati della spesa"}</span>
             </div>
           </div>
 
@@ -430,15 +407,16 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           )}
 
           {/* Editable fields */}
-          <div className="flex-1 overflow-y-auto px-5 pb-2 no-scrollbar">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-2 no-scrollbar">
             <div className="bg-[#F7F7F5] rounded-[24px] p-4 flex flex-col gap-4">
 
               {/* Esercente */}
               <div>
-                <label className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                <label htmlFor="receipt-title" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
                   Esercente
                 </label>
                 <input
+                  id="receipt-title"
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -449,10 +427,11 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
               {/* Importo + Categoria */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                  <label htmlFor="receipt-amount" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
                     Importo (€)
                   </label>
                   <input
+                    id="receipt-amount"
                     type="text"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
@@ -461,11 +440,12 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                  <label htmlFor="receipt-category" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
                     Categoria
                   </label>
                   <div className="relative">
                     <select
+                      id="receipt-category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full appearance-none text-xs font-bold text-[#0B0B0B] bg-white border border-[#A7A7A7] rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#FDC909] pr-7"
@@ -481,13 +461,15 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
               {/* Data */}
               <div>
-                <label className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                <label htmlFor="receipt-date" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
                   Data
                 </label>
                 <input
-                  type="text"
+                  id="receipt-date"
+                  type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  onInput={(e) => setDate(e.currentTarget.value)}
                   className="w-full text-xs font-bold text-[#0B0B0B] bg-white border border-[#A7A7A7] rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#FDC909]"
                 />
               </div>
@@ -512,11 +494,11 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
             </button>
             <div className="grid grid-cols-2 gap-2.5">
               <button
-                onClick={() => { stopStream(); resetFlow(); startCamera(); }}
+                onClick={() => { stopStream(); resetFlow(); }}
                 className="py-3 rounded-full bg-[#F7F7F5] text-[#0B0B0B] font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-[#A7A7A7]"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                Rifai scansione
+                Cambia foto
               </button>
               <button
                 onClick={handleClose}
@@ -572,3 +554,4 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     </div>
   );
 }
+

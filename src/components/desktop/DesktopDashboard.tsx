@@ -26,6 +26,7 @@ import { HomeTrendChart } from "../HomeTrendChart";
 import { SubscriptionToggle } from "../AbbonamentiScreen";
 import { MonthlyBudgetCard } from "../MonthlyBudgetCard";
 import { monthlySummary } from "@/lib/monthlyBudget";
+import { mainGoal, goalProgress } from "@/lib/goalProgress";
 import { UpcomingPaymentsCard } from "../UpcomingPaymentsCard";
 
 interface DesktopDashboardProps {
@@ -49,13 +50,15 @@ export function DesktopDashboard({
     toggleSubscription,
     totalActiveSubscriptionsCost,
     goals,
+    primaryGoalId,
   } = useApp();
 
   const [editing, setEditing] = useState<TransactionItem | null>(null);
   const money = (val: number) =>
     new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(val);
 
-  const nextGoal = goals[0] || null;
+  const selectedGoal = mainGoal(goals, primaryGoalId);
+  const nextGoal = selectedGoal ? { ...selectedGoal, ...goalProgress(selectedGoal) } : null;
   const activeSubsCount = subscriptions.filter((s) => s.active).length;
   const monthly = monthlySummary(transactions);
   const totalMonthlySpending = monthly.spent;
@@ -309,7 +312,7 @@ export function DesktopDashboard({
                 </div>
                 <div className="flex justify-between items-center text-xs font-bold text-[#73736E]">
                   <span>Progresso</span>
-                  <span className="text-[#121212]">{nextGoal.percent}%</span>
+                  <span className="text-[#121212]">{nextGoal.percent}% · Mancano {money(nextGoal.remaining)}</span>
                 </div>
               </div>
             </>

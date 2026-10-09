@@ -1,0 +1,20 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),path=require('path');
+const root=process.argv[2]||path.resolve(__dirname,'..'),ts=require(root+'/node_modules/typescript');
+const compile=file=>ts.transpileModule(fs.readFileSync(root+'/'+file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;
+const progress={exports:{}};vm.runInNewContext(compile('src/lib/goalProgress.ts'),progress);
+const monthly={exports:{}};vm.runInNewContext(compile('src/lib/monthlyBudget.ts'),monthly);
+const goal={id:'g1',title:'Viaggio',target:100,current:99.99,percent:100,completed:true};
+assert.equal(progress.exports.goalProgress(goal).completed,false);assert.equal(progress.exports.goalProgress(goal).percent,99);assert.equal(progress.exports.goalProgress(goal).remaining,.01);
+assert.equal(progress.exports.mainGoal([goal,{...goal,id:'g2',current:150}],'g2').id,'g1');assert.equal(progress.exports.mainGoal([{...goal,current:150}],null),null);
+function harness(mode){let states=[],cursor=0,refs=[],refCursor=0,events=[];
+ const react={createContext:()=>({Provider:'provider'}),useContext:()=>null,useEffect:()=>{},useRef:initial=>refs[refCursor++]||(refs[refCursor-1]={current:initial}),useState:initial=>{const index=cursor++;if(!(index in states))states[index]=typeof initial==='function'?initial():initial;return[states[index],value=>states[index]=typeof value==='function'?value(states[index]):value]},createElement:(tag,props)=>({tag,props})};
+ const sdk={auth:{getSession:async()=>({data:{session:null}}),getUser:async()=>({data:{user:null}}),updateUser:async()=>({error:mode==='error'?{}:null})},from:()=>{let data,action;const query={insert:payload=>{data=payload;action='insert';return query},update:payload=>{data=payload;return query},delete:()=>query,eq:()=>query,select:()=>query,single:async()=>{if(mode==='network')throw Error('offline');return{data:mode==='error'?null:{...data,id:action==='insert'?'saved':'g1'},error:mode==='error'?{}:null}}};return query}};
+ const scope={exports:{},console,require:name=>name==='react'?react:name==='@/lib/monthlyBudget'?monthly.exports:name==='@/lib/goalProgress'?progress.exports:name==='@/lib/saveFeedback'?{notifySaved:title=>events.push(title)}:{supabase:sdk}};vm.runInNewContext(compile('src/context/AppContext.tsx'),scope);
+ const render=()=>{cursor=0;refCursor=0;return scope.exports.AppProvider({children:null}).props.value};render();states[4]=[{...goal,current:25,percent:25,completed:false}];if(mode!=='local')states[7]='u';return{app:render(),states,events,render};
+}
+(async()=>{
+ for(const mode of ['local','success']){const h=harness(mode);assert.equal((await h.app.addMoneyToGoal('g1',.1)).error,undefined);assert.equal(h.states[4][0].current,25.1);assert.equal((await h.render().updateGoal('g1',{title:'Viaggio nuovo',target:20,current:25.1})).error,undefined);assert.equal(h.states[4][0].completed,true);assert.ok(h.events.includes('Obiettivo raggiunto!'));assert.equal((await h.render().setPrimaryGoal('g1')).error!==undefined,true);assert.equal((await h.render().addGoal({title:'Computer',target:300})).error,undefined);assert.equal(h.states[4].length,2);assert.equal((await h.render().deleteGoal('g1')).error,undefined);assert.equal(h.states[4].length,1);}
+ for(const mode of ['error','network']){const h=harness(mode);assert.ok((await h.app.updateGoal('g1',{title:'Nuovo',target:200,current:50})).error);assert.equal(h.states[4][0].current,25);assert.ok((await h.app.addGoal({title:'New',target:100})).error);assert.equal(h.states[4].length,1);assert.equal(h.events.length,0);}
+ const h=harness('local');assert.ok((await h.app.addGoal({title:'',target:1})).error);assert.ok((await h.app.addMoneyToGoal('g1',NaN)).error);assert.equal((await h.app.setPrimaryGoal('g1')).error,undefined);assert.equal(h.states[13],'g1');
+ console.log('Goal progress, completed fallback, exact cents, create/edit/delete, primary preference and failed-save preservation passed');
+})().catch(error=>{console.error(error);process.exitCode=1});
