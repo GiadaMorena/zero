@@ -21,6 +21,7 @@ function validDate(year: number, month: number, day: number): string {
 }
 // Prefer an explicitly labelled total. Item prices, cash received and change are never used as a fallback.
 export function receiptFields(text: string): ReceiptFields {
+  text = text.replace(/(\d)\s*([\/.-])\s*(?=\d)/g, "$1$2");
   const lines = text
     .normalize("NFKC")
     .split(/\r?\n/)
@@ -29,7 +30,7 @@ export function receiptFields(text: string): ReceiptFields {
   const candidates: { cents: number; rank: number }[] = [];
   lines.forEach((line, index) => {
     if (
-      !/\bTOTALE\b|\bTOTAL\b/i.test(line) ||
+      !/\bTOTALE\b|\bTOTAL\b|\b[id]mporto\s+pagat[oa]?\b/i.test(line) ||
       /SUB\s*TOTALE|TOTALE\s+(?:IVA|IMPOST|ARTICOL|PEZZ|PUNT|SCONT|REST)|-[\s€]*\d/i.test(
         line,
       )
@@ -45,7 +46,11 @@ export function receiptFields(text: string): ReceiptFields {
     if (Number.isSafeInteger(cents) && cents > 0)
       candidates.push({
         cents,
-        rank: /COMPLESSIVO|DA PAGARE|PAGATO|DOCUMENTO/i.test(line) ? 2 : 1,
+        rank: /[id]mporto\s+pagat[oa]?/i.test(line)
+          ? 3
+          : /COMPLESSIVO|DA PAGARE|PAGATO|DOCUMENTO/i.test(line)
+            ? 2
+            : 1,
       });
   });
   const bestRank = Math.max(0, ...candidates.map((item) => item.rank));
@@ -72,7 +77,7 @@ export function receiptFields(text: string): ReceiptFields {
     );
     if (date) dates.add(date);
   }
-  const title =
+  let title =
     lines
       .slice(0, 6)
       .find(
@@ -84,9 +89,10 @@ export function receiptFields(text: string): ReceiptFields {
             line,
           ),
       ) || "";
+  if (/\beurospin\s*\.\s*it\b/i.test(text)) title = "Eurospin";
   const category = /farmaci|parafarmaci/i.test(title)
     ? "Salute"
-    : /supermercat|esselunga|carrefour|conad|coop\b|lidl|aldi|ristorant|pizzer|bar\b|caff/i.test(
+    : /supermercat|eurospin|esselunga|carrefour|conad|coop\b|lidl|aldi|ristorant|pizzer|bar\b|caff/i.test(
           title,
         )
       ? "Cibo"

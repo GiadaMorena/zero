@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   X,
   Camera,
@@ -21,14 +16,15 @@ import { useApp } from "@/context/AppContext";
 import { parseTransactionAmount } from "@/lib/quickTransaction";
 import { readReceipt } from "@/lib/readReceipt";
 import { ReceiptPhotoViewer } from "./ReceiptPhotoViewer";
+import { createPortal } from "react-dom";
 
 type ScanStep =
-  | "idle"       // mostra viewfinder (con camera o placeholder)
-  | "acquiring"  // shutter flash
-  | "analyzing"  // reading the actual image on device
-  | "confirm"    // dati estratti modificabili
-  | "saving"     // breve spinner salvataggio
-  | "success";   // feedback ✓
+  | "idle" // mostra viewfinder (con camera o placeholder)
+  | "acquiring" // shutter flash
+  | "analyzing" // reading the actual image on device
+  | "confirm" // dati estratti modificabili
+  | "saving" // breve spinner salvataggio
+  | "success"; // feedback ✓
 
 interface ReceiptScanModalProps {
   isOpen: boolean;
@@ -48,7 +44,7 @@ const CATEGORIES = [
 
 const todayIT = () => {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
 
 /* ─────────────────────────────────────────────────────────── */
@@ -56,9 +52,11 @@ const todayIT = () => {
 export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   const { addTransaction, activeCard } = useApp();
 
-  const [step, setStep]               = useState<ScanStep>("idle");
+  const [step, setStep] = useState<ScanStep>("idle");
   const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError, setCameraError]   = useState<"denied" | "unavailable" | null>(null);
+  const [cameraError, setCameraError] = useState<
+    "denied" | "unavailable" | null
+  >(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [photoOpen, setPhotoOpen] = useState(false);
@@ -73,14 +71,14 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   openRef.current = isOpen;
 
   // Receipt fields entered by the user
-  const [title,    setTitle]    = useState("");
-  const [amount,   setAmount]   = useState("");
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Cibo");
-  const [date,     setDate]     = useState(todayIT());
+  const [date, setDate] = useState(todayIT());
 
-  const videoRef   = useRef<HTMLVideoElement>(null);
-  const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const streamRef  = useRef<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* ── cleanup stream on unmount / close ─────────────────── */
@@ -93,12 +91,15 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     setCameraActive(false);
   }, []);
 
-  useEffect(() => () => {
-    cameraRequest.current++;
-    readingRef.current?.abort();
-    streamRef.current?.getTracks().forEach(track => track.stop());
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      cameraRequest.current++;
+      readingRef.current?.abort();
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -111,7 +112,9 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     setPhotoOpen(false);
     readingRef.current?.abort();
     readingRef.current = null;
-    setReadText(""); setReadNotice(""); setReadProgress(0);
+    setReadText("");
+    setReadNotice("");
+    setReadProgress(0);
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setError("");
     setStep("idle");
@@ -138,11 +141,15 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
       });
       if (!openRef.current || request !== cameraRequest.current) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
         return;
       }
       streamRef.current = stream;
@@ -151,15 +158,19 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         await videoRef.current.play();
       }
       if (!openRef.current || request !== cameraRequest.current) {
-        stream.getTracks().forEach(track => track.stop()); return;
+        stream.getTracks().forEach((track) => track.stop());
+        return;
       }
       setCameraActive(true);
     } catch (err: any) {
       if (!openRef.current || request !== cameraRequest.current) return;
-      streamRef.current?.getTracks().forEach(track => track.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
       setCameraActive(false);
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
         setCameraError("denied");
       } else {
         setCameraError("unavailable");
@@ -170,27 +181,59 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
   /* ── Capture frame from camera ─────────────────────────── */
   const analyze = async (image: string) => {
     readingRef.current?.abort();
-    const controller = new AbortController(); readingRef.current = controller;
-    setError(""); setReadNotice(""); setReadText(""); setReadProgress(0); setStep("analyzing");
+    const controller = new AbortController();
+    readingRef.current = controller;
+    setError("");
+    setReadNotice("");
+    setReadText("");
+    setReadProgress(0);
+    setStep("analyzing");
     try {
-      const result = await readReceipt(image, controller.signal, value => setReadProgress(previous => Math.max(previous, value)));
-      if (!openRef.current || readingRef.current !== controller || controller.signal.aborted) return;
-      setTitle(result.fields.title); setAmount(result.fields.amount); setDate(result.fields.date); setCategory(result.fields.category);
+      const result = await readReceipt(image, controller.signal, (value) =>
+        setReadProgress((previous) => Math.max(previous, value)),
+      );
+      if (
+        !openRef.current ||
+        readingRef.current !== controller ||
+        controller.signal.aborted
+      )
+        return;
+      setTitle(result.fields.title);
+      setAmount(result.fields.amount);
+      setDate(result.fields.date);
+      setCategory(result.fields.category);
       setReadText(result.text);
-      setReadNotice(result.fields.amount ? "Dati letti dalla foto. Controlla importo, esercente e data prima di salvare." : "Totale non riconosciuto con certezza. Inseriscilo dalla foto prima di salvare.");
+      setReadNotice(
+        result.fields.amount
+          ? "Dati letti dalla foto. Controlla importo, esercente e data prima di salvare."
+          : "Totale non riconosciuto con certezza. Inseriscilo dalla foto prima di salvare.",
+      );
       setStep("confirm");
     } catch {
-      if (!openRef.current || readingRef.current !== controller || controller.signal.aborted) return;
-      setTitle(""); setAmount(""); setDate(""); setCategory("Altro");
-      setReadNotice("Non riesco a leggere questa foto. Puoi compilare i dati manualmente o scegliere un’immagine più nitida."); setStep("confirm");
-    } finally { if (readingRef.current === controller) readingRef.current = null; }
+      if (
+        !openRef.current ||
+        readingRef.current !== controller ||
+        controller.signal.aborted
+      )
+        return;
+      setTitle("");
+      setAmount("");
+      setDate("");
+      setCategory("Altro");
+      setReadNotice(
+        "Non riesco a leggere questa foto. Puoi compilare i dati manualmente o scegliere un’immagine più nitida.",
+      );
+      setStep("confirm");
+    } finally {
+      if (readingRef.current === controller) readingRef.current = null;
+    }
   };
 
   const captureFromCamera = () => {
     if (!videoRef.current || !canvasRef.current) return;
-    const video  = videoRef.current;
+    const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width  = video.videoWidth  || 640;
+    canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -207,7 +250,8 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/") || file.size > 15 * 1024 * 1024) {
-      setError("Scegli un’immagine di dimensioni inferiori a 15 MB."); return;
+      setError("Scegli un’immagine di dimensioni inferiori a 15 MB.");
+      return;
     }
     const request = ++cameraRequest.current;
     const reader = new FileReader();
@@ -217,7 +261,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
       stopStream();
       void analyze(ev.target?.result as string);
     };
-    reader.onerror = () => { if (openRef.current) setError("Non riesco ad aprire questa immagine. Prova un’altra foto."); };
+    reader.onerror = () => {
+      if (openRef.current)
+        setError("Non riesco ad aprire questa immagine. Prova un’altra foto.");
+    };
     reader.readAsDataURL(file);
   };
 
@@ -226,8 +273,18 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
     if (savingRef.current) return;
     const num = parseTransactionAmount(amount);
     const receiptDate = new Date(`${date}T12:00:00`);
-    if (!title.trim() || num === null || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(receiptDate.getTime()) || `${receiptDate.getFullYear()}-${String(receiptDate.getMonth()+1).padStart(2,"0")}-${String(receiptDate.getDate()).padStart(2,"0")}` !== date) {
-      setError("Inserisci l’esercente, una data valida e un importo maggiore di zero con al massimo due decimali."); return;
+    if (
+      !title.trim() ||
+      num === null ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      !Number.isFinite(receiptDate.getTime()) ||
+      `${receiptDate.getFullYear()}-${String(receiptDate.getMonth() + 1).padStart(2, "0")}-${String(receiptDate.getDate()).padStart(2, "0")}` !==
+        date
+    ) {
+      setError(
+        "Inserisci l’esercente, una data valida e un importo maggiore di zero con al massimo due decimali.",
+      );
+      return;
     }
     savingRef.current = true;
     setError("");
@@ -240,29 +297,50 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
         type: "expense",
         date: date || todayIT(),
         cardId: activeCard?.id || "",
-        note: capturedImage ? "Registrato da foto scontrino: dati confermati" : "Inserito manualmente",
+        note: capturedImage
+          ? "Registrato da foto scontrino: dati confermati"
+          : "Inserito manualmente",
       });
-      if (result.error) { setError(result.error); setStep("confirm"); return; }
+      if (result.error) {
+        setError(result.error);
+        setStep("confirm");
+        return;
+      }
       setStep("success");
       closeTimer.current = setTimeout(() => {
         handleClose();
       }, 2200);
-    } catch { setError("Salvataggio non riuscito. I dati inseriti sono ancora qui."); setStep("confirm"); }
-    finally { savingRef.current = false; }
+    } catch {
+      setError("Salvataggio non riuscito. I dati inseriti sono ancora qui.");
+      setStep("confirm");
+    } finally {
+      savingRef.current = false;
+    }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
   const money = (v: string) => {
     const n = parseFloat(v.replace(",", ".")) || 0;
-    return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+    return new Intl.NumberFormat("it-IT", {
+      style: "currency",
+      currency: "EUR",
+    }).format(n);
   };
 
   /* ═══════════════════════════════════════════════════════ */
-  return (
-    <div role="dialog" aria-modal="true" aria-label="Foto scontrino" data-app-update-block className="fixed inset-0 z-[150] flex flex-col bg-[#0B0B0B]"
-         style={{ paddingTop: "env(safe-area-inset-top, 44px)", paddingBottom: "env(safe-area-inset-bottom, 20px)" }}>
-
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Foto scontrino"
+      data-app-update-block
+      className="fixed inset-0 z-[150] flex flex-col bg-[#0B0B0B]"
+      style={{
+        paddingTop: "env(safe-area-inset-top, 44px)",
+        paddingBottom: "env(safe-area-inset-bottom, 20px)",
+      }}
+    >
       {/* Hidden elements */}
       <canvas ref={canvasRef} className="hidden" />
       <input
@@ -284,9 +362,11 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           <X className="h-4 w-4 text-[#0B0B0B]" />
         </button>
         <h2 className="text-sm font-black text-white tracking-tight">
-          {step === "confirm" ? "Controlla la spesa" :
-           step === "success" ? "Spesa salvata" :
-           "Foto scontrino"}
+          {step === "confirm"
+            ? "Controlla la spesa"
+            : step === "success"
+              ? "Spesa salvata"
+              : "Foto scontrino"}
         </h2>
         <div className="w-9" />
       </div>
@@ -299,19 +379,22 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
             Lettura sul tuo dispositivo
           </p>
           <p className="text-[11px] text-[#A7A7A7] font-medium mt-0.5 leading-snug">
-            La foto resta su questo dispositivo. ZERO prova a leggere i dati; controllali sempre prima di salvare la spesa.
+            La foto resta su questo dispositivo. ZERO prova a leggere i dati;
+            controllali sempre prima di salvare la spesa.
           </p>
         </div>
       </div>
-      {error && <p role="alert" className="mx-5 mb-3 text-xs text-red-300">{error}</p>}
+      {error && (
+        <p role="alert" className="mx-5 mb-3 text-xs text-red-300">
+          {error}
+        </p>
+      )}
 
       {/* ══ STEP: IDLE / CAMERA VIEWFINDER ════════════════════ */}
       {(step === "idle" || step === "acquiring") && (
         <div className="flex-1 min-h-0 flex flex-col gap-4 px-5 overflow-hidden">
-
           {/* Viewfinder */}
           <div className="relative flex-1 rounded-[28px] overflow-hidden bg-[#0B0B0B] border border-[#A7A7A7]">
-
             {/* Live camera feed */}
             <video
               ref={videoRef}
@@ -335,9 +418,12 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
             {cameraError === "denied" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-6">
                 <AlertCircle className="h-10 w-10 text-[#FDC909]" />
-                <p className="text-sm font-black text-white">Fotocamera non disponibile</p>
+                <p className="text-sm font-black text-white">
+                  Fotocamera non disponibile
+                </p>
                 <p className="text-xs text-[#A7A7A7] font-medium leading-snug">
-                  Non è stato possibile accedere alla fotocamera. Puoi caricare uno scontrino dalla galleria.
+                  Non è stato possibile accedere alla fotocamera. Puoi caricare
+                  uno scontrino dalla galleria.
                 </p>
               </div>
             )}
@@ -346,9 +432,12 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
             {cameraError === "unavailable" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-6">
                 <AlertCircle className="h-10 w-10 text-[#FDC909]" />
-                <p className="text-sm font-black text-white">Fotocamera non supportata</p>
+                <p className="text-sm font-black text-white">
+                  Fotocamera non supportata
+                </p>
                 <p className="text-xs text-[#A7A7A7] font-medium leading-snug">
-                  Questo browser non supporta la fotocamera. Carica un'immagine dalla galleria.
+                  Questo browser non supporta la fotocamera. Carica un'immagine
+                  dalla galleria.
                 </p>
               </div>
             )}
@@ -358,11 +447,16 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-[75%] h-[55%] relative">
                   {/* Corners */}
-                  {[["top-0 left-0","border-t-2 border-l-2 rounded-tl-xl"],
-                    ["top-0 right-0","border-t-2 border-r-2 rounded-tr-xl"],
-                    ["bottom-0 left-0","border-b-2 border-l-2 rounded-bl-xl"],
-                    ["bottom-0 right-0","border-b-2 border-r-2 rounded-br-xl"]].map(([pos, cls], i) => (
-                    <div key={i} className={`absolute ${pos} h-8 w-8 border-[#FDC909] ${cls}`} />
+                  {[
+                    ["top-0 left-0", "border-t-2 border-l-2 rounded-tl-xl"],
+                    ["top-0 right-0", "border-t-2 border-r-2 rounded-tr-xl"],
+                    ["bottom-0 left-0", "border-b-2 border-l-2 rounded-bl-xl"],
+                    ["bottom-0 right-0", "border-b-2 border-r-2 rounded-br-xl"],
+                  ].map(([pos, cls], i) => (
+                    <div
+                      key={i}
+                      className={`absolute ${pos} h-8 w-8 border-[#FDC909] ${cls}`}
+                    />
                   ))}
                   {/* Scan line */}
                   <div className="absolute inset-x-0 top-1/2 h-0.5 bg-[#FDC909] animate-pulse" />
@@ -375,12 +469,22 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
             {/* Acquiring flash */}
             {step === "acquiring" && (
-              <div className="absolute inset-0 bg-white animate-ping" style={{ animationDuration: "0.3s", animationIterationCount: 1 }} />
+              <div
+                className="absolute inset-0 bg-white animate-ping"
+                style={{
+                  animationDuration: "0.3s",
+                  animationIterationCount: 1,
+                }}
+              />
             )}
 
             {/* Captured image preview */}
             {capturedImage && step === "acquiring" && (
-              <img src={capturedImage} alt="scontrino" className="absolute inset-0 w-full h-full object-cover" />
+              <img
+                src={capturedImage}
+                alt="scontrino"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
             )}
           </div>
 
@@ -413,18 +517,74 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
               <ImagePlus className="h-4.5 w-4.5 stroke-[2.5]" />
               <span>Carica dalla galleria</span>
             </button>
-            <button type="button" onClick={() => { stopStream(); setError(""); setStep("confirm"); }} className="py-2 text-xs font-bold text-white underline underline-offset-4">Compila senza foto</button>
+            <button
+              type="button"
+              onClick={() => {
+                stopStream();
+                setError("");
+                setStep("confirm");
+              }}
+              className="py-2 text-xs font-bold text-white underline underline-offset-4"
+            >
+              Compila senza foto
+            </button>
           </div>
         </div>
       )}
 
-      {step === "analyzing" && <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-5 px-6 text-center" role="status" aria-live="polite">
-        {capturedImage && <img src={capturedImage} alt="Scontrino da leggere" className="h-44 w-36 object-contain rounded-2xl bg-white" />}
-        <Loader2 className="h-8 w-8 text-[#FDC909] animate-spin motion-reduce:animate-none" />
-        <div><h3 className="text-base font-bold text-white">{readProgress < 20 ? "Preparo la lettura…" : "Leggo lo scontrino…"}</h3><p className="mt-2 text-xs text-[#A7A7A7]">Al primo utilizzo può richiedere qualche secondo.</p></div>
-        <div role="progressbar" aria-label="Lettura scontrino" aria-valuemin={0} aria-valuemax={100} aria-valuenow={readProgress} className="h-1.5 w-48 overflow-hidden rounded-full bg-white/20"><div className="h-full bg-[#FDC909] transition-[width] motion-reduce:transition-none" style={{width:`${readProgress}%`}} /></div>
-        <button type="button" onClick={()=>{readingRef.current?.abort();readingRef.current=null;setReadNotice("Lettura annullata. Compila i dati dalla foto.");setDate("");setCategory("Altro");setStep("confirm");}} className="px-5 py-3 text-xs font-bold text-white underline underline-offset-4">Compila manualmente</button>
-      </div>}
+      {step === "analyzing" && (
+        <div
+          className="flex-1 min-h-0 flex flex-col items-center justify-center gap-5 px-6 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          {capturedImage && (
+            <img
+              src={capturedImage}
+              alt="Scontrino da leggere"
+              className="h-44 w-36 object-contain rounded-2xl bg-white"
+            />
+          )}
+          <Loader2 className="h-8 w-8 text-[#FDC909] animate-spin motion-reduce:animate-none" />
+          <div>
+            <h3 className="text-base font-bold text-white">
+              {readProgress < 20
+                ? "Preparo la lettura…"
+                : "Leggo lo scontrino…"}
+            </h3>
+            <p className="mt-2 text-xs text-[#A7A7A7]">
+              Al primo utilizzo può richiedere qualche secondo.
+            </p>
+          </div>
+          <div
+            role="progressbar"
+            aria-label="Lettura scontrino"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={readProgress}
+            className="h-1.5 w-48 overflow-hidden rounded-full bg-white/20"
+          >
+            <div
+              className="h-full bg-[#FDC909] transition-[width] motion-reduce:transition-none"
+              style={{ width: `${readProgress}%` }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              readingRef.current?.abort();
+              readingRef.current = null;
+              setReadNotice("Lettura annullata. Compila i dati dalla foto.");
+              setDate("");
+              setCategory("Altro");
+              setStep("confirm");
+            }}
+            className="px-5 py-3 text-xs font-bold text-white underline underline-offset-4"
+          >
+            Compila manualmente
+          </button>
+        </div>
+      )}
 
       {/* ══ STEP: CONFIRM ═════════════════════════════════════ */}
       {step === "confirm" && (
@@ -433,16 +593,36 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           <div className="mx-5 mb-4 shrink-0">
             <div className="flex items-center gap-2 bg-[#FDC909] text-[#0B0B0B] p-3 rounded-2xl text-xs font-bold">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>{capturedImage ? readNotice || "Foto pronta — inserisci i dati e salva" : "Inserisci i dati della spesa"}</span>
+              <span>
+                {capturedImage
+                  ? readNotice || "Foto pronta — inserisci i dati e salva"
+                  : "Inserisci i dati della spesa"}
+              </span>
             </div>
           </div>
 
           {/* Captured image thumbnail */}
           {capturedImage && (
             <div className="mx-5 mb-3 shrink-0">
-              <button type="button" onClick={()=>setPhotoOpen(true)} aria-label="Apri foto dello scontrino" className="flex w-full items-center gap-4 rounded-2xl border border-white/20 bg-white/10 p-3 text-left text-white">
-                <img src={capturedImage} alt="" className="h-20 w-16 shrink-0 rounded-lg object-cover object-top bg-white" />
-                <span><span className="block text-sm font-bold">Leggi lo scontrino</span><span className="mt-1 block text-xs text-white/70">Apri a schermo intero e ingrandisci la foto</span></span>
+              <button
+                type="button"
+                onClick={() => setPhotoOpen(true)}
+                aria-label="Apri foto dello scontrino"
+                className="flex w-full items-center gap-4 rounded-2xl border border-white/20 bg-white/10 p-3 text-left text-white"
+              >
+                <img
+                  src={capturedImage}
+                  alt=""
+                  className="h-20 w-16 shrink-0 rounded-lg object-cover object-top bg-white"
+                />
+                <span>
+                  <span className="block text-sm font-bold">
+                    Leggi lo scontrino
+                  </span>
+                  <span className="mt-1 block text-xs text-white/70">
+                    Apri a schermo intero e ingrandisci la foto
+                  </span>
+                </span>
               </button>
             </div>
           )}
@@ -450,10 +630,12 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           {/* Editable fields */}
           <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-2 no-scrollbar">
             <div className="bg-[#F7F7F5] rounded-[24px] p-4 flex flex-col gap-4">
-
               {/* Esercente */}
               <div>
-                <label htmlFor="receipt-title" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                <label
+                  htmlFor="receipt-title"
+                  className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5"
+                >
                   Esercente
                 </label>
                 <input
@@ -468,7 +650,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
               {/* Importo + Categoria */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="receipt-amount" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                  <label
+                    htmlFor="receipt-amount"
+                    className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5"
+                  >
                     Importo (€)
                   </label>
                   <input
@@ -481,7 +666,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
                   />
                 </div>
                 <div>
-                  <label htmlFor="receipt-category" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                  <label
+                    htmlFor="receipt-category"
+                    className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5"
+                  >
                     Categoria
                   </label>
                   <div className="relative">
@@ -492,7 +680,9 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
                       className="w-full appearance-none text-xs font-bold text-[#0B0B0B] bg-white border border-[#A7A7A7] rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#FDC909] pr-7"
                     >
                       {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>{c}</option>
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
                       ))}
                     </select>
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#A7A7A7] pointer-events-none" />
@@ -502,7 +692,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
 
               {/* Data */}
               <div>
-                <label htmlFor="receipt-date" className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5">
+                <label
+                  htmlFor="receipt-date"
+                  className="block text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest mb-1.5"
+                >
                   Data
                 </label>
                 <input
@@ -511,18 +704,31 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   onInput={(e) => setDate(e.currentTarget.value)}
-                  className="w-full text-xs font-bold text-[#0B0B0B] bg-white border border-[#A7A7A7] rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#FDC909]"
+                  className="block min-w-0 max-w-full w-full appearance-none text-xs font-bold text-[#0B0B0B] bg-white border border-[#A7A7A7] rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#FDC909]"
                 />
               </div>
 
               {/* Carta */}
               <div className="flex items-center justify-between bg-white border border-[#A7A7A7] rounded-xl px-3 py-2.5">
-                <span className="text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest">Carta</span>
+                <span className="text-[10px] font-extrabold text-[#A7A7A7] uppercase tracking-widest">
+                  Carta
+                </span>
                 <span className="text-xs font-bold text-[#0B0B0B]">
-                  {activeCard ? `${activeCard.bankName} ${activeCard.number}` : "Nessuna carta"}
+                  {activeCard
+                    ? `${activeCard.bankName} ${activeCard.number}`
+                    : "Nessuna carta"}
                 </span>
               </div>
-              {readText && <details className="rounded-xl border border-black/10 bg-white p-3 text-xs text-[#73736E]"><summary className="cursor-pointer font-bold text-[#0B0B0B]">Testo letto dalla foto</summary><pre className="mt-3 whitespace-pre-wrap break-words font-sans">{readText}</pre></details>}
+              {readText && (
+                <details className="rounded-xl border border-black/10 bg-white p-3 text-xs text-[#73736E]">
+                  <summary className="cursor-pointer font-bold text-[#0B0B0B]">
+                    Testo letto dalla foto
+                  </summary>
+                  <pre className="mt-3 whitespace-pre-wrap break-words font-sans">
+                    {readText}
+                  </pre>
+                </details>
+              )}
             </div>
           </div>
 
@@ -536,7 +742,10 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
             </button>
             <div className="grid grid-cols-2 gap-2.5">
               <button
-                onClick={() => { stopStream(); resetFlow(); }}
+                onClick={() => {
+                  stopStream();
+                  resetFlow();
+                }}
                 className="py-3 rounded-full bg-[#F7F7F5] text-[#0B0B0B] font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-[#A7A7A7]"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -559,7 +768,9 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           <div className="h-16 w-16 rounded-full bg-[#FDC909] flex items-center justify-center">
             <Loader2 className="h-8 w-8 text-[#0B0B0B] animate-spin" />
           </div>
-          <p className="text-sm font-extrabold text-white">Salvataggio in corso…</p>
+          <p className="text-sm font-extrabold text-white">
+            Salvataggio in corso…
+          </p>
         </div>
       )}
 
@@ -593,8 +804,13 @@ export function ReceiptScanModal({ isOpen, onClose }: ReceiptScanModalProps) {
           `}</style>
         </div>
       )}
-      {photoOpen && capturedImage && <ReceiptPhotoViewer src={capturedImage} onClose={()=>setPhotoOpen(false)} />}
-    </div>
+      {photoOpen && capturedImage && (
+        <ReceiptPhotoViewer
+          src={capturedImage}
+          onClose={() => setPhotoOpen(false)}
+        />
+      )}
+    </div>,
+    document.body,
   );
 }
-

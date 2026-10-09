@@ -2,6 +2,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const root=process.argv[2]||path.resolve(__dirname,'..'),ts=require(root+'/node_modules/typescript'),scope={exports:{}};
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(root+'/src/lib/receiptFields.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,scope);
 const read=scope.exports.receiptFields;
+assert.equal(read('Importo pagato\n28,77').amount,'28,77');assert.equal(read('dmporto pagat\n28,77').amount,'28,77');assert.equal(read('29/ 8/2026').date,'2026-08-29');assert.equal(read('CIVE S.R.L.\nwww. eurospin.it').title,'Eurospin');
 const sample=read('ESSELUNGA\nDOCUMENTO COMMERCIALE\nVia Roma 10\nPane 2,40\nPasta 20,00\nTOTALE COMPLESSIVO 22,40\nTOTALE IVA 4,04\nCONTANTI 30,00\nRESTO 7,60\n09/10/2026 13:30');
 assert.equal(sample.title,'ESSELUNGA');assert.equal(sample.amount,'22,40');assert.equal(sample.date,'2026-10-09');assert.equal(sample.category,'Cibo');
 assert.equal(read('Totale 1.234,56').amount,'1234,56');assert.equal(read('TOTALE\n12.50').amount,'12,50');

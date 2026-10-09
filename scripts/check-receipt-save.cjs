@@ -5,7 +5,7 @@ const quick={exports:{}};vm.runInNewContext(compile('src/lib/quickTransaction.ts
 function harness(failure){let states=[],refs=[],cursor=0,refCursor=0,calls=[],resolveSave;
 const react={useState:initial=>{const i=cursor++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return [states[i],v=>states[i]=v]},useRef:initial=>refs[refCursor++]||(refs[refCursor-1]={current:initial}),useEffect:()=>{},useCallback:fn=>fn,createElement:(tag,props,...children)=>({tag,props:props||{},children})};
 const app={activeCard:{id:'card'},addTransaction:data=>{calls.push(data);return new Promise(resolve=>resolveSave=()=>resolve(failure?{error:'Connessione non disponibile'}:{}))}};
-const scope={exports:{},require:name=>name==='react'?react:name==='@/context/AppContext'?{useApp:()=>app}:name==='@/lib/quickTransaction'?quick.exports:{},setTimeout:()=>1,clearTimeout:()=>{},console};vm.runInNewContext(compile('src/components/ReceiptScanModal.tsx'),scope);
+const scope={exports:{},document:{body:{}},require:name=>name==='react'?react:name==='react-dom'?{createPortal:node=>node}:name==='@/context/AppContext'?{useApp:()=>app}:name==='@/lib/quickTransaction'?quick.exports:{},setTimeout:()=>1,clearTimeout:()=>{},console};vm.runInNewContext(compile('src/components/ReceiptScanModal.tsx'),scope);
 const render=()=>{cursor=0;refCursor=0;return scope.exports.ReceiptScanModal({isOpen:true,onClose:()=>{}})};
 const find=(node,predicate)=>{if(!node||typeof node!=='object')return null;if(predicate(node))return node;for(const child of(node.children||[]).flat(Infinity)){const found=find(child,predicate);if(found)return found}return null};
 let tree=render();find(tree,n=>n.tag==='button'&&n.children.includes('Compila senza foto')).props.onClick();

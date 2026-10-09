@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');const root=process.argv[2]||path.resolve(__dirname,'..'),ts=require(root+'/node_modules/typescript');
+const compile=file=>ts.transpileModule(fs.readFileSync(root+'/src/lib/'+file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
+const fields={exports:{}};vm.runInNewContext(compile('receiptFields.ts'),fields);const scope={exports:{},require:()=>fields.exports};vm.runInNewContext(compile('receiptDate.ts'),scope);
+const word=(text,x0,y0,confidence=95)=>({text,bbox:{x0,y0,x1:x0+text.length*15,y1:y0+40},symbols:[...text].map(text=>({text,confidence}))});
+const read=scope.exports.receiptDateFromWords;
+assert.equal(read([word("'29",10,10),word('A8/2026',65,0)]),'2026-08-29');
+assert.equal(read([word('29/',10,10),word('8/2026',65,0)]),'2026-08-29');
+assert.equal(read([word('29',10,100),word('8/2026',65,0)]),'');
+assert.equal(read([word('29',10,10,25),word('8/2026',65,0)]),'');
+assert.equal(read([word('29',10,10),word('A1/2026',65,0)]),'');
+assert.equal(read([word('31',10,10),word('2/2026',65,0)]),'');
+assert.equal(read([word('29',10,10),{...word('8/2026',65,0),symbols:[]}]),'');
+assert.equal(read([word('28',10,10),word('29',25,10),word('8/2026',65,0)]),'');
+console.log('Receipt date fragments, same-row alignment, calendar validation, strong digit confidence and ambiguity rejection passed');
