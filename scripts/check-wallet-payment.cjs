@@ -1,0 +1,16 @@
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert/strict');
+const ts = require('typescript');
+const code = ts.transpileModule(fs.readFileSync('src/lib/walletPayment.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const context = { exports: {}, URLSearchParams, Date, Number };
+vm.runInNewContext(code, context);
+const { parseWalletPayment: parse, walletMarker } = context.exports;
+const base = { currency:'EUR', amount:'28,77', merchant:'Caffè & Spesa', date:'2026-10-18', ref:'11111111-1111-4111-8111-111111111111', cardId:'22222222-2222-4222-8222-222222222222' };
+const hash = changes => '#zero-pay?' + new URLSearchParams({...base,...changes});
+assert.equal(parse(hash()).amount,28.77);
+assert.equal(parse(hash()).title,'Caffè & Spesa');
+for(const changes of [{currency:'USD'},{amount:'0'},{amount:'1.234,50'},{amount:'1.234'},{amount:'NaN'},{date:'2026-02-31'},{date:'2026-99-99'},{ref:'[UUID]'},{cardId:''},{merchant:'[ESERCENTE_CODIFICATO]'}]) assert.equal(parse(hash(changes)),null,JSON.stringify(changes));
+assert.equal(parse('#access_token=abc'),null);
+assert.notEqual(walletMarker(base.ref),walletMarker('33333333-3333-4333-8333-333333333333'));
+console.log('PASS: Wallet draft parsing, currencies, dates, encoded merchant, placeholders, OAuth isolation and reference markers.');

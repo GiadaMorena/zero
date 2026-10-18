@@ -78,6 +78,7 @@ export interface UserProfile {
 }
 
 interface AppContextType {
+  isHydrated: boolean;
   monthlyBudget: number | null;
   updateMonthlyBudget: (value: number | null) => Promise<{ error?: string }>;
   cards: CardItem[];
@@ -1140,6 +1141,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
+        isHydrated,
         monthlyBudget,
         updateMonthlyBudget,
         cards,

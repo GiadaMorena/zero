@@ -1,4 +1,5 @@
 "use client";
+import { ApplePaySetup } from "@/components/ApplePaySetup";
 
 import React, { useState } from "react";
 import { User, Bell, Palette, Shield, CreditCard, Download, Trash2, Check, RefreshCw } from "lucide-react";
@@ -29,6 +30,7 @@ export function DesktopImpostazioni() {
         </p>
       </div>
 
+      <ApplePaySetup />
       {/* Profile Settings Card */}
       <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-6 shadow-xs flex flex-col gap-4">
         <div className="flex items-center gap-3 pb-3 border-b border-[#EBEBE5]">

@@ -16,6 +16,7 @@ import { StatisticheScreen } from "@/components/StatisticheScreen";
 import { ProfiloScreen } from "@/components/ProfiloScreen";
 import { AddSpesaModal } from "@/components/AddSpesaModal";
 import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
+import { WalletPaymentReceiver } from "@/components/WalletPaymentReceiver";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DesktopApp } from "@/components/desktop/DesktopApp";
 import { AppProvider } from "@/context/AppContext";
@@ -392,6 +393,7 @@ export default function Home() {
 
   return (
     <AppProvider>
+      <WalletPaymentReceiver unlocked={isAppUnlocked} accountEmail={authState.userEmail} />
       <ThemeSync screenBackground="#F7F7F5" />
       {setupError && <p role="alert" className="p-4 text-red-700">{setupError}</p>}
 
