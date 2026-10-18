@@ -49,7 +49,8 @@ export function WalletPaymentReceiver({ unlocked, accountEmail }: { unlocked: bo
     setPending(null);
     try { sessionStorage.removeItem(KEY); } catch { /* Memory state still clears. */ }
   };
-  const duplicate = pending && (savedRefs.includes(pending.draft.ref) || transactions.some(tx => tx.note?.includes(walletMarker(pending.draft.ref))));
+  // Ignore optimistic rows: a failed insert must leave the form open for retry.
+  const duplicate = pending && (savedRefs.includes(pending.draft.ref) || transactions.some(tx => !tx.id.startsWith("tx-") && tx.note?.includes(walletMarker(pending.draft.ref))));
   const wrongAccount = pending?.owner && pending.owner !== owner;
   return <>
     {unlocked && (message || wrongAccount || duplicate) && <div role="alert" className="fixed inset-x-4 top-6 z-[100] mx-auto max-w-md rounded-2xl border border-black/10 bg-white p-5 shadow-xl"><p className="text-sm">{message || (wrongAccount ? "Questo pagamento appartiene a un altro account. Riapri il collegamento con l’account corretto." : "Questo pagamento è già stato registrato.")}</p><button onClick={() => { setMessage(""); close(); }} className="mt-3 font-bold underline">Chiudi</button></div>}
