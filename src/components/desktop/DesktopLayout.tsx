@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import {
+  LogOut,
   LayoutDashboard,
   ArrowUpDown,
   BarChart2,
@@ -57,6 +58,8 @@ const PAGE_TITLES: Record<DesktopSection, string> = {
 };
 
 interface DesktopLayoutProps {
+  onLogout: () => void;
+  isSigningOut?: boolean;
   activeSection: DesktopSection;
   onNavigate: (s: DesktopSection) => void;
   children: React.ReactNode;
@@ -67,6 +70,8 @@ interface DesktopLayoutProps {
 }
 
 export function DesktopLayout({
+  onLogout,
+  isSigningOut = false,
   activeSection,
   onNavigate,
   children,
@@ -144,6 +149,7 @@ export function DesktopLayout({
           })}
         </nav>
 
+        <button type="button" onClick={onLogout} disabled={isSigningOut} className="mx-3 mb-3 flex shrink-0 items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-bold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"><LogOut aria-hidden="true" className="h-4 w-4" />{isSigningOut ? "Disconnessione…" : "Disconnetti"}</button>
         {/* Bottom User & Profile */}
         <div className="px-3 pb-4 border-t border-[#A7A7A7]/20 pt-3 flex flex-col gap-1">
           <button

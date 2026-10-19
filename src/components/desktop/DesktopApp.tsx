@@ -13,7 +13,7 @@ import { AssicurazioniScreen } from "../AssicurazioniScreen";
 import { AddSpesaModal } from "../AddSpesaModal";
 import { ReceiptScanModal } from "../ReceiptScanModal";
 
-export function DesktopApp() {
+export function DesktopApp({ onLogout, isSigningOut = false }: { onLogout: () => void; isSigningOut?: boolean }) {
   const [activeSection, setActiveSection] = useState<DesktopSection>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -74,6 +74,8 @@ export function DesktopApp() {
   return (
     <div className="zero-motion">
       <DesktopLayout
+        onLogout={onLogout}
+        isSigningOut={isSigningOut}
         activeSection={activeSection}
         onNavigate={(s) => setActiveSection(s)}
         onSearch={setSearchQuery}

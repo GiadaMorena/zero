@@ -20,6 +20,7 @@ import { WalletPaymentReceiver } from "@/components/WalletPaymentReceiver";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DesktopApp } from "@/components/desktop/DesktopApp";
 import { AppProvider } from "@/context/AppContext";
+import { signOutSession } from "@/lib/signOutSession";
 import { supabase } from "@/lib/supabase";
 import { OnboardingProfile } from "@/components/OnboardingProfile";
 import { nextLoginStep, sameLoginAccount } from "@/lib/pinFlow";
@@ -138,6 +139,17 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
+      if (event !== "SIGNED_OUT") return;
+      setAuthState(previous => ({ ...previous, isRegistered: false }));
+      setIsAddModalOpen(false);
+      setTempPin("");
+      setFlowStep("login");
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const saveAuthState = (newState: AuthState) => {
     setAuthState(newState);
     try {
@@ -215,12 +227,20 @@ export default function Home() {
   };
   const profileSetup = <OnboardingProfile name={authState.userName} onComplete={name => { saveAuthState({ ...authState, userName: name }); setFlowStep("add_card"); }} />;
 
-  // Sign out while retaining this account's device PIN for its next login.
+  // A completed sign-out discards the mounted account data as well as the SDK session.
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    setSetupError("");
+    const result = await signOutSession(supabase.auth, window.localStorage, window.sessionStorage);
+    if (result.error) { setSetupError(result.error); setIsSigningOut(false); return; }
     saveAuthState({ ...authState, isRegistered: false });
+    setIsAddModalOpen(false);
+    setTempPin("");
     setIsResettingPin(false);
-    setFlowStep("welcome");
+    setFlowStep("login");
+    window.location.replace(window.location.pathname);
   };
 
   const handleOpenAddModal = (type: "expense" | "income" = "expense") => {
@@ -383,7 +403,7 @@ export default function Home() {
         );
       case "app":
       default:
-        return <DesktopApp />;
+        return <DesktopApp onLogout={handleLogout} isSigningOut={isSigningOut} />;
     }
   };
 

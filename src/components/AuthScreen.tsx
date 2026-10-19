@@ -94,7 +94,7 @@ export function AuthScreen({ onAuth, defaultView = "register", initialError = ""
     try {
       const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin + "/", skipBrowserRedirect: true },
+        options: { redirectTo: window.location.origin + "/", skipBrowserRedirect: true, queryParams: { prompt: "select_account" } },
       });
       if (authError) {
         setError("Accesso Google non disponibile. Riprova più tardi.");

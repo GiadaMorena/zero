@@ -22,17 +22,18 @@ const react={createElement:(tag,props,...children)=>({tag,props:props||{},childr
 const stored=new Map();const localStorage={getItem:k=>stored.get(k)||null,setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)};
 let profileResolve;
 const user={email:'giada@example.test',id:'fake-user',user_metadata:{zero_onboarding_completed:true},app_metadata:{provider:'google'}};
-let sessionUser=user;
-const supabase={auth:{getSession:async()=>({data:{session:sessionUser?{user:sessionUser}:null}}),getUser:async()=>({data:{user}}),signOut:async()=>{},updateUser:async()=>({error:null})},from:()=>({select:()=>({eq:()=>({single:()=>new Promise(resolve=>{profileResolve=resolve})})})})};
+let sessionUser=user; let authListener;
+const supabase={auth:{getSession:async()=>({data:{session:sessionUser?{user:sessionUser}:null}}),getUser:async()=>({data:{user}}),signOut:async()=>{sessionUser=null;return {error:null};},onAuthStateChange:callback=>{authListener=callback;return {data:{subscription:{unsubscribe:()=>{}}}};},updateUser:async()=>({error:null})},from:()=>({select:()=>({eq:()=>({single:()=>new Promise(resolve=>{profileResolve=resolve})})})})};
 const listeners={};const document={hidden:false,addEventListener:(key,fn)=>listeners[key]=fn,removeEventListener:key=>delete listeners[key]};
 const components={};
 function requireStub(name){
  if(name==='react')return react;if(name==='@/lib/supabase')return {supabase};if(name==='@/lib/pinFlow')return scope.exports;
+ if(name==='@/lib/signOutSession') { const result={exports:{}}; vm.runInNewContext(ts.transpileModule(fs.readFileSync(root+'/src/lib/signOutSession.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,result);return result.exports; }
  if(name==='@/context/AppContext')return {AppProvider:'AppProvider'};
  const component=name.split('/').pop();components[component]=component;return {[component]:component};
 }
 const code=ts.transpileModule(fs.readFileSync(root+'/src/app/page.tsx','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;
-const page={exports:{},require:requireStub,localStorage,document,window:{location:{hash:'',search:'',pathname:'/'},history:{replaceState:()=>{}}},URLSearchParams,console};vm.runInNewContext(code,page);
+const page={exports:{},require:requireStub,localStorage,document,window:{localStorage,sessionStorage:localStorage,location:{hash:'',search:'',pathname:'/',replace:()=>{}},history:{replaceState:()=>{}}},URLSearchParams,console};vm.runInNewContext(code,page);
 function render(){cursor=0;effects=[];latestTree=page.exports.default();return latestTree;}
 function find(tag,node=latestTree){if(!node||typeof node!=='object')return null;if(node.tag===tag)return node;for(const child of node.children||[]){for(const item of Array.isArray(child)?child:[child]){const found=find(tag,item);if(found)return found;}}return null;}
 (async()=>{
@@ -41,11 +42,12 @@ function find(tag,node=latestTree){if(!node||typeof node!=='object')return null;
  const saved=JSON.parse(stored.get('zero_auth_state_v6'));assert.equal(saved.isRegistered,false);assert.equal(saved.pinCode,pin.pinCode);
  states[1]='login';render();await find('AuthScreen').props.onAuth({name:'Giada',email:'GIADA@example.test'});assert.equal(states[1],'lock');
  render();assert.equal(find('PinScreen').props.mode,'lock');find('PinScreen').props.onSuccess();assert.equal(states[1],'app','one successful unlock enters app directly');
- render();effects[1]();document.hidden=true;listeners.visibilitychange();assert.equal(states[1],'lock','background lock applies in app');
- render();effects[1]();listeners.visibilitychange();assert.equal(states[1],'lock','background event cannot change PIN verification into setup');
+ render();effects[2]();document.hidden=true;listeners.visibilitychange();assert.equal(states[1],'lock','background lock applies in app');
+ render();effects[2]();listeners.visibilitychange();assert.equal(states[1],'lock','background event cannot change PIN verification into setup');
  find('PinScreen').props.onForgotPin();render();await find('AuthScreen').props.onAuth({name:'Giada',email:user.email});assert.equal(states[1],'create_pin','reauthentication after forgotten PIN permits explicit reset');
  render();find('PinScreen').props.onPinSet('395827');assert.equal(states[1],'confirm_pin');render();find('PinScreen').props.onSuccess();assert.equal(states[1],'app');
  render();states[1]='register';render();find('AuthScreen').props.onAuth({name:'Nuovo',email:'nuovo@example.test'});assert.equal(states[0].hasPin,false,'new account must not inherit old PIN');
+ states[1]="app";render();assert.equal(typeof find("DesktopApp").props.onLogout,"function","desktop receives the real logout handler");effects[1]();authListener("SIGNED_OUT");assert.equal(states[1],"login","session revocation locks open tabs");assert.equal(states[0].isRegistered,false);
  // A full reload after logout must restore device PIN settings before the next login.
  stored.set('zero_auth_state_v6',JSON.stringify(saved));states=[];sessionUser=null;render();effects[0]();await new Promise(resolve=>setImmediate(resolve));
  assert.equal(states[0].pinCode,pin.pinCode);assert.equal(states[1],'welcome');assert.equal(states[7],false);
