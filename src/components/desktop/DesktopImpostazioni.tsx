@@ -8,14 +8,25 @@ import { useApp } from "@/context/AppContext";
 export function DesktopImpostazioni() {
   const { profile, updateProfile, exportCSV, resetAllData } = useApp();
   const [nameInput, setNameInput] = useState(profile.name);
-  const [emailInput, setEmailInput] = useState(profile.email);
+  const emailInput = profile.email;
+  const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile({ name: nameInput, email: emailInput });
+    if (saving) return;
+    setSaving(true); setSaveError(""); setSavedSuccess(false);
+    const result = await updateProfile({ name: nameInput });
+    setSaving(false);
+    if (result.error) { setSaveError(result.error); return; }
     setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2000);
+  };
+  const toggleReminders = async () => {
+    if (saving) return;
+    setSaving(true); setSaveError("");
+    const result = await updateProfile({ notificationsEnabled: !profile.notificationsEnabled });
+    setSaving(false); if (result.error) setSaveError(result.error);
   };
 
   return (
@@ -30,6 +41,7 @@ export function DesktopImpostazioni() {
         </p>
       </div>
 
+      {saveError && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{saveError}</p>}
       <ApplePaySetup />
       {/* Profile Settings Card */}
       <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-6 shadow-xs flex flex-col gap-4">
@@ -45,41 +57,41 @@ export function DesktopImpostazioni() {
 
         <form onSubmit={handleSaveProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-[#73736E] mb-1">Nome e Cognome</label>
+            <label htmlFor="desktop-profile-name" className="block text-xs font-bold text-[#73736E] mb-1">Nome e Cognome</label>
             <input
-              type="text"
+              id="desktop-profile-name" type="text" required maxLength={100} disabled={saving}
               value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
+              onChange={(e) => { setNameInput(e.target.value); setSavedSuccess(false); }}
               className="w-full p-3 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#73736E] mb-1">Email Registrata</label>
+            <label htmlFor="desktop-profile-email" className="block text-xs font-bold text-[#73736E] mb-1">Email di accesso</label>
             <input
-              type="email"
+              id="desktop-profile-email" type="email" readOnly aria-describedby="desktop-email-help"
               value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
               className="w-full p-3 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5] text-xs font-bold text-[#121212] focus:outline-none focus:border-[#F5E050]"
             />
           </div>
 
           <div className="sm:col-span-2 flex items-center justify-between pt-2">
             {savedSuccess ? (
-              <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                <Check className="h-4 w-4" /> Salvato con successo!
+              <span role="status" className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                <Check className="h-4 w-4" /> Profilo salvato
               </span>
             ) : (
-              <span className="text-[10px] text-[#73736E] font-medium">I dati rimangono salvati in locale.</span>
+              <span className="text-[10px] text-[#73736E] font-medium">Il nome viene salvato nel tuo profilo.</span>
             )}
             <button
-              type="submit"
+              type="submit" disabled={saving}
               className="px-5 py-2.5 rounded-2xl bg-[#121212] text-white text-xs font-black shadow-md hover:bg-black transition-all"
             >
-              Salva Profilo
+              {saving ? "Salvataggio…" : "Salva profilo"}
             </button>
           </div>
         </form>
+        <p id="desktop-email-help" className="text-xs text-[#666]">L’email identifica l’account usato per accedere e qui è in sola lettura.</p>
       </div>
 
       {/* Preferenze App */}
@@ -97,11 +109,11 @@ export function DesktopImpostazioni() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5]">
             <div>
-              <p className="text-xs font-bold text-[#121212]">Notifiche di spesa</p>
-              <p className="text-[10px] text-[#73736E] font-medium">Avvisi su scadenze abbonamenti e consigli</p>
+              <p className="text-xs font-bold text-[#121212]">Promemoria nell’app</p>
+              <p className="text-[10px] text-[#73736E] font-medium">Scadenze visibili aprendo la campanella. Nessuna notifica push.</p>
             </div>
             <button
-              onClick={() => updateProfile({ notificationsEnabled: !profile.notificationsEnabled })}
+              onClick={toggleReminders} disabled={saving} role="switch" aria-checked={profile.notificationsEnabled} aria-label="Promemoria nell’app"
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 profile.notificationsEnabled ? "bg-[#F5E050]" : "bg-[#EBEBE5]"
               }`}
@@ -133,8 +145,8 @@ export function DesktopImpostazioni() {
             <Shield className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-extrabold text-[#121212]">Esportazione & Backup Dati</h3>
-            <p className="text-[10px] text-[#73736E] font-medium">Esporta report o ripristina lo stato iniziale</p>
+            <h3 className="text-sm font-extrabold text-[#121212]">Esportazione e dati locali</h3>
+            <p className="text-[10px] text-[#73736E] font-medium">Scarica i movimenti o rimuovi la cache di questo dispositivo</p>
           </div>
         </div>
 
@@ -154,7 +166,7 @@ export function DesktopImpostazioni() {
 
           <button
             onClick={() => {
-              if (confirm("Vuoi ripristinare i dati di default dell'app ZERO?")) {
+              if (confirm("Vuoi uscire e svuotare la cache di questo dispositivo? Verrà rimosso anche il PIN locale. I dati salvati nel tuo account non vengono eliminati.")) {
                 resetAllData();
               }
             }}
@@ -163,8 +175,8 @@ export function DesktopImpostazioni() {
             <div className="flex items-center gap-3">
               <Trash2 className="h-5 w-5 text-rose-600" />
               <div>
-                <p className="text-xs font-extrabold text-rose-700">Ripristina Dati Iniziali</p>
-                <p className="text-[10px] text-rose-500 font-medium">Cancella modifiche locali</p>
+                <p className="text-xs font-extrabold text-rose-700">Svuota cache ed esci</p>
+                <p className="text-[10px] text-rose-500 font-medium">Rimuove anche il PIN su questo dispositivo</p>
               </div>
             </div>
           </button>

@@ -30,20 +30,30 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
 
   // Profilo personale edit state
   const [editName, setEditName] = useState(profile.name);
-  const [editEmail, setEditEmail] = useState(profile.email);
+  const editEmail = profile.email;
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [savedFeedback, setSavedFeedback] = useState(false);
 
-  const handleSaveProfile = () => {
-    if (!editName.trim()) return;
-    updateProfile({ name: editName.trim(), email: editEmail.trim() });
+  const handleSaveProfile = async () => {
+    if (saving) return;
+    setSaving(true); setSaveError(""); setSavedFeedback(false);
+    const result = await updateProfile({ name: editName });
+    setSaving(false);
+    if (result.error) { setSaveError(result.error); return; }
     setSavedFeedback(true);
-    setTimeout(() => setSavedFeedback(false), 2000);
+  };
+  const toggleReminders = async () => {
+    if (saving) return;
+    setSaving(true); setSaveError("");
+    const result = await updateProfile({ notificationsEnabled: !profile.notificationsEnabled });
+    setSaving(false); if (result.error) setSaveError(result.error);
   };
 
   const openSection = (section: ActiveSection) => {
     if (section === "profilo") {
       setEditName(profile.name);
-      setEditEmail(profile.email);
+      setSavedFeedback(false); setSaveError("");
     }
     setActiveSection(section);
   };
@@ -105,6 +115,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
       >
         <div className="flex items-center gap-3 pt-1 px-1">
           <button
+            aria-label="Torna al profilo"
             onClick={() => setActiveSection(null)}
             className="h-9 w-9 rounded-full bg-white border border-[#A7A7A7]/30 flex items-center justify-center text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
           >
@@ -121,7 +132,8 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
             <input
               type="text"
               value={editName}
-              onChange={(e) => setEditName(e.target.value)}
+              aria-label="Nome" maxLength={100} disabled={saving}
+              onChange={(e) => { setEditName(e.target.value); setSavedFeedback(false); }}
               className="w-full px-4 rounded-2xl bg-[#F7F7F5] border border-[#A7A7A7]/40 text-sm font-semibold text-[#0B0B0B] placeholder:text-[#A7A7A7] focus:outline-none focus:border-[#FDC909] focus:ring-2 focus:ring-[#FDC909] transition-all"
               style={{ height: "52px" }}
               placeholder="Il tuo nome"
@@ -134,14 +146,17 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
             <input
               type="email"
               value={editEmail}
-              onChange={(e) => setEditEmail(e.target.value)}
+              readOnly aria-label="Email di accesso"
               className="w-full px-4 rounded-2xl bg-[#F7F7F5] border border-[#A7A7A7]/40 text-sm font-semibold text-[#0B0B0B] placeholder:text-[#A7A7A7] focus:outline-none focus:border-[#FDC909] focus:ring-2 focus:ring-[#FDC909] transition-all"
               style={{ height: "52px" }}
               placeholder="la.tua@email.it"
             />
           </div>
 
+          <p className="text-xs text-[#666]">L’email di accesso è in sola lettura.</p>
+          {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
           <button
+            disabled={saving}
             onClick={handleSaveProfile}
             className="w-full h-12 rounded-full bg-[#0B0B0B] text-[#F7F7F5] font-black text-sm flex items-center justify-center gap-2 hover:bg-black active:scale-[0.98] transition-all cursor-pointer mt-1"
           >
@@ -151,7 +166,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
                 Salvato
               </>
             ) : (
-              "Salva modifiche"
+              saving ? "Salvataggio…" : "Salva modifiche"
             )}
           </button>
         </div>
@@ -168,6 +183,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
       >
         <div className="flex items-center gap-3 pt-1 px-1">
           <button
+            aria-label="Torna al profilo"
             onClick={() => setActiveSection(null)}
             className="h-9 w-9 rounded-full bg-white border border-[#A7A7A7]/30 flex items-center justify-center text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
           >
@@ -176,15 +192,16 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
           <h1 className="text-xl font-black tracking-tight text-[#0B0B0B]">Notifiche</h1>
         </div>
 
+        {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
         <div className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-2.5 flex flex-col gap-1">
           <div className="flex items-center justify-between p-3 rounded-2xl">
             <div className="flex items-center gap-3">
               <Bell className="h-4 w-4 text-[#A7A7A7]" />
-              <span className="text-xs font-bold text-[#0B0B0B]">Notifiche push</span>
+              <span className="text-xs font-bold text-[#0B0B0B]">Promemoria nell’app</span>
             </div>
             {/* Toggle */}
             <button
-              onClick={() => updateProfile({ notificationsEnabled: !profile.notificationsEnabled })}
+              onClick={toggleReminders} disabled={saving} role="switch" aria-checked={profile.notificationsEnabled} aria-label="Promemoria nell’app"
               className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
                 profile.notificationsEnabled ? "bg-[#FDC909]" : "bg-[#A7A7A7]/40"
               }`}
@@ -199,7 +216,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
         </div>
 
         <p className="text-[11px] text-[#A7A7A7] font-medium px-1 leading-relaxed">
-          Attiva le notifiche per ricevere aggiornamenti su movimenti, scadenze abbonamenti e obiettivi raggiunti.
+          I promemoria mostrano le scadenze nella campanella di ZERO. Non inviano notifiche push sul telefono.
         </p>
       </div>
     );
@@ -214,6 +231,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
       >
         <div className="flex items-center gap-3 pt-1 px-1">
           <button
+            aria-label="Torna al profilo"
             onClick={() => setActiveSection(null)}
             className="h-9 w-9 rounded-full bg-white border border-[#A7A7A7]/30 flex items-center justify-center text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
           >
@@ -244,6 +262,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
       >
         <div className="flex items-center gap-3 pt-1 px-1">
           <button
+            aria-label="Torna al profilo"
             onClick={() => setActiveSection(null)}
             className="h-9 w-9 rounded-full bg-white border border-[#A7A7A7]/30 flex items-center justify-center text-[#0B0B0B] hover:bg-[#F7F7F5] transition-colors"
           >
@@ -254,15 +273,8 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
 
         <div className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-5 flex flex-col gap-3">
           <p className="text-xs font-bold text-[#0B0B0B]">Hai bisogno di aiuto?</p>
-          <p className="text-[11px] text-[#A7A7A7] leading-relaxed">
-            Per assistenza tecnica o domande sull'app, scrivici a:
-          </p>
-          <div className="px-4 py-3 bg-[#F7F7F5] rounded-2xl border border-[#A7A7A7]/20">
-            <p className="text-sm font-black text-[#0B0B0B]">supporto@zero.app</p>
-          </div>
-          <p className="text-[11px] text-[#A7A7A7] leading-relaxed mt-1">
-            Risponderemo entro 24 ore nei giorni lavorativi.
-          </p>
+          <p className="text-sm text-[#666] leading-relaxed">Per segnalare un problema, annota la schermata, cosa stavi facendo e il messaggio di errore. Non condividere PIN, password o numeri completi delle carte.</p>
+          <p className="text-xs text-[#666]">Le modifiche al profilo richiedono una connessione. Se un salvataggio non riesce, i dati inseriti restano disponibili per riprovare.</p>
         </div>
       </div>
     );

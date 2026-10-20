@@ -172,3 +172,10 @@
 .zero-save-check { stroke-dasharray:1; animation:zero-save-check 360ms ease-out both; }
 @media(prefers-reduced-motion:reduce){.zero-save-feedback,.zero-save-check{animation:none!important}.zero-save-check{stroke-dashoffset:0}}
 @media(prefers-reduced-motion:reduce){.zero-motion .zero-wallet-card{transition:none!important;rotate:0deg}}
+
+/* Keyboard focus stays visible without altering touch interactions. */
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid #8A6900;
+  outline-offset: 3px;
+}
+.tabular-nums { font-variant-numeric: tabular-nums; }

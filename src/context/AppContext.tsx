@@ -143,7 +143,7 @@ interface AppContextType {
     type?: "zero" | "revolut" | "mastercard" | "generic";
   }) => void;
   deleteCard: (id: string) => void;
-  updateProfile: (data: Partial<UserProfile>) => void;
+  updateProfile: (data: Partial<UserProfile>) => Promise<{ error?: string }>;
   resetAllData: () => void;
   exportCSV: () => void;
   totalMonthlySpending: number;
@@ -269,7 +269,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Load data from Supabase when user session is available ────────
   useEffect(() => {
-    const loadFromDB = async (uid: string) => {
+    const loadFromDB = async (uid: string, accountEmail?: string) => {
       try {
         const [
           { data: cardsData },
@@ -297,7 +297,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (profileData) {
           setProfile({
             name: profileData.name || "",
-            email: profileData.email || "",
+            email: accountEmail || profileData.email || "",
             avatarText: profileData.avatar_text || "",
             currency: profileData.currency || "EUR (€)",
             notificationsEnabled: profileData.notifications_enabled ?? true,
@@ -341,7 +341,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUserId(session.user.id);
         setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
         setPrimaryGoalId(typeof session.user.user_metadata?.zero_primary_goal_id === "string" ? session.user.user_metadata.zero_primary_goal_id : null);
-        loadFromDB(session.user.id);
+        loadFromDB(session.user.id, session.user.email);
       } else {
         loadFromLocalStorage();
       }
@@ -353,7 +353,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUserId(session.user.id);
         setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
         setPrimaryGoalId(typeof session.user.user_metadata?.zero_primary_goal_id === "string" ? session.user.user_metadata.zero_primary_goal_id : null);
-        loadFromDB(session.user.id);
+        loadFromDB(session.user.id, session.user.email);
       } else {
         setUserId(null);
       }
@@ -1023,45 +1023,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ── Profile ────────────────────────────────────────────────────────
-  const updateProfile = async (data: Partial<UserProfile>) => {
-    setProfile((prev) => {
-      const updated = { ...prev, ...data };
-      if (data.name) updated.avatarText = data.name.charAt(0).toUpperCase();
-      return updated;
-    });
-
-    if (data.name) {
-      // Sync name on all active cards in state
-      setCards((prev) => prev.map((c) => ({ ...c, name: data.name! })));
-      // Update local storage auth state cache
-      try {
-        const savedAuth = localStorage.getItem("zero_auth_state_v6");
-        if (savedAuth) {
-          const parsedAuth = JSON.parse(savedAuth);
-          parsedAuth.userName = data.name;
-          localStorage.setItem("zero_auth_state_v6", JSON.stringify(parsedAuth));
-        }
-      } catch (e) {
-        console.error("Failed to update auth state storage:", e);
+  const profileBusy = useRef(false);
+  const updateProfile = async (data: Partial<UserProfile>): Promise<{ error?: string }> => {
+    if (profileBusy.current) return { error: "Un salvataggio è già in corso. Attendi un momento." };
+    if (data.email !== undefined && data.email !== profile.email) return { error: "L’email di accesso non si modifica dal profilo." };
+    const name = data.name?.trim();
+    if (data.name !== undefined && (!name || name.length > 100)) return { error: "Inserisci un nome da 1 a 100 caratteri." };
+    profileBusy.current = true;
+    try {
+      const uid = await getEffectiveUserId();
+      if (uid) {
+        const { error } = await supabase.from("profiles").update({
+          ...(name !== undefined && { name, avatar_text: name.charAt(0).toUpperCase() }),
+          ...(data.currency !== undefined && { currency: data.currency }),
+          ...(data.notificationsEnabled !== undefined && { notifications_enabled: data.notificationsEnabled }),
+          ...(data.theme !== undefined && { theme: data.theme }),
+        }).eq("id", uid).select("id").single();
+        if (error) return { error: "Non è stato possibile salvare il profilo. I dati precedenti sono ancora al sicuro. Riprova." };
       }
-    }
-
-    const uid = await getEffectiveUserId();
-    if (uid) {
-      if (data.name) {
-        // Sync name on cards table in Supabase
-        await supabase.from("cards").update({ name: data.name }).eq("user_id", uid);
-        // Sync user metadata on Supabase Auth
-        await supabase.auth.updateUser({ data: { name: data.name } }).catch(() => {});
+      setProfile(previous => ({ ...previous, ...data, ...(name !== undefined && { name, avatarText: name.charAt(0).toUpperCase() }) }));
+      if (name !== undefined) {
+        try {
+          const saved = JSON.parse(localStorage.getItem("zero_auth_state_v6") || "null");
+          if (saved) localStorage.setItem("zero_auth_state_v6", JSON.stringify({ ...saved, userName: name }));
+        } catch { /* The persisted profile is the source of truth. */ }
       }
-      await supabase.from("profiles").update({
-        ...(data.name !== undefined && { name: data.name, avatar_text: data.name.charAt(0).toUpperCase() }),
-        ...(data.email !== undefined && { email: data.email }),
-        ...(data.currency !== undefined && { currency: data.currency }),
-        ...(data.notificationsEnabled !== undefined && { notifications_enabled: data.notificationsEnabled }),
-        ...(data.theme !== undefined && { theme: data.theme }),
-      }).eq("id", uid);
-    }
+      return {};
+    } catch { return { error: "Connessione non disponibile. Il profilo non è stato modificato. Riprova." }; }
+    finally { profileBusy.current = false; }
   };
 
   // ── Reset all data ─────────────────────────────────────────────────

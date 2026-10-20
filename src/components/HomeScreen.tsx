@@ -1,4 +1,5 @@
 "use client";
+import { NotificationBell } from "@/components/NotificationBell";
 
 import React, { useState } from "react";
 import Image from "next/image";
@@ -82,7 +83,8 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
             Un passo alla volta, grandi obiettivi.
           </p>
         </div>
-        <button
+        <div className="flex shrink-0 items-center gap-2"><NotificationBell onManage={() => onNavigate("abbonamenti")} />
+        <button aria-label="Apri il profilo"
           onClick={() => onNavigate("profilo")}
           className="h-10 w-10 flex items-center justify-center hover:scale-105 transition-transform"
         >
@@ -95,6 +97,7 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
             priority
           />
         </button>
+        </div>
       </div>
 
       {/* ── 2. WALLET CAROUSEL ── */}
