@@ -269,7 +269,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Load data from Supabase when user session is available ────────
   useEffect(() => {
+    let loadingUserId: string | null = null;
     const loadFromDB = async (uid: string, accountEmail?: string) => {
+      if (loadingUserId === uid) return;
+      loadingUserId = uid;
       try {
         const [
           { data: cardsData },
@@ -308,6 +311,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.error("Failed to load from Supabase, falling back to localStorage:", e);
         loadFromLocalStorage(false);
       } finally {
+        if (loadingUserId === uid) loadingUserId = null;
         setIsHydrated(true);
       }
     };

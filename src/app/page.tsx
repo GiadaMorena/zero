@@ -1,24 +1,25 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import React, { useState, useEffect } from "react";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { AuthScreen } from "@/components/AuthScreen";
 import { PinScreen } from "@/components/PinScreen";
 import { AddCardScreen } from "@/components/AddCardScreen";
-import { HomeScreen } from "@/components/HomeScreen";
-import { SpeseScreen } from "@/components/SpeseScreen";
-import { AnalisiScreen } from "@/components/AnalisiScreen";
-import { CarteScreen } from "@/components/CarteScreen";
-import { ObiettiviScreen } from "@/components/ObiettiviScreen";
-import { AbbonamentiScreen } from "@/components/AbbonamentiScreen";
-import { AssicurazioniScreen } from "@/components/AssicurazioniScreen";
-import { StatisticheScreen } from "@/components/StatisticheScreen";
-import { ProfiloScreen } from "@/components/ProfiloScreen";
+const HomeScreen = dynamic(() => import("@/components/HomeScreen").then(mod => mod.HomeScreen), { loading: () => <ScreenLoading /> });
+const SpeseScreen = dynamic(() => import("@/components/SpeseScreen").then(mod => mod.SpeseScreen), { loading: () => <ScreenLoading /> });
+const AnalisiScreen = dynamic(() => import("@/components/AnalisiScreen").then(mod => mod.AnalisiScreen), { loading: () => <ScreenLoading /> });
+const CarteScreen = dynamic(() => import("@/components/CarteScreen").then(mod => mod.CarteScreen), { loading: () => <ScreenLoading /> });
+const ObiettiviScreen = dynamic(() => import("@/components/ObiettiviScreen").then(mod => mod.ObiettiviScreen), { loading: () => <ScreenLoading /> });
+const AbbonamentiScreen = dynamic(() => import("@/components/AbbonamentiScreen").then(mod => mod.AbbonamentiScreen), { loading: () => <ScreenLoading /> });
+const AssicurazioniScreen = dynamic(() => import("@/components/AssicurazioniScreen").then(mod => mod.AssicurazioniScreen), { loading: () => <ScreenLoading /> });
+const StatisticheScreen = dynamic(() => import("@/components/StatisticheScreen").then(mod => mod.StatisticheScreen), { loading: () => <ScreenLoading /> });
+const ProfiloScreen = dynamic(() => import("@/components/ProfiloScreen").then(mod => mod.ProfiloScreen), { loading: () => <ScreenLoading /> });
 import { AddSpesaModal } from "@/components/AddSpesaModal";
 import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
 import { WalletPaymentReceiver } from "@/components/WalletPaymentReceiver";
 import { ThemeSync } from "@/components/ThemeSync";
-import { DesktopApp } from "@/components/desktop/DesktopApp";
+const DesktopApp = dynamic(() => import("@/components/desktop/DesktopApp").then(mod => mod.DesktopApp), { loading: () => <ScreenLoading /> });
 import { AppProvider } from "@/context/AppContext";
 import { signOutSession } from "@/lib/signOutSession";
 import { supabase } from "@/lib/supabase";
@@ -44,6 +45,8 @@ export interface AuthState {
   userName: string;
   userEmail: string;
 }
+
+function ScreenLoading() { return <div role="status" className="flex min-h-48 items-center justify-center p-6 text-sm text-[#777]">Caricamento…</div>; }
 
 const STORAGE_KEY = "zero_auth_state_v6";
 
@@ -89,16 +92,8 @@ export default function Home() {
 
         if (session?.user) {
           const sameAccount = sameLoginAccount(parsed?.userEmail, session.user.email);
-          // User is authenticated with Supabase - fetch fresh profile name
-          const { data: prof } = await supabase
-            .from("profiles")
-            .select("name")
-            .eq("id", session.user.id)
-            .single();
-          if (cancelled) return;
-
+          // The provider refreshes the profile in parallel; the PIN does not wait for a name lookup.
           const name =
-            prof?.name ||
             (sameAccount ? parsed?.userName : "") ||
             session.user.user_metadata?.name ||
             session.user.email?.split("@")[0] ||
@@ -415,6 +410,15 @@ export default function Home() {
     }
   };
 
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const viewport = window.matchMedia("(min-width: 768px)");
+    const sync = () => setIsDesktop(viewport.matches);
+    sync();
+    viewport.addEventListener("change", sync);
+    return () => viewport.removeEventListener("change", sync);
+  }, []);
+
   const isAppUnlocked = flowStep === "app";
 
   if (isInitializing) return <main role="status" data-app-update-block="true" className="flex min-h-dvh items-center justify-center bg-[#F7F7F5] text-sm font-semibold text-[#777]">Apertura di ZERO…</main>;
@@ -426,7 +430,7 @@ export default function Home() {
       {setupError && <p role="alert" className="p-4 text-red-700">{setupError}</p>}
 
       {/* Mobile Experience (< 768px) */}
-      <div className="md:hidden" data-app-session-unlocked={isAppUnlocked ? "true" : undefined} data-account-email={isAppUnlocked ? authState.userEmail : undefined} data-app-update-block={flowStep !== "app" && flowStep !== "lock" && flowStep !== "welcome" ? "true" : undefined}>
+      {!isDesktop && <div className="md:hidden" data-app-session-unlocked={isAppUnlocked ? "true" : undefined} data-account-email={isAppUnlocked ? authState.userEmail : undefined} data-app-update-block={flowStep !== "app" && flowStep !== "lock" && flowStep !== "welcome" ? "true" : undefined}>
         <main className={`w-full min-h-[100dvh] flex flex-col bg-[#F7F7F5] selection:bg-[#FDC909] ${isAppUnlocked ? "zero-motion" : ""}`}>
           <div className="flex-1 flex flex-col w-full bg-[#F7F7F5]">
             <div
@@ -451,11 +455,11 @@ export default function Home() {
             defaultType={addModalType}
           />
         </main>
-      </div>
+      </div>}
 
       {/* Desktop Experience (≥ 768px) */}
       <div className="hidden md:block" data-app-session-unlocked={isAppUnlocked ? "true" : undefined} data-account-email={isAppUnlocked ? authState.userEmail : undefined} data-app-update-block={flowStep !== "app" && flowStep !== "lock" && flowStep !== "welcome" ? "true" : undefined}>
-        {renderDesktopScreen()}
+        {isDesktop ? renderDesktopScreen() : null}
       </div>
     </AppProvider>
   );

@@ -27,7 +27,7 @@ const supabase={auth:{getSession:async()=>({data:{session:sessionUser?{user:sess
 const listeners={};const document={hidden:false,addEventListener:(key,fn)=>listeners[key]=fn,removeEventListener:key=>delete listeners[key]};
 const components={};
 function requireStub(name){
- if(name==='react')return react;if(name==='@/lib/supabase')return {supabase};if(name==='@/lib/pinFlow')return scope.exports;
+ if(name==='react')return react;if(name==='next/dynamic')return {__esModule:true,default:loader=>{const match=loader.toString().match(/mod\.(\w+)/);if(!match)throw Error('Unknown lazy component');return match[1];}};if(name==='@/lib/supabase')return {supabase};if(name==='@/lib/pinFlow')return scope.exports;
  if(name==='@/lib/signOutSession') { const result={exports:{}}; vm.runInNewContext(ts.transpileModule(fs.readFileSync(root+'/src/lib/signOutSession.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,result);return result.exports; }
  if(name==='@/context/AppContext')return {AppProvider:'AppProvider'};
  const component=name.split('/').pop();components[component]=component;return {[component]:component};
@@ -38,6 +38,8 @@ const page={Date:class extends Date { static now(){return clock;} },exports:{},r
 function render(){cursor=0;effects=[];latestTree=page.exports.default();return latestTree;}
 function find(tag,node=latestTree){if(!node||typeof node!=='object')return null;if(node.tag===tag)return node;for(const child of node.children||[]){for(const item of Array.isArray(child)?child:[child]){const found=find(tag,item);if(found)return found;}}return null;}
 (async()=>{
+ stored.set("zero_auth_state_v6",JSON.stringify({isRegistered:true,hasPin:true,pinCode:pin.pinCode,userName:"Giada",userEmail:user.email}));render();effects[0]();await new Promise(resolve=>setImmediate(resolve));assert.equal(states[7],false,"opening does not await the remote profile name");assert.equal(states[1],"lock","a valid session still requires PIN");assert.equal(profileResolve,undefined,"startup does not duplicate the profile request");states=[];
+
  render();states[0]={isRegistered:true,hasPin:true,pinCode:pin.pinCode,userName:'Giada',userEmail:user.email};states[1]='app';states[7]=false;render();
  states[3]='profilo';render();await find('ProfiloScreen').props.onLogout();
  const saved=JSON.parse(stored.get('zero_auth_state_v6'));assert.equal(saved.isRegistered,false);assert.equal(saved.pinCode,pin.pinCode);
@@ -51,7 +53,7 @@ function find(tag,node=latestTree){if(!node||typeof node!=='object')return null;
  find('PinScreen').props.onForgotPin();render();await find('AuthScreen').props.onAuth({name:'Giada',email:user.email});assert.equal(states[1],'create_pin','reauthentication after forgotten PIN permits explicit reset');
  render();find('PinScreen').props.onPinSet('395827');assert.equal(states[1],'confirm_pin');render();find('PinScreen').props.onSuccess();assert.equal(states[1],'app');
  render();states[1]='register';render();find('AuthScreen').props.onAuth({name:'Nuovo',email:'nuovo@example.test'});assert.equal(states[0].hasPin,false,'new account must not inherit old PIN');
- states[1]="app";render();assert.equal(typeof find("DesktopApp").props.onLogout,"function","desktop receives the real logout handler");effects[1]();authListener("SIGNED_OUT");assert.equal(states[1],"login","session revocation locks open tabs");assert.equal(states[0].isRegistered,false);
+ states[1]="app";states[10]=true;render();assert.equal(typeof find("DesktopApp").props.onLogout,"function","desktop receives the real logout handler");effects[1]();authListener("SIGNED_OUT");assert.equal(states[1],"login","session revocation locks open tabs");assert.equal(states[0].isRegistered,false);states[10]=false;
  // A full reload after logout must restore device PIN settings before the next login.
  stored.set('zero_auth_state_v6',JSON.stringify(saved));states=[];sessionUser=null;render();effects[0]();await new Promise(resolve=>setImmediate(resolve));
  assert.equal(states[0].pinCode,pin.pinCode);assert.equal(states[1],'welcome');assert.equal(states[7],false);
