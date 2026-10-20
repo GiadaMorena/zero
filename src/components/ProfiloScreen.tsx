@@ -246,7 +246,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
             <span className="text-sm font-black">PIN a 6 cifre attivo</span>
           </div>
           <p className="text-[11px] text-[#A7A7A7] leading-relaxed">
-            Il tuo account è protetto da un PIN a 6 cifre. L'app si blocca automaticamente quando vai in background. Per rientrare basta inserire il codice una volta; la conferma serve solo quando crei un nuovo PIN.
+            Il tuo account è protetto da un PIN a 6 cifre. Se torni entro 2 minuti da un’altra app, non serve reinserirlo. Dopo un’assenza più lunga o un riavvio dell’app viene richiesto il codice. Dopo “Disconnetti” serve un nuovo accesso.
           </p>
         </div>
       </div>

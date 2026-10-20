@@ -159,12 +159,20 @@ export default function Home() {
     }
   };
 
-  // 2. Background Re-Lock Handler
+  // A brief switch to another app keeps this unlocked session open.
+  // A full reload or explicit logout still requires authentication as before.
   useEffect(() => {
+    if (flowStep !== "app" || !authState.isRegistered || !authState.hasPin) return;
+    let hiddenAt: number | null = document.hidden ? Date.now() : null;
     const handleVisibilityChange = () => {
-      if (document.hidden && flowStep === "app" && authState.isRegistered && authState.hasPin) {
-        setFlowStep("lock");
+      if (document.hidden) {
+        if (hiddenAt === null) hiddenAt = Date.now();
+        return;
       }
+      if (hiddenAt === null) return;
+      const elapsed = Date.now() - hiddenAt;
+      hiddenAt = null;
+      if (elapsed >= 2 * 60_000 || elapsed < 0) setFlowStep("lock");
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);

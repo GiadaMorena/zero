@@ -33,7 +33,8 @@ function requireStub(name){
  const component=name.split('/').pop();components[component]=component;return {[component]:component};
 }
 const code=ts.transpileModule(fs.readFileSync(root+'/src/app/page.tsx','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;
-const page={exports:{},require:requireStub,localStorage,document,window:{localStorage,sessionStorage:localStorage,location:{hash:'',search:'',pathname:'/',replace:()=>{}},history:{replaceState:()=>{}}},URLSearchParams,console};vm.runInNewContext(code,page);
+let clock=1000;
+const page={Date:class extends Date { static now(){return clock;} },exports:{},require:requireStub,localStorage,document,window:{localStorage,sessionStorage:localStorage,location:{hash:'',search:'',pathname:'/',replace:()=>{}},history:{replaceState:()=>{}}},URLSearchParams,console};vm.runInNewContext(code,page);
 function render(){cursor=0;effects=[];latestTree=page.exports.default();return latestTree;}
 function find(tag,node=latestTree){if(!node||typeof node!=='object')return null;if(node.tag===tag)return node;for(const child of node.children||[]){for(const item of Array.isArray(child)?child:[child]){const found=find(tag,item);if(found)return found;}}return null;}
 (async()=>{
@@ -42,8 +43,11 @@ function find(tag,node=latestTree){if(!node||typeof node!=='object')return null;
  const saved=JSON.parse(stored.get('zero_auth_state_v6'));assert.equal(saved.isRegistered,false);assert.equal(saved.pinCode,pin.pinCode);
  states[1]='login';render();await find('AuthScreen').props.onAuth({name:'Giada',email:'GIADA@example.test'});assert.equal(states[1],'lock');
  render();assert.equal(find('PinScreen').props.mode,'lock');find('PinScreen').props.onSuccess();assert.equal(states[1],'app','one successful unlock enters app directly');
- render();effects[2]();document.hidden=true;listeners.visibilitychange();assert.equal(states[1],'lock','background lock applies in app');
- render();effects[2]();listeners.visibilitychange();assert.equal(states[1],'lock','background event cannot change PIN verification into setup');
+ render();effects[2]();document.hidden=true;listeners.visibilitychange();assert.equal(states[1],'app','hiding alone does not lock');
+ clock+=1000;document.hidden=false;listeners.visibilitychange();assert.equal(states[1],'app','one-second switch retains the unlocked session');
+ document.hidden=true;listeners.visibilitychange();clock+=119999;document.hidden=false;listeners.visibilitychange();assert.equal(states[1],'app','returning before two minutes does not lock');
+ document.hidden=true;listeners.visibilitychange();clock+=120000;document.hidden=false;listeners.visibilitychange();assert.equal(states[1],'lock','return after two minutes requires PIN');
+ render();effects[2]();assert.equal(states[1],'lock','background handling cannot unlock an existing PIN screen');
  find('PinScreen').props.onForgotPin();render();await find('AuthScreen').props.onAuth({name:'Giada',email:user.email});assert.equal(states[1],'create_pin','reauthentication after forgotten PIN permits explicit reset');
  render();find('PinScreen').props.onPinSet('395827');assert.equal(states[1],'confirm_pin');render();find('PinScreen').props.onSuccess();assert.equal(states[1],'app');
  render();states[1]='register';render();find('AuthScreen').props.onAuth({name:'Nuovo',email:'nuovo@example.test'});assert.equal(states[0].hasPin,false,'new account must not inherit old PIN');
@@ -62,5 +66,5 @@ function find(tag,node=latestTree){if(!node||typeof node!=='object')return null;
    for(const digit of entered){cursor=0;const tree=pinModule.exports.PinScreen(props);button(digit,tree).props.onClick();}
    assert.equal(count,successes,'one keypad entry validates only the configured PIN');
  }
- console.log('PIN routing, account matching, logout retention, single unlock, background lock and registration/reset confirmation passed');
+ console.log('PIN routing, account matching, logout retention, single unlock, brief-switch grace, two-minute background lock and registration/reset confirmation passed');
 })().catch(error=>{console.error(error);process.exitCode=1});
