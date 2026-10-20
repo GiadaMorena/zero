@@ -44,10 +44,10 @@ export function SubscriptionToggle({
       >
         <span
           aria-hidden="true"
-          className={`flex h-6 w-10 shrink-0 items-center rounded-full px-[3px] transition-colors motion-reduce:transition-none ${checked ? "bg-[#FDC909]" : "bg-[#A7A7A7]/40"}`}
+          className={`flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 ring-1 ring-inset ring-black/5 transition-colors motion-reduce:transition-none ${checked ? "bg-[#FDC909]" : "bg-[#D1D1CC]"}`}
         >
           <span
-            className={`block h-[18px] w-[18px] shrink-0 rounded-full bg-white shadow-xs transition-transform duration-200 motion-reduce:transition-none ${checked ? "translate-x-4" : "translate-x-0"}`}
+            className={`block h-6 w-6 shrink-0 rounded-full bg-white shadow-sm transition-transform duration-200 motion-reduce:transition-none ${checked ? "translate-x-5" : "translate-x-0"}`}
           />
         </span>
       </button>
