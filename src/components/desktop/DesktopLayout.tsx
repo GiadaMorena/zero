@@ -104,7 +104,7 @@ export function DesktopLayout({
         {/* Official ZERO Logo Header */}
         <div className="px-6 py-5 border-b border-[#A7A7A7]/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-2xl bg-[#0B0B0B] flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-md">
+            <div className="h-9 w-9 rounded-2xl bg-[#FDC909] flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-sm">
               <Image
                 src={Logo}
                 alt="ZERO Logo"
