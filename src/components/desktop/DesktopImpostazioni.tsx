@@ -110,11 +110,11 @@ export function DesktopImpostazioni() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#F8F8F5] border border-[#EBEBE5]">
             <div>
-              <p className="text-xs font-bold text-[#121212]">Promemoria nell’app</p>
-              <p className="text-[10px] text-[#73736E] font-medium">Scadenze visibili aprendo la campanella. Nessuna notifica push.</p>
+              <p className="text-xs font-bold text-[#121212]">Promemoria abbonamenti</p>
+              <p className="text-[10px] text-[#73736E] font-medium">Controlla la campanella e gli avvisi sui dispositivi che hai attivato.</p>
             </div>
             <button
-              onClick={toggleReminders} disabled={saving} role="switch" aria-checked={profile.notificationsEnabled} aria-label="Promemoria nell’app"
+              onClick={toggleReminders} disabled={saving} role="switch" aria-checked={profile.notificationsEnabled} aria-label="Promemoria abbonamenti"
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 profile.notificationsEnabled ? "bg-[#F5E050]" : "bg-[#EBEBE5]"
               }`}

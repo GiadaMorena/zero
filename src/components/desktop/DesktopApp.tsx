@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DesktopLayout, DesktopSection } from "./DesktopLayout";
 import { DesktopDashboard } from "./DesktopDashboard";
 import { DesktopMovimenti } from "./DesktopMovimenti";
@@ -13,12 +13,16 @@ import { AssicurazioniScreen } from "../AssicurazioniScreen";
 import { AddSpesaModal } from "../AddSpesaModal";
 import { ReceiptScanModal } from "../ReceiptScanModal";
 
-export function DesktopApp({ onLogout, isSigningOut = false }: { onLogout: () => void; isSigningOut?: boolean }) {
-  const [activeSection, setActiveSection] = useState<DesktopSection>("dashboard");
+export function DesktopApp({ onLogout, isSigningOut = false, reminderRequest = 0 }: { onLogout: () => void; isSigningOut?: boolean; reminderRequest?: number }) {
+  const [activeSection, setActiveSection] = useState<DesktopSection>(reminderRequest > 0 ? "abbonamenti" : "dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addModalType, setAddModalType] = useState<"expense" | "income">("expense");
   const [isScanOpen, setIsScanOpen] = useState(false);
+
+  useEffect(() => {
+    if (reminderRequest > 0) setActiveSection("abbonamenti");
+  }, [reminderRequest]);
 
   const handleOpenAdd = (type: "expense" | "income" = "expense") => {
     setAddModalType(type);

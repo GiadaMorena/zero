@@ -1,8 +1,13 @@
 import { adminClient, authenticatedUser, noCache, readPushState, validPush, writePushState } from "@/lib/subscriptionReminderServer";
+import { createECDH } from "node:crypto";
 export const runtime="nodejs";
 export async function GET(request:Request){
  let configured=!!(process.env.VAPID_PUBLIC_KEY&&process.env.VAPID_PRIVATE_KEY&&process.env.CRON_SECRET&&process.env.SUPABASE_SERVICE_ROLE_KEY&&process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
- if(configured)try{const check=await adminClient().auth.admin.listUsers({page:1,perPage:1});configured=!check.error;}catch{configured=false;}
+ if(configured)try{
+  const pair=createECDH("prime256v1");pair.setPrivateKey(Buffer.from(process.env.VAPID_PRIVATE_KEY!,"base64url"));
+  configured=pair.getPublicKey().equals(Buffer.from(process.env.VAPID_PUBLIC_KEY!,"base64url"));
+  if(configured){const check=await adminClient().auth.admin.listUsers({page:1,perPage:1});configured=!check.error;}
+ }catch{configured=false;}
  let endpoints:string[]=[];
  if(configured&&request.headers.has("authorization"))try{
   const auth=await authenticatedUser(request);

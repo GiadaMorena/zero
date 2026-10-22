@@ -199,11 +199,11 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
           <div className="flex items-center justify-between p-3 rounded-2xl">
             <div className="flex items-center gap-3">
               <Bell className="h-4 w-4 text-[#A7A7A7]" />
-              <span className="text-xs font-bold text-[#0B0B0B]">Promemoria nell’app</span>
+              <span className="text-xs font-bold text-[#0B0B0B]">Promemoria abbonamenti</span>
             </div>
             {/* Toggle */}
             <button
-              onClick={toggleReminders} disabled={saving} role="switch" aria-checked={profile.notificationsEnabled} aria-label="Promemoria nell’app"
+              onClick={toggleReminders} disabled={saving} role="switch" aria-checked={profile.notificationsEnabled} aria-label="Promemoria abbonamenti"
               className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
                 profile.notificationsEnabled ? "bg-[#FDC909]" : "bg-[#A7A7A7]/40"
               }`}
@@ -218,7 +218,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
         </div>
 
         <p className="text-[11px] text-[#A7A7A7] font-medium px-1 leading-relaxed">
-          I promemoria mostrano le scadenze nella campanella di ZERO. Non inviano notifiche push sul telefono.
+          Questa preferenza controlla i promemoria nella campanella e le notifiche sui dispositivi attivati. Per ricevere avvisi con ZERO chiusa, attiva anche questo dispositivo qui sopra.
         </p>
       </div>
     );

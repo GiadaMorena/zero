@@ -409,7 +409,7 @@ export default function Home() {
         );
       case "app":
       default:
-        return <DesktopApp onLogout={handleLogout} isSigningOut={isSigningOut} />;
+        return <DesktopApp onLogout={handleLogout} isSigningOut={isSigningOut} reminderRequest={reminderRequest} />;
     }
   };
 
@@ -423,14 +423,29 @@ export default function Home() {
   }, []);
 
   const isAppUnlocked = flowStep === "app";
+  const [reminderRequest, setReminderRequest] = useState(0);
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    const showReminders = (event: MessageEvent) => {
-      if (event.data?.type === "zero-subscription-reminders") setActiveTab("home");
+    const openReminders = () => {
+      // Keep the destination while login or the PIN screen is still required.
+      setActiveTab("abbonamenti");
+      setReminderRequest(current => current + 1);
     };
-    navigator.serviceWorker.addEventListener("message", showReminders);
-    return () => navigator.serviceWorker.removeEventListener("message", showReminders);
+    const readReminderHash = () => {
+      if (window.location.hash !== "#subscription-reminders") return;
+      openReminders();
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    };
+    readReminderHash();
+    window.addEventListener("hashchange", readReminderHash);
+    const showReminders = (event: MessageEvent) => {
+      if (event.data?.type === "zero-subscription-reminders") openReminders();
+    };
+    if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", showReminders);
+    return () => {
+      window.removeEventListener("hashchange", readReminderHash);
+      if ("serviceWorker" in navigator) navigator.serviceWorker.removeEventListener("message", showReminders);
+    };
   }, []);
 
   if (isInitializing) return <main role="status" data-app-update-block="true" className="flex min-h-dvh items-center justify-center bg-[#F7F7F5] text-sm font-semibold text-[#777]">Apertura di ZERO…</main>;
