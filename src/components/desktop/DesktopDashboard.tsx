@@ -1,4 +1,5 @@
 "use client";
+import { SubscriptionDueBanner } from "@/components/SubscriptionDueBanner";
 
 import { getCardAppearance } from "@/lib/cardAppearance";
 import { BankIdentity } from "../BankIdentity";
@@ -67,6 +68,7 @@ export function DesktopDashboard({
   return (
     <div className="p-8 max-w-[1500px] mx-auto w-full flex flex-col gap-6 select-none">
       {/* ── 1. Top Summary Banner ── */}
+      <SubscriptionDueBanner onManage={() => onNavigate("abbonamenti")} />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Card 1: Total Balance */}
         <div className="rounded-[24px] bg-white border border-[#EBEBE5] p-5 shadow-xs flex flex-col justify-between">

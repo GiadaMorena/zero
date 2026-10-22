@@ -1,4 +1,7 @@
 "use client";
+import { useSubscriptionTracking } from "@/components/SubscriptionTrackingProvider";
+import { SubscriptionPaymentStatus } from "@/components/SubscriptionPaymentStatus";
+import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { useEffect, useRef, useState } from "react";
 import {
   Plus,
@@ -39,6 +42,7 @@ type Dialog =
   | { kind: "new"; name?: string }
   | { kind: "edit" | "delete"; sub: SubscriptionItem };
 export function SubscriptionBoard({ desktop = false }: { desktop?: boolean }) {
+  const trackingState = useSubscriptionTracking();
   const app = useApp(),
     [filter, setFilter] = useState("Inclusi"),
     [dialog, setDialog] = useState<Dialog | null>(null);
@@ -84,6 +88,7 @@ export function SubscriptionBoard({ desktop = false }: { desktop?: boolean }) {
           <Plus className="h-5 w-5" />
         </button>
       </header>
+      <details className="rounded-2xl border border-black/10 bg-white p-4"><summary className="cursor-pointer text-sm font-bold">Promemoria il giorno prima e il giorno del rinnovo</summary><div className="mt-3"><PushNotificationSettings /></div></details>
       <section className="rounded-[24px] border border-black/10 bg-white p-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -143,6 +148,8 @@ export function SubscriptionBoard({ desktop = false }: { desktop?: boolean }) {
       >
         {visible.map((sub) => {
           const renewal = nextRenewal(sub);
+          const linkedId = trackingState.tracking.subscriptions[sub.id]?.cardId;
+          const linkedCard = app.cards.find(card => card.id === linkedId);
           return (
             <article
               key={sub.id}
@@ -180,6 +187,8 @@ export function SubscriptionBoard({ desktop = false }: { desktop?: boolean }) {
                     ? `Prossimo rinnovo: ${renewal.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`
                     : "Data del rinnovo da completare"}
               </p>
+              <p className="mt-2 text-xs text-[#666]">Carta: {linkedCard ? `${linkedCard.bankName} · ${linkedCard.number}` : linkedId ? "Non più disponibile: modificala" : "Nessuna carta associata"}</p>
+              <SubscriptionPaymentStatus sub={sub} />
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
@@ -256,7 +265,8 @@ export function SubscriptionBoard({ desktop = false }: { desktop?: boolean }) {
         Questi controlli modificano il monitoraggio in ZERO. Per disdire un
         servizio, usa il sito del fornitore.
       </p>
-      {dialog && (
+      {!trackingState.ready && <div role={trackingState.error ? "alert" : "status"} className="rounded-2xl bg-white p-4 text-sm">{trackingState.error || "Caricamento carte associate e conferme…"}{trackingState.error && <button type="button" onClick={trackingState.retry} className="ml-3 font-bold underline">Riprova</button>}</div>}
+      {dialog && trackingState.ready && (
         <SubscriptionEditor
           key={
             dialog.kind + ("sub" in dialog ? dialog.sub.id : dialog.name || "")
@@ -275,6 +285,7 @@ function SubscriptionEditor({
   dialog: Dialog;
   onClose: () => void;
 }) {
+  const trackingState = useSubscriptionTracking();
   const app = useApp(),
     sub = "sub" in dialog ? dialog.sub : null,
     parts = sub ? renewalParts(sub.date) : null;
@@ -294,6 +305,7 @@ function SubscriptionEditor({
     [month, setMonth] = useState(
       parts?.month.toString() || String(new Date().getMonth()),
     );
+  const [cardId, setCardId] = useState(sub ? trackingState.tracking.subscriptions[sub.id]?.cardId || "" : "");
   const [pending, setPending] = useState(false),
     [error, setError] = useState("");
   const guard = useRef(false),
@@ -347,6 +359,10 @@ function SubscriptionEditor({
       if (result.error) {
         setError(result.error);
         return;
+      }
+      if (dialog.kind !== "delete") {
+        const linked = await trackingState.setCard(sub?.id || requestId, cardId);
+        if (linked.error) { setError(`Abbonamento salvato, ma la carta non è stata aggiornata. ${linked.error}`); return; }
       }
       onClose();
     } catch {
@@ -473,6 +489,7 @@ function SubscriptionEditor({
               <p className="text-[11px] text-[#73736E]">
                 Nei mesi più corti si usa l’ultimo giorno disponibile.
               </p>
+              <label className="text-xs font-bold">Carta associata (modificabile)<select value={cardId} onChange={event => setCardId(event.target.value)} className={style}><option value="">Nessuna carta / altro metodo</option>{cardId && !app.cards.some(card => card.id === cardId) && <option value={cardId}>Carta non più disponibile: scegli un’altra opzione</option>}{app.cards.map(card => <option key={card.id} value={card.id}>{card.bankName} · {card.number}</option>)}</select></label>
               <label className="text-xs font-bold">
                 Categoria
                 <select

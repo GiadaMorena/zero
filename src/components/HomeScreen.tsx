@@ -1,4 +1,5 @@
 "use client";
+import { SubscriptionDueBanner } from "@/components/SubscriptionDueBanner";
 import { NotificationBell } from "@/components/NotificationBell";
 
 import React, { useState } from "react";
@@ -99,6 +100,8 @@ export function HomeScreen({ onOpenAddModal, onNavigate }: HomeScreenProps) {
         </button>
         </div>
       </div>
+
+      <SubscriptionDueBanner onManage={() => onNavigate("abbonamenti")} />
 
       {/* ── 2. WALLET CAROUSEL ── */}
       <div className="-mx-4">

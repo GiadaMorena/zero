@@ -34,6 +34,7 @@ export interface TransactionItem {
 }
 
 export interface SubscriptionItem {
+  createdAt?: string;
   id: string;
   name: string;
   cost: number;
@@ -203,6 +204,7 @@ function dbToSubscription(row: any): SubscriptionItem {
     active: row.active,
     category: row.category,
     color: row.color,
+    createdAt: row.created_at,
   };
 }
 

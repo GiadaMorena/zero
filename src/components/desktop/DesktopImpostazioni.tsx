@@ -1,4 +1,5 @@
 "use client";
+import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { ApplePaySetup } from "@/components/ApplePaySetup";
 
 import React, { useState } from "react";
@@ -138,6 +139,7 @@ export function DesktopImpostazioni() {
         </div>
       </div>
 
+      <PushNotificationSettings />
       {/* Esportazione & Gestione Dati */}
       <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-6 shadow-xs flex flex-col gap-4">
         <div className="flex items-center gap-3 pb-3 border-b border-[#EBEBE5]">

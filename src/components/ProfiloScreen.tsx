@@ -1,4 +1,5 @@
 "use client";
+import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { ApplePaySetup } from "@/components/ApplePaySetup";
 
 import React, { useState } from "react";
@@ -192,6 +193,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
           <h1 className="text-xl font-black tracking-tight text-[#0B0B0B]">Notifiche</h1>
         </div>
 
+        <PushNotificationSettings />
         {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
         <div className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-2.5 flex flex-col gap-1">
           <div className="flex items-center justify-between p-3 rounded-2xl">

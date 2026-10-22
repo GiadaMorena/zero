@@ -20,6 +20,8 @@ import { BottomNavBar, NavTab } from "@/components/BottomNavBar";
 import { WalletPaymentReceiver } from "@/components/WalletPaymentReceiver";
 import { ThemeSync } from "@/components/ThemeSync";
 const DesktopApp = dynamic(() => import("@/components/desktop/DesktopApp").then(mod => mod.DesktopApp), { loading: () => <ScreenLoading /> });
+import { SubscriptionTrackingProvider } from "@/components/SubscriptionTrackingProvider";
+import { disableDevicePush } from "@/lib/devicePush";
 import { AppProvider } from "@/context/AppContext";
 import { signOutSession } from "@/lib/signOutSession";
 import { supabase } from "@/lib/supabase";
@@ -236,6 +238,7 @@ export default function Home() {
     if (isSigningOut) return;
     setIsSigningOut(true);
     setSetupError("");
+    try { await disableDevicePush(); } catch { /* Logout still closes the session if push is unavailable. */ }
     const result = await signOutSession(supabase.auth, window.localStorage, window.sessionStorage);
     if (result.error) { setSetupError(result.error); setIsSigningOut(false); return; }
     saveAuthState({ ...authState, isRegistered: false });
@@ -421,10 +424,19 @@ export default function Home() {
 
   const isAppUnlocked = flowStep === "app";
 
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const showReminders = (event: MessageEvent) => {
+      if (event.data?.type === "zero-subscription-reminders") setActiveTab("home");
+    };
+    navigator.serviceWorker.addEventListener("message", showReminders);
+    return () => navigator.serviceWorker.removeEventListener("message", showReminders);
+  }, []);
+
   if (isInitializing) return <main role="status" data-app-update-block="true" className="flex min-h-dvh items-center justify-center bg-[#F7F7F5] text-sm font-semibold text-[#777]">Apertura di ZERO…</main>;
 
   return (
-    <AppProvider>
+    <AppProvider><SubscriptionTrackingProvider>
       <WalletPaymentReceiver unlocked={isAppUnlocked} accountEmail={authState.userEmail} />
       <ThemeSync screenBackground="#F7F7F5" />
       {setupError && <p role="alert" className="p-4 text-red-700">{setupError}</p>}
@@ -461,7 +473,7 @@ export default function Home() {
       <div className="hidden md:block" data-app-session-unlocked={isAppUnlocked ? "true" : undefined} data-account-email={isAppUnlocked ? authState.userEmail : undefined} data-app-update-block={flowStep !== "app" && flowStep !== "lock" && flowStep !== "welcome" ? "true" : undefined}>
         {isDesktop ? renderDesktopScreen() : null}
       </div>
-    </AppProvider>
+    </SubscriptionTrackingProvider></AppProvider>
   );
 }
 
