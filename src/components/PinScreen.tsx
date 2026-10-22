@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Delete, Lock } from "lucide-react";
 import Logo from "@/assets/logo.png";
@@ -30,18 +30,21 @@ export function PinScreen({
   const [pinDigits, setPinDigits] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isShaking, setIsShaking] = useState<boolean>(false);
+  const digitsRef = useRef<string[]>([]);
 
   useEffect(() => {
     setCurrentMode(initialMode);
+    digitsRef.current = [];
     setPinDigits([]);
     setErrorMessage("");
   }, [initialMode]);
 
   // Handle digit press (0-9)
   const handleDigitPress = (digit: string) => {
-    if (pinDigits.length >= 6) return;
+    if (digitsRef.current.length >= 6) return;
     setErrorMessage("");
-    const newDigits = [...pinDigits, digit];
+    const newDigits = [...digitsRef.current, digit];
+    digitsRef.current = newDigits;
     setPinDigits(newDigits);
 
     // Auto verify when 6th digit is typed
@@ -53,9 +56,10 @@ export function PinScreen({
 
   // Handle backspace ⌫
   const handleBackspace = () => {
-    if (pinDigits.length === 0) return;
+    if (digitsRef.current.length === 0 || digitsRef.current.length >= 6) return;
     setErrorMessage("");
-    setPinDigits((prev) => prev.slice(0, -1));
+    digitsRef.current = digitsRef.current.slice(0, -1);
+    setPinDigits(digitsRef.current);
   };
 
   // Process completed 6-digit PIN entry
@@ -71,6 +75,7 @@ export function PinScreen({
       } else {
         triggerError("Il codice non coincide. Riprova.");
         setTimeout(() => {
+          digitsRef.current = [];
           setPinDigits([]);
         }, 800);
       }
@@ -80,6 +85,7 @@ export function PinScreen({
       } else {
         triggerError("Codice non corretto");
         setTimeout(() => {
+          digitsRef.current = [];
           setPinDigits([]);
         }, 600);
       }
@@ -91,6 +97,23 @@ export function PinScreen({
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 500);
   };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])")) return;
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        handleDigitPress(event.key);
+      } else if (event.key === "Backspace") {
+        event.preventDefault();
+        handleBackspace();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   // Content text based on current mode
   const getHeaderInfo = () => {
@@ -148,7 +171,7 @@ export function PinScreen({
 
         {/* 6 INDICATOR DOTS ○ ○ ○ ○ ○ ○ */}
         <div className="flex flex-col items-center gap-3 my-2">
-          <div
+          <div role="group" aria-label={`${pinDigits.length} di 6 cifre inserite`}
             className={`flex items-center gap-3.5 transition-transform duration-300 ${
               isShaking ? "animate-bounce" : ""
             }`}
@@ -206,6 +229,8 @@ export function PinScreen({
             <Delete className="w-6 h-6 stroke-[2.2]" />
           </button>
         </div>
+
+        <p className="hidden md:block text-xs font-semibold text-[#777] text-center">Puoi usare anche la tastiera. Backspace per correggere.</p>
 
         {/* FORGOT PIN LINK (Only on Lock Mode) */}
         {currentMode === "lock" && onForgotPin && (

@@ -18,7 +18,7 @@ assert.equal(nextLoginStep({zero_onboarding_completed:true},{hasPin:true,pinCode
 
 // Render the actual page with hook/SDK stubs to exercise logout → login → one unlock.
 let states=[],cursor=0,latestTree,effects=[];
-const react={createElement:(tag,props,...children)=>({tag,props:props||{},children}),useState:initial=>{const i=cursor++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],v=>states[i]=typeof v==='function'?v(states[i]):v];},useEffect:fn=>effects.push(fn)};
+const react={createElement:(tag,props,...children)=>({tag,props:props||{},children}),useState:initial=>{const i=cursor++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],v=>states[i]=typeof v==='function'?v(states[i]):v];},useRef:initial=>{const i=cursor++;if(!(i in states))states[i]={current:initial};return states[i];},useEffect:fn=>effects.push(fn)};
 const stored=new Map();const localStorage={getItem:k=>stored.get(k)||null,setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)};
 let profileResolve;
 const user={email:'giada@example.test',id:'fake-user',user_metadata:{zero_onboarding_completed:true},app_metadata:{provider:'google'}};
