@@ -1,7 +1,7 @@
 const fs = require('node:fs'), vm = require('node:vm'), assert = require('node:assert/strict'), path = require('node:path');
 const root = process.argv[2] || path.resolve(__dirname, '..');
 const ts = require(root + '/node_modules/typescript');
-function compile(file, jsx = false) { return ts.transpileModule(fs.readFileSync(root + '/' + file, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS, jsx: jsx ? ts.JsxEmit.ReactJSX : undefined } }).outputText; }
+function compile(file, jsx = false) { const source = process.argv[3] && file.endsWith('WalletPaymentReceiver.tsx') ? process.argv[3] : root + '/' + file; return ts.transpileModule(fs.readFileSync(source, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS, jsx: jsx ? ts.JsxEmit.ReactJSX : undefined } }).outputText; }
 const logicScope = { exports: {}, URLSearchParams, Date, Number };
 vm.runInNewContext(compile('src/lib/walletPayment.ts'), logicScope);
 const logic = logicScope.exports;
@@ -21,12 +21,13 @@ function mount({ props = { unlocked: false, accountEmail: 'old@example.test' }, 
   const localStorage = { getItem: key => local.get(key) || null, setItem: (key, value) => local.set(key, value) };
   const window = { location: { hash: initialHash, pathname: '/', search: '' }, history: { replaceState: () => { window.location.hash = ''; } }, addEventListener: (type, fn) => listeners.set(type, fn), removeEventListener: type => listeners.delete(type) };
   const react = {
+    useRef(initial) { const index = cursor++; if (!(index in hooks)) hooks[index] = { current: initial }; return hooks[index]; },
     useState(initial) { const index = cursor++; if (!(index in hooks)) hooks[index] = { value: typeof initial === 'function' ? initial() : initial }; return [hooks[index].value, value => { const next = typeof value === 'function' ? value(hooks[index].value) : value; if (!Object.is(next, hooks[index].value)) { hooks[index].value = next; dirty = true; } }]; },
     useEffect(effect, deps) { const index = cursor++, previous = hooks[index]; if (!previous || deps.some((value, i) => !Object.is(value, previous.deps?.[i]))) pendingEffects.push(() => { previous?.cleanup?.(); hooks[index] = { deps, cleanup: effect() }; }); },
   };
   const jsx = (tag, elementProps) => ({ tag, props: elementProps || {} });
-  const imports = { react, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' }, '@/context/AppContext': { useApp: () => ({ isHydrated: true, transactions }) }, '@/components/AddSpesaModal': { AddSpesaModal: 'AddSpesaModal' }, '@/lib/walletPayment': logic };
-  const scope = { exports: {}, require: name => imports[name], window, sessionStorage, localStorage, URLSearchParams, Date, String, JSON };
+  const imports = { react, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' }, '@/context/AppContext': { useApp: () => ({ isHydrated: true, transactions }) }, '@/components/AddSpesaModal': { AddSpesaModal: 'AddSpesaModal' }, '@/lib/walletPayment': logic, '@/lib/supabase': { supabase: { auth: { getSession: async () => ({ data: { session: null } }) } } } };
+  const scope = { exports: {}, require: name => imports[name], window, document: { addEventListener() {}, removeEventListener() {}, visibilityState: 'visible' }, navigator: {}, sessionStorage, localStorage, URLSearchParams, URL, Date, String, JSON };
   vm.runInNewContext(compile('src/components/WalletPaymentReceiver.tsx', true), scope);
   function render(next = props) { props = next; let passes = 0; do { if (++passes > 20) throw Error('Receiver did not settle'); dirty = false; cursor = 0; pendingEffects = []; tree = scope.exports.WalletPaymentReceiver(props); for (const effect of pendingEffects) effect(); } while (dirty); return tree; }
   render();
