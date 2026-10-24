@@ -25,20 +25,30 @@ export function WalletPaymentReceiver({ unlocked, accountEmail }: { unlocked: bo
       let draft: WalletPaymentDraft | null = null;
       try { draft = parseWalletPayment(window.location.hash); } catch { /* Invalid date or payload. */ }
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      if (!draft) { setMessage("Dati del pagamento incompleti. Controlla l’automazione: importo in euro, esercente, data e UUID."); return; }
-      const next = { draft, expires: Date.now() + 30 * 60 * 1000, owner };
+      if (!draft) { setMessage("Dati del pagamento incompleti. Controlla l’automazione: importo in euro, esercente, data e riferimento del pagamento."); return; }
+      // An email cached before login is not proof that this is the current account.
+      const next = { draft, expires: Date.now() + 30 * 60 * 1000, owner: unlocked ? owner : "" };
       try { sessionStorage.setItem(KEY, JSON.stringify(next)); } catch { /* Keep the current draft in memory. */ }
       setPending(next);
     };
     try {
       const stored = JSON.parse(sessionStorage.getItem(KEY) || "null") as Pending | null;
-      if (stored && stored.expires > Date.now() && parseWalletPayment("#zero-pay?" + new URLSearchParams({ ...stored.draft, merchant: stored.draft.title, amount: String(stored.draft.amount), currency: "EUR" }).toString())) setPending(stored);
+      const restored = stored && stored.expires > Date.now() ? parseWalletPayment("#zero-pay?" + new URLSearchParams({
+        ref: stored.draft.ref,
+        cardId: stored.draft.cardId,
+        date: stored.draft.date,
+        merchant: stored.draft.title,
+        amount: String(stored.draft.amount),
+        currency: "EUR",
+        ...(stored.draft.preview ? { preview: "1" } : {}),
+      }).toString()) : null;
+      if (stored && restored) setPending({ ...stored, draft: restored });
       else sessionStorage.removeItem(KEY);
     } catch { /* Ignore unavailable or invalid session cache. */ }
     receive();
     window.addEventListener("hashchange", receive);
     return () => window.removeEventListener("hashchange", receive);
-  }, [owner]);
+  }, [owner, unlocked]);
   useEffect(() => {
     if (!unlocked || !owner || !pending || pending.owner) return;
     const bound = { ...pending, owner };

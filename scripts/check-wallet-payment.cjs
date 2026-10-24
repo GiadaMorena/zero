@@ -10,6 +10,8 @@ const base = { currency:'EUR', amount:'28,77', merchant:'Caffè & Spesa', date:'
 const hash = changes => '#zero-pay?' + new URLSearchParams({...base,...changes});
 assert.equal(parse(hash()).amount,28.77);
 assert.equal(parse(hash()).title,'Caffè & Spesa');
+assert.equal(parse(hash({ref:'20261018153720123'})).ref,'20261018153720123','Native Shortcuts date-based reference');
+for(const ref of ['20261019153720123','20261018243720123','20261018156020123','20261018153760123','20261018153720']) assert.equal(parse(hash({ref})),null,'Reject invalid timestamp '+ref);
 for(const changes of [{currency:'USD'},{amount:'0'},{amount:'1.234,50'},{amount:'1.234'},{amount:'NaN'},{date:'2026-02-31'},{date:'2026-99-99'},{ref:'[UUID]'},{cardId:''},{merchant:'[ESERCENTE_CODIFICATO]'}]) assert.equal(parse(hash(changes)),null,JSON.stringify(changes));
 assert.equal(parse('#access_token=abc'),null);
 assert.notEqual(walletMarker(base.ref),walletMarker('33333333-3333-4333-8333-333333333333'));

@@ -72,6 +72,7 @@ function TransactionForm({ onClose, defaultType, transaction, draft, onSaved }: 
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (draft?.preview) { setError("Questa è una prova: nessuna spesa viene salvata."); return; }
     if (saveGuard.current) return;
     if (numericAmount === null) { setError("Inserisci un importo maggiore di zero, con al massimo due decimali."); return; }
     if ((transaction || draft) && !/^\d{4}-\d{2}-\d{2}$/.test(date)) { setError("Scegli la data del movimento."); return; }
@@ -94,11 +95,11 @@ function TransactionForm({ onClose, defaultType, transaction, draft, onSaved }: 
   return <div className="zero-backdrop fixed inset-0 z-50 flex items-end justify-center bg-[#0B0B0B]/60 p-0 backdrop-blur-md sm:items-center sm:p-4">
     <form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="transaction-title" onSubmit={handleSave} className="zero-panel flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[32px] border border-[#A7A7A7]/30 bg-[#F7F7F5] shadow-2xl sm:rounded-[32px]">
       <header className="flex shrink-0 items-center justify-between px-6 pb-4 pt-5">
-        <h2 id="transaction-title" className="text-lg font-black tracking-tight">{transaction ? "Modifica movimento" : type === "expense" ? "Aggiungi spesa" : "Nuova entrata"}</h2>
+        <h2 id="transaction-title" className="text-lg font-black tracking-tight">{draft?.preview ? "Prova Apple Pay" : transaction ? "Modifica movimento" : type === "expense" ? "Aggiungi spesa" : "Nuova entrata"}</h2>
         <button type="button" onClick={onClose} disabled={saving} aria-label="Chiudi" className="rounded-full bg-white p-2.5 disabled:opacity-40"><X className="h-4 w-4" /></button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto"><fieldset disabled={saving} className="min-w-0 px-6 pb-2">
-        {draft && <p className="mb-4 rounded-xl bg-[#FFF8D5] p-3 text-sm">Pagamento Apple Pay: controlla i dati e scegli la categoria.</p>}
+        {draft && <p className="mb-4 rounded-xl bg-[#FFF8D5] p-3 text-sm">{draft.preview ? "Il modulo si è aperto correttamente. Importo e negozio sono fittizi: puoi scegliere una categoria per provare. Nessuna spesa sarà salvata." : "Pagamento Apple Pay: controlla i dati e scegli la categoria."}</p>}
         <div hidden={!!draft} className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-white p-1">
           {(["expense", "income"] as const).map(item => <button key={item} type="button" aria-pressed={type === item} onClick={() => switchType(item)} className={`rounded-full py-2.5 text-xs font-bold ${type === item ? "bg-[#0B0B0B] text-white" : "text-[#777]"}`}>{item === "expense" ? "− Spesa" : "+ Entrata"}</button>)}
         </div>
@@ -120,7 +121,7 @@ function TransactionForm({ onClose, defaultType, transaction, draft, onSaved }: 
       </fieldset></div>
       <footer className="shrink-0 border-t border-black/5 px-6 pt-4" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 1.25rem)"}}>
         {error && <p id="transaction-error" role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
-        <button type="submit" disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FDC909] py-4 text-sm font-black text-[#0B0B0B] transition-transform active:scale-[0.98] disabled:opacity-60">{saving ? <><LoaderCircle className="h-4 w-4 animate-spin" />Salvataggio…</> : `Salva ${transaction ? "modifiche" : type === "expense" ? "spesa" : "entrata"}${numericAmount !== null ? ` · ${numericAmount.toLocaleString("it-IT", {style:"currency",currency:"EUR"})}` : ""}`}</button>
+        {draft?.preview ? <button type="button" onClick={onClose} className="w-full rounded-full bg-[#FDC909] py-4 text-sm font-black text-[#0B0B0B]">Chiudi prova</button> : <button type="submit" disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FDC909] py-4 text-sm font-black text-[#0B0B0B] transition-transform active:scale-[0.98] disabled:opacity-60">{saving ? <><LoaderCircle className="h-4 w-4 animate-spin" />Salvataggio…</> : `Salva ${transaction ? "modifiche" : type === "expense" ? "spesa" : "entrata"}${numericAmount !== null ? ` · ${numericAmount.toLocaleString("it-IT", {style:"currency",currency:"EUR"})}` : ""}`}</button>}
       </footer>
     </form>
   </div>;
