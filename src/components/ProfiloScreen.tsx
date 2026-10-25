@@ -1,6 +1,7 @@
 "use client";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { ApplePaySetup } from "@/components/ApplePaySetup";
+import { BiometricUnlockSettings } from "@/components/BiometricUnlockSettings";
 
 import React, { useState } from "react";
 import {
@@ -305,6 +306,7 @@ export function ProfiloScreen({ onNavigate, onLogout }: ProfiloScreenProps) {
         </div>
       </div>
 
+      <BiometricUnlockSettings />
       <ApplePaySetup />
       {/* Menu List */}
       <div className="rounded-[24px] bg-white border border-[#A7A7A7]/20 p-2.5 flex flex-col gap-1">

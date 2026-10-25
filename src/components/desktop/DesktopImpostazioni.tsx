@@ -1,6 +1,7 @@
 "use client";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { ApplePaySetup } from "@/components/ApplePaySetup";
+import { BiometricUnlockSettings } from "@/components/BiometricUnlockSettings";
 
 import React, { useState } from "react";
 import { User, Bell, Palette, Shield, CreditCard, Download, Trash2, Check, RefreshCw } from "lucide-react";
@@ -43,6 +44,7 @@ export function DesktopImpostazioni() {
       </div>
 
       {saveError && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{saveError}</p>}
+      <BiometricUnlockSettings />
       <ApplePaySetup />
       {/* Profile Settings Card */}
       <div className="rounded-[28px] bg-white border border-[#EBEBE5] p-6 shadow-xs flex flex-col gap-4">

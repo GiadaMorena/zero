@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Delete, Lock } from "lucide-react";
+import { Delete, Lock, ScanFace } from "lucide-react";
 import Logo from "@/assets/logo.png";
+import { biometricUnlockStatus, unlockWithBiometric, cancelBiometricPrompt } from "@/lib/biometricUnlock";
 
 export type PinMode = "create" | "confirm" | "lock";
 
 interface PinScreenProps {
   mode: PinMode;
   userName?: string;
+  accountEmail?: string;
   expectedPin?: string;
   onPinSet?: (pin: string) => void;
   onSuccess?: () => void;
@@ -20,6 +22,7 @@ interface PinScreenProps {
 export function PinScreen({
   mode: initialMode,
   userName = "",
+  accountEmail = "",
   expectedPin = "",
   onPinSet,
   onSuccess,
@@ -31,17 +34,84 @@ export function PinScreen({
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isShaking, setIsShaking] = useState<boolean>(false);
   const digitsRef = useRef<string[]>([]);
+  const [biometricReady, setBiometricReady] = useState(false);
+  const [biometricBusy, setBiometricBusy] = useState(false);
+  const biometricAttempt = useRef(0);
+  const biometricController = useRef<AbortController | null>(null);
+  const biometricBusyRef = useRef(false);
+  const completed = useRef(false);
+
+  const cancelBiometric = () => {
+    biometricAttempt.current++;
+    biometricBusyRef.current = false;
+    if (biometricController.current) {
+      biometricController.current.abort();
+      biometricController.current = null;
+      void cancelBiometricPrompt();
+    }
+    setBiometricBusy(false);
+  };
+
+  useEffect(() => {
+    let live = true;
+    completed.current = false;
+    setBiometricBusy(false);
+    setBiometricReady(false);
+    if (initialMode === "lock" && accountEmail) {
+      void biometricUnlockStatus(accountEmail).then(result => {
+        if (live) setBiometricReady(result.available && result.enabled);
+      }).catch(() => { /* The PIN remains available if verification is unavailable. */ });
+    }
+    return () => {
+      live = false;
+      biometricAttempt.current++;
+      biometricBusyRef.current = false;
+      if (biometricController.current) {
+        biometricController.current.abort();
+        biometricController.current = null;
+        void cancelBiometricPrompt();
+      }
+    };
+  }, [initialMode, accountEmail]);
+
+  const handleBiometric = async () => {
+    if (!biometricReady || biometricBusyRef.current || completed.current || currentMode !== "lock") return;
+    const attempt = ++biometricAttempt.current;
+    const controller = new AbortController();
+    biometricController.current = controller;
+    biometricBusyRef.current = true;
+    setBiometricBusy(true);
+    setErrorMessage("");
+    digitsRef.current = [];
+    setPinDigits([]);
+    try {
+      const result = await unlockWithBiometric(accountEmail, controller.signal);
+      if (attempt !== biometricAttempt.current || controller.signal.aborted || completed.current || result.verified !== true) return;
+      completed.current = true;
+      onSuccess?.();
+    } catch (error) {
+      if (attempt === biometricAttempt.current && !controller.signal.aborted) {
+        setErrorMessage(error instanceof Error ? error.message : "Verifica non riuscita. Puoi usare il codice.");
+      }
+    } finally {
+      if (attempt === biometricAttempt.current) {
+        biometricController.current = null;
+        biometricBusyRef.current = false;
+        setBiometricBusy(false);
+      }
+    }
+  };
 
   useEffect(() => {
     setCurrentMode(initialMode);
     digitsRef.current = [];
     setPinDigits([]);
     setErrorMessage("");
-  }, [initialMode]);
+  }, [initialMode, accountEmail]);
 
   // Handle digit press (0-9)
   const handleDigitPress = (digit: string) => {
-    if (digitsRef.current.length >= 6) return;
+    if (digitsRef.current.length >= 6 || biometricBusyRef.current || completed.current) return;
     setErrorMessage("");
     const newDigits = [...digitsRef.current, digit];
     digitsRef.current = newDigits;
@@ -70,6 +140,8 @@ export function PinScreen({
       // The parent switches flow steps after the first entry, which remounts
       // this screen. Compare against the PIN passed back as expectedPin.
       if (code === expectedPin) {
+        completed.current = true;
+        cancelBiometric();
         if (onPinSet) onPinSet(code);
         if (onSuccess) onSuccess();
       } else {
@@ -81,6 +153,8 @@ export function PinScreen({
       }
     } else if (currentMode === "lock") {
       if (/^\d{6}$/.test(expectedPin) && code === expectedPin) {
+        completed.current = true;
+        cancelBiometric();
         if (onSuccess) onSuccess();
       } else {
         triggerError("Codice non corretto");
@@ -140,12 +214,12 @@ export function PinScreen({
   const { title, subtitle } = getHeaderInfo();
 
   return (
-    <div data-app-update-block={currentMode !== "lock" || pinDigits.length > 0 ? "true" : undefined} className="fixed inset-0 z-50 bg-[#F7F7F5] flex flex-col justify-between items-center px-6 select-none overflow-y-auto">
+    <div data-app-update-block={currentMode !== "lock" || pinDigits.length > 0 || biometricBusy ? "true" : undefined} className="fixed inset-0 z-50 bg-[#F7F7F5] flex flex-col justify-between items-center px-6 select-none overflow-y-auto">
       {/* Safe Area Top */}
       <div style={{ height: "env(safe-area-inset-top, 24px)" }} />
 
       {/* Main Container */}
-      <div className="w-full max-w-xs mx-auto flex-1 flex flex-col items-center justify-center py-6 gap-8">
+      <div className={`w-full max-w-xs mx-auto flex-1 flex flex-col items-center justify-center ${biometricReady && currentMode === "lock" ? "py-4 gap-5" : "py-6 gap-8"}`}>
         
         {/* LOGO ZERO (Top / Center) */}
         <div className="flex flex-col items-center gap-2">
@@ -168,6 +242,14 @@ export function PinScreen({
             {subtitle}
           </p>
         </div>
+
+        {currentMode === "lock" && biometricReady && <div className="flex w-full flex-col items-center gap-2">
+          <button type="button" onClick={() => void handleBiometric()} disabled={biometricBusy} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FDC909] px-5 py-3.5 text-sm font-bold text-[#0B0B0B] transition-colors hover:bg-[#F3BF00] disabled:opacity-60">
+            <ScanFace className="h-5 w-5" aria-hidden="true" />
+            {biometricBusy ? "Verifica in corso…" : "Sblocca con Face ID / passkey"}
+          </button>
+          {biometricBusy ? <button type="button" onClick={() => { cancelBiometric(); setErrorMessage(""); }} className="p-2 text-xs font-bold underline underline-offset-4">Usa il codice</button> : <p className="text-center text-[11px] leading-relaxed text-[#777]">Oppure inserisci il codice qui sotto.</p>}
+        </div>}
 
         {/* 6 INDICATOR DOTS ○ ○ ○ ○ ○ ○ */}
         <div className="flex flex-col items-center gap-3 my-2">

@@ -308,6 +308,7 @@ export default function Home() {
             mode="lock"
             userName={authState.userName}
             expectedPin={authState.pinCode}
+            accountEmail={authState.userEmail}
             onSuccess={handleUnlockSuccess}
             onForgotPin={handleForgotPin}
           />
@@ -403,6 +404,7 @@ export default function Home() {
             mode="lock"
             userName={authState.userName}
             expectedPin={authState.pinCode}
+            accountEmail={authState.userEmail}
             onSuccess={handleUnlockSuccess}
             onForgotPin={handleForgotPin}
           />
