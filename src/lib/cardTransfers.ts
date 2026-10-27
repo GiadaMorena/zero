@@ -65,7 +65,7 @@ const errorText = (error: unknown) => {
   if (message.includes("ZERO_TRANSFER_REQUEST_CONFLICT")) return "Questa richiesta è già stata usata con dati diversi. Chiudi il modulo e riprova.";
   if (message.includes("ZERO_TRANSFER_AUTH_REQUIRED")) return "Accedi di nuovo a ZERO per registrare il trasferimento.";
   if (message.includes("ZERO_TRANSFER_INVALID")) return "Controlla carte, importo, data e nota del trasferimento.";
-  if (message.includes("record_card_transfer") && /does not exist|could not find|schema cache/i.test(message)) return "I trasferimenti non sono ancora disponibili sul server. Riprova tra poco.";
+  if (message.includes("record_card_transfer") && /does not exist|could not find|schema cache/i.test(message)) return "Il servizio trasferimenti deve ancora essere attivato. Il trasferimento non è stato registrato e i saldi non sono cambiati.";
   return "Non è stato possibile confermare il trasferimento. Riprova senza chiudere questo modulo: la stessa richiesta non verrà registrata due volte.";
 };
 

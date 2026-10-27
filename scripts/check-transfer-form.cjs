@@ -37,7 +37,7 @@ const cards = [
 
 function harness(override = {}) {
   const hooks = [], effects = [], listeners = new Map(), calls = [];
-  let cursor = 0, tree, closeCount = 0, uuidCount = 0, dirty = false, disposed = false, writesAfterUnmount = 0;
+  let cursor = 0, tree, portal, closeCount = 0, uuidCount = 0, dirty = false, disposed = false, writesAfterUnmount = 0;
   const app = { cards: cards.map(item => ({ ...item })), activeCard: cards[1], ...override,
     addTransfer: async (...args) => { calls.push(args); return override.save ? override.save(...args) : {}; },
   };
@@ -56,6 +56,7 @@ function harness(override = {}) {
     },
   };
   const document = {
+    body: { tagName: 'BODY' },
     activeElement: null,
     addEventListener(type, handler) { listeners.set(type, handler); },
     removeEventListener(type, handler) { if (listeners.get(type) === handler) listeners.delete(type); },
@@ -64,6 +65,7 @@ function harness(override = {}) {
     crypto: { randomUUID: () => { uuidCount++; return 'ef2790a4-87a0-41af-b56a-9088fbad474f'; } },
     require(name) {
       if (name === 'react') return react;
+      if (name === 'react-dom') return { createPortal: (child, host) => ({ portal: true, child, host }) };
       if (name === 'react/jsx-runtime') return { jsx: (tag, props) => ({ tag, props }), jsxs: (tag, props) => ({ tag, props }) };
       if (name === '@/context/AppContext') return { useApp: () => app };
       if (name === '@/lib/quickTransaction') return helpers.exports;
@@ -77,7 +79,8 @@ function harness(override = {}) {
     do {
       dirty = false; cursor = 0; effects.length = 0;
       const outer = scope.exports.TransferModal(props);
-      tree = outer?.tag(outer.props) || null;
+      portal = outer;
+      tree = outer?.child?.tag(outer.child.props) || null;
       effects.splice(0).forEach(effect => effect());
     } while (dirty);
     return tree;
@@ -89,12 +92,25 @@ function harness(override = {}) {
   function submit() { return form().props.onSubmit({ preventDefault() {} }); }
   const button = name => find(tree, node => node.tag === 'button' && (node.props['aria-label'] === name || text(node) === name));
   function unmount() { hooks.forEach(hook => hook.cleanup?.()); disposed = true; }
+  function serverOutput() {
+    const currentDocument = scope.document; delete scope.document;
+    try { return scope.exports.TransferModal(props); } finally { scope.document = currentDocument; }
+  }
   return { app, render, byId, input, submit, form, button, unmount, listeners, calls,
+    serverOutput, get portal() { return portal; }, body: document.body,
     get tree() { return tree; }, get closeCount() { return closeCount; }, get uuidCount() { return uuidCount; }, get writesAfterUnmount() { return writesAfterUnmount; } };
 }
 
 (async () => {
   const defaults = harness();
+  assert.equal(defaults.portal.portal, true, 'modal escapes transformed screen ancestors through a React portal');
+  assert.equal(defaults.portal.host, defaults.body, 'portal is hosted directly in document.body');
+  assert.ok(defaults.tree.props.className.includes('fixed inset-0 z-[80]'), 'viewport overlay is above bottom navigation');
+  assert.equal(defaults.serverOutput(), null, 'server rendering does not touch document or create a portal');
+  assert.equal(defaults.byId('transfer-date').props.style.minInlineSize, 0);
+  assert.equal(defaults.byId('transfer-date').props.style.maxInlineSize, '100%');
+  assert.ok(defaults.byId('transfer-date').props.className.includes('appearance-none'));
+  assert.ok(defaults.byId('transfer-date').props.className.includes('text-left'));
   assert.equal(defaults.byId('transfer-from').props.value, 'b', 'active card starts as source');
   assert.equal(defaults.byId('transfer-to').props.value, 'a');
   assert.match(defaults.byId('transfer-date').props.value, /^\d{4}-\d{2}-\d{2}$/);

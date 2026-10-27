@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { ArrowDown, ArrowLeftRight, ChevronDown, CreditCard, LoaderCircle, X } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { parseTransactionAmount } from "@/lib/quickTransaction";
@@ -24,7 +25,8 @@ function validDate(value: string) {
 const money = (value: number) => value.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 
 export function TransferModal({ isOpen, onClose }: TransferModalProps) {
-  return isOpen ? <TransferForm onClose={onClose} /> : null;
+  if (!isOpen || typeof document === "undefined") return null;
+  return createPortal(<TransferForm onClose={onClose} />, document.body);
 }
 
 function TransferForm({ onClose }: Pick<TransferModalProps, "onClose">) {
@@ -112,7 +114,7 @@ function TransferForm({ onClose }: Pick<TransferModalProps, "onClose">) {
     }
   };
 
-  return <div className="zero-backdrop fixed inset-0 z-50 flex items-end justify-center bg-[#0B0B0B]/60 p-0 backdrop-blur-md sm:items-center sm:p-4">
+  return <div className="zero-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-[#0B0B0B]/60 p-0 backdrop-blur-md sm:items-center sm:p-4">
     <form ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="transfer-title" aria-describedby="transfer-description" data-app-update-block="true" onSubmit={handleSave} className="zero-panel flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[32px] border border-[#A7A7A7]/30 bg-[#F7F7F5] shadow-2xl sm:rounded-[32px]">
       <header className="flex shrink-0 items-center justify-between px-6 pb-4 pt-5">
         <div className="flex items-center gap-2.5"><ArrowLeftRight aria-hidden="true" className="h-5 w-5" /><h2 id="transfer-title" className="text-lg font-black tracking-tight">Trasferisci tra carte</h2></div>
@@ -137,7 +139,9 @@ function TransferForm({ onClose }: Pick<TransferModalProps, "onClose">) {
         </div>
         <p className="mb-5 mt-3 text-center text-xs leading-relaxed text-[#666]">Non modifica spese, entrate o budget.</p>
         <label htmlFor="transfer-date" className="mb-1.5 block text-xs font-bold text-[#777]">Data del trasferimento</label>
-        <input id="transfer-date" type="date" required value={date} onChange={event => { setDate(event.currentTarget.value); setError(""); }} onInput={event => setDate(event.currentTarget.value)} className="mb-4 w-full min-w-0 rounded-2xl border border-black/10 bg-white p-3.5 text-sm" />
+        <div className="mb-4 min-w-0 max-w-full overflow-hidden rounded-2xl border border-black/10 bg-white">
+          <input id="transfer-date" type="date" required value={date} onChange={event => { setDate(event.currentTarget.value); setError(""); }} onInput={event => setDate(event.currentTarget.value)} style={{ minInlineSize: 0, maxInlineSize: "100%", inlineSize: "100%" }} className="block min-h-12 w-full min-w-0 max-w-full appearance-none rounded-2xl bg-transparent px-3.5 py-3 text-left text-sm outline-none [&::-webkit-date-and-time-value]:min-w-0 [&::-webkit-date-and-time-value]:text-left" />
+        </div>
         <label htmlFor="transfer-note" className="mb-1.5 block text-xs font-bold text-[#777]">Nota <span className="font-normal">(facoltativa)</span></label>
         <textarea id="transfer-note" value={note} maxLength={500} onChange={event => setNote(event.target.value)} placeholder="Es. Ricarica della carta" rows={2} className="w-full resize-none rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-[#FDC909]" />
       </fieldset></div>
