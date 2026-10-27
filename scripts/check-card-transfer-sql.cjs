@@ -1,0 +1,67 @@
+// Optional real PostgreSQL regression suite. Supply a PGlite module directory as
+// argument 3 (or install @electric-sql/pglite in a test-only environment).
+const fs = require('fs'), path = require('path'), assert = require('node:assert/strict');
+const root = process.argv[2] || path.resolve(__dirname, '..');
+const modulePath = process.argv[3] || '@electric-sql/pglite';
+const migrationPath = process.argv[4] || path.join(root, 'src/lib/migrations/20261027_card_transfers.sql');
+const { PGlite } = require(modulePath);
+const user = '11111111-1111-4111-8111-111111111111', foreign = '22222222-2222-4222-8222-222222222222';
+const a = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', b = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', c = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1';
+let seq = 0; const request = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, '0')}`;
+(async () => {
+  const db = new PGlite();
+  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
+    CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
+    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+    GRANT USAGE ON SCHEMA auth TO authenticated,anon; GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated,anon;
+    CREATE TABLE public.cards(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES auth.users(id),name text NOT NULL DEFAULT '',bank_name text NOT NULL DEFAULT '',number text NOT NULL DEFAULT '',balance numeric NOT NULL DEFAULT 0);
+    INSERT INTO auth.users VALUES ('${user}'),('${foreign}');
+    INSERT INTO cards VALUES ('${a}','${user}','Carta A','Fineco','1234',100),('${b}','${user}','Carta B','Allianz','5678',20),('${c}','${foreign}','Altra','Altra','9999',500);`);
+  const sql = fs.readFileSync(migrationPath, 'utf8'); await db.exec(sql); await db.exec(sql);
+  const actAs = async uid => { await db.exec('RESET ROLE'); await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [uid || '']); await db.exec('SET ROLE authenticated'); };
+  const transfer = async (id, from = a, to = b, amount = '12.34', date = '2026-10-27', note = null) => (await db.query('SELECT public.record_card_transfer($1::uuid,$2::uuid,$3::uuid,$4::numeric,$5::date,$6::text) AS result', [id, from, to, amount, date, note])).rows[0].result;
+  const balances = async () => { await db.exec('RESET ROLE'); return (await db.query('SELECT id,balance::text AS balance FROM cards ORDER BY id')).rows; };
+  const expectError = async (fn, pattern) => { await assert.rejects(fn, pattern); };
+  await actAs(user); const firstId = request(), first = await transfer(firstId);
+  assert.equal(Number(first.transfer.amount), 12.34); assert.equal(first.transfer.from_label, 'Fineco · •••• 1234');
+  assert.equal(Number(first.balances.find(row => row.id === a).balance), 87.66); assert.equal(Number(first.balances.find(row => row.id === b).balance), 32.34);
+  const afterFirst = await balances(); assert.equal(afterFirst.reduce((sum, row) => sum + Number(row.balance), 0), 620);
+  await actAs(user); await transfer(request(), b, a, '2.34'); const repeated = await transfer(firstId);
+  assert.equal(Number(repeated.balances.find(row => row.id === a).balance), 90, 'retries return current rather than historical balances');
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM card_transfers')).rows[0].n, 2);
+  await expectError(() => transfer(firstId, a, b, '99'), /ZERO_TRANSFER_REQUEST_CONFLICT/);
+  for (const amount of ['0','-1','0.001','NaN','Infinity','1000000000']) await expectError(() => transfer(request(), a, b, amount), /ZERO_TRANSFER_INVALID/);
+  await expectError(() => transfer(request(), a, a), /ZERO_TRANSFER_INVALID/);
+  await expectError(() => transfer(request(), a, b, '1', '2026-10-27', 'x'.repeat(501)), /ZERO_TRANSFER_INVALID/);
+  await expectError(() => transfer(request(), a, b, '999'), /ZERO_TRANSFER_INSUFFICIENT_FUNDS/);
+  await expectError(() => transfer(request(), a, c, '1'), /ZERO_TRANSFER_CARD_UNAVAILABLE/);
+  await actAs(foreign); assert.equal((await db.query('SELECT count(*)::int AS n FROM card_transfers')).rows[0].n, 0, 'RLS hides the other account');
+  await expectError(() => transfer(request(), a, c, '1'), /ZERO_TRANSFER_CARD_UNAVAILABLE/);
+  await actAs(null); await expectError(() => transfer(request()), /ZERO_TRANSFER_AUTH_REQUIRED/);
+  await db.exec('RESET ROLE; SET ROLE anon'); await expectError(() => transfer(request()), /permission denied/);
+  await actAs(user); await expectError(() => db.query('DELETE FROM card_transfers'), /permission denied/);
+  await expectError(() => db.query("UPDATE card_transfers SET amount=1"), /permission denied/);
+  await expectError(() => db.query(`INSERT INTO card_transfers SELECT * FROM card_transfers LIMIT 1`), /permission denied/);
+  for (const card of [a, b]) for (const invalidBalance of ['NaN', 'Infinity', '-Infinity', '-0.01']) {
+    await db.exec('RESET ROLE');
+    const prior = (await db.query('SELECT balance::text AS balance FROM cards WHERE id=$1', [card])).rows[0].balance;
+    await db.query('UPDATE cards SET balance=$1::numeric WHERE id=$2', [invalidBalance, card]);
+    const beforeInvalidBalance = await balances();
+    await actAs(user); await expectError(() => transfer(request(), a, b, '1'), /ZERO_TRANSFER_INVALID/);
+    assert.deepEqual(await balances(), beforeInvalidBalance, 'invalid stored balances are rejected before either card changes');
+    await db.query('UPDATE cards SET balance=$1::numeric WHERE id=$2', [prior, card]);
+  }
+  const beforeFailure = await balances();
+  await db.exec(`CREATE FUNCTION fail_credit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.id='${b}' AND NEW.balance>OLD.balance THEN RAISE EXCEPTION 'fixture failure after debit'; END IF; RETURN NEW; END $$;
+    CREATE TRIGGER fail_credit BEFORE UPDATE ON cards FOR EACH ROW EXECUTE FUNCTION fail_credit();`);
+  await actAs(user); await expectError(() => transfer(request(), a, b, '1'), /fixture failure after debit/);
+  assert.deepEqual(await balances(), beforeFailure, 'a credit failure rolls the debit back in the same database transaction');
+  await db.exec('DROP TRIGGER fail_credit ON cards; DROP FUNCTION fail_credit()');
+  await actAs(user); const parallelId = request(); await Promise.all([transfer(parallelId, a, b, '1'), transfer(parallelId, a, b, '1')]);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM card_transfers WHERE id=$1', [parallelId])).rows[0].n, 1);
+  await db.exec('RESET ROLE'); await db.query('DELETE FROM cards WHERE id=$1', [a]);
+  await actAs(user); const historical = await transfer(firstId); assert.equal(historical.transfer.from_card_id, null); assert.equal(historical.transfer.from_label, 'Fineco · •••• 1234');
+  await expectError(() => transfer(firstId, b, a, '12.34'), /ZERO_TRANSFER_REQUEST_CONFLICT/);
+  await db.close();
+  console.log('PASS real PostgreSQL migration repeatability, atomic debit+credit, rollback, conservation, amount/stored-balance validation, RLS/execute permissions, ownership, idempotent retries/current balances, and deleted-card history.');
+})().catch(error => { console.error(error); process.exitCode = 1; });

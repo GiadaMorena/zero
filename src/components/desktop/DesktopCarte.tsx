@@ -6,6 +6,7 @@ import { useApp } from "@/context/AppContext";
 import { getCardAppearance } from "@/lib/cardAppearance";
 import { CardChip } from "../BankCardDetails";
 import { BankIdentity } from "../BankIdentity";
+import { CardTransfers } from "../CardTransfers";
 
 export function DesktopCarte() {
   const { cards, activeCardIndex, setActiveCardIndex, addCard, deleteCard, profile } = useApp();
@@ -148,6 +149,8 @@ export function DesktopCarte() {
           })}
         </div>
       )}
+
+      <CardTransfers />
 
       {/* Add Card Modal */}
       {isAddModalOpen && (

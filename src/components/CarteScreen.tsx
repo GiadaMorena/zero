@@ -6,6 +6,7 @@ import { useApp } from "@/context/AppContext";
 import { getCardAppearance } from "@/lib/cardAppearance";
 import { CardChip } from "./BankCardDetails";
 import { BankIdentity } from "./BankIdentity";
+import { CardTransfers } from "./CardTransfers";
 
 /* ─── Add Card Modal ─────────────────────────────────────── */
 function AddCardModal({
@@ -526,6 +527,8 @@ export function CarteScreen() {
           </button>
         </div>
       )}
+
+      <CardTransfers selectedCardIds={selectedCardFilterIds} />
 
       {/* Recent transactions per card */}
       {cards.length > 0 && (

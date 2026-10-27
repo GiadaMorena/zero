@@ -8,6 +8,7 @@ import { goalProgress, validGoal } from "@/lib/goalProgress";
 import { notifySaved } from "@/lib/saveFeedback";
 import { SaveFeedback } from "@/components/SaveFeedback";
 import { validSubscription } from "@/lib/subscriptionFields";
+import { persistCardTransfer, transferFromRow, validateCardTransfer, type CardTransferInput, type CardTransferItem } from "@/lib/cardTransfers";
 
 const STORAGE_KEY = "zero_app_state_v6";
 
@@ -87,6 +88,10 @@ interface AppContextType {
   setActiveCardIndex: (index: number) => void;
   activeCard: CardItem | null;
   transactions: TransactionItem[];
+  transfers: CardTransferItem[];
+  transfersLoading: boolean;
+  transferLoadError: string;
+  addTransfer: (data: CardTransferInput, requestId: string) => Promise<{ error?: string }>;
   subscriptions: SubscriptionItem[];
   goals: GoalItem[];
   primaryGoalId: string | null;
@@ -252,6 +257,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [movementNotice, setMovementNotice] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [primaryGoalId, setPrimaryGoalId] = useState<string | null>(null);
+  const [transferState, setTransferState] = useState<{ owner: string | null; items: CardTransferItem[]; loading: boolean; error: string }>({ owner: null, items: [], loading: false, error: "" });
+  const transferAccount = useRef<{ id: string | null; epoch: number }>({ id: null, epoch: 0 });
+  const transferAlive = useRef(true);
   const goalBusy = useRef(false);
   const subscriptionBusy = useRef(false);
   const movementBusy = useRef(false);
@@ -272,9 +280,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // ── Load data from Supabase when user session is available ────────
   useEffect(() => {
     let loadingUserId: string | null = null;
+    let active = true;
+    let authRevision = 0;
+    transferAlive.current = true;
+    const changeTransferAccount = (id: string | null) => {
+      if (transferAccount.current.id === id) return;
+      transferAccount.current = { id, epoch: transferAccount.current.epoch + 1 };
+      setTransferState({ owner: id, items: [], loading: !!id, error: "" });
+    };
     const loadFromDB = async (uid: string, accountEmail?: string) => {
       if (loadingUserId === uid) return;
       loadingUserId = uid;
+      const accountEpoch = transferAccount.current.epoch;
       try {
         const [
           { data: cardsData },
@@ -292,6 +309,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           supabase.from("profiles").select("*").eq("id", uid).single(),
         ]);
 
+        if (!active || transferAccount.current.id !== uid || transferAccount.current.epoch !== accountEpoch) return;
         if (cardsData) setCards(cardsData.map(dbToCard));
         if (txData) setTransactions(txData.map(dbToTransaction));
         if (subData) setSubscriptions(subData.map(dbToSubscription));
@@ -310,11 +328,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } catch (e) {
+        if (!active || transferAccount.current.id !== uid || transferAccount.current.epoch !== accountEpoch) return;
         console.error("Failed to load from Supabase, falling back to localStorage:", e);
         loadFromLocalStorage(false);
       } finally {
         if (loadingUserId === uid) loadingUserId = null;
-        setIsHydrated(true);
+        if (active && transferAccount.current.id === uid && transferAccount.current.epoch === accountEpoch) setIsHydrated(true);
       }
     };
 
@@ -343,6 +362,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active || authRevision !== 0) return;
+      changeTransferAccount(session?.user?.id || null);
       if (session?.user) {
         setUserId(session.user.id);
         setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
@@ -351,10 +372,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else {
         loadFromLocalStorage();
       }
-    }).catch(() => loadFromLocalStorage());
+    }).catch(() => { if (active && authRevision === 0) loadFromLocalStorage(); });
 
     // Listen for auth changes
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      authRevision += 1;
+      changeTransferAccount(session?.user?.id || null);
       if (session?.user) {
         setUserId(session.user.id);
         setMonthlyBudget(validMonthlyBudget(session.user.user_metadata?.zero_monthly_budget));
@@ -365,8 +389,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => authSub.unsubscribe();
+    return () => {
+      active = false;
+      transferAlive.current = false;
+      transferAccount.current = { id: null, epoch: transferAccount.current.epoch + 1 };
+      authSub.unsubscribe();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Transfers are a separate ledger. Its cache and asynchronous reads always
+  // belong to one authenticated account; they never enter expense/income totals.
+  useEffect(() => {
+    const uid = userId;
+    const epoch = transferAccount.current.epoch;
+    let live = true;
+    const current = () => live && transferAlive.current && transferAccount.current.id === uid && transferAccount.current.epoch === epoch;
+    if (!uid || transferAccount.current.id !== uid) {
+      setTransferState({ owner: null, items: [], loading: false, error: "" });
+      return () => { live = false; };
+    }
+    const key = `zero_card_transfers_v1:${uid}`;
+    let cached: CardTransferItem[] = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) || "null");
+      if (saved?.owner === uid && Array.isArray(saved.rows)) cached = saved.rows.map(transferFromRow).filter((item: CardTransferItem | null): item is CardTransferItem => !!item);
+    } catch { /* A failed cache read does not prevent loading from the server. */ }
+    setTransferState({ owner: uid, items: cached, loading: true, error: "" });
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from("card_transfers").select("*").eq("user_id", uid).order("created_at", { ascending: false });
+        if (!current()) return;
+        if (error || !Array.isArray(data)) throw Error("transfer-load");
+        const items = data.map(transferFromRow).filter((item): item is CardTransferItem => !!item);
+        setTransferState(previous => {
+          if (!current()) return previous;
+          const confirmed = previous.owner === uid ? previous.items : [];
+          const merged = [...new Map([...confirmed, ...items].map(item => [item.id, item])).values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          return { owner: uid, items: merged, loading: false, error: "" };
+        });
+      } catch {
+        if (current()) setTransferState(previous => current() ? { owner: uid, items: previous.owner === uid ? previous.items : cached, loading: false, error: "Non riesco a caricare lo storico dei trasferimenti. Controlla la connessione e riapri l’app." } : previous);
+      }
+    })();
+    return () => { live = false; };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || transferState.owner !== userId || transferAccount.current.id !== userId || transferState.loading || transferState.error) return;
+    try {
+      const rows = transferState.items.map(item => ({ id: item.id, from_card_id: item.fromCardId, to_card_id: item.toCardId, from_label: item.fromLabel, to_label: item.toLabel, amount: item.amount, date: item.date, note: item.note || null, created_at: item.createdAt }));
+      localStorage.setItem(`zero_card_transfers_v1:${userId}`, JSON.stringify({ owner: userId, rows }));
+    } catch { /* The server is the source of truth when device storage is full. */ }
+  }, [userId, transferState]);
 
   // ── Persist to localStorage as cache ──────────────────────────────
   useEffect(() => {
@@ -406,6 +480,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     email: string;
     card?: { bankName: string; number: string; expiry: string; balance: number };
   }) => {
+    setTransferState({ owner: userId, items: [], loading: false, error: "" });
     const newProfile: UserProfile = {
       name: data.name,
       email: data.email,
@@ -470,6 +545,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ── Add Transaction ────────────────────────────────────────────────
+  const addTransfer = async (data: CardTransferInput, requestId: string): Promise<{ error?: string }> => {
+    const invalid = validateCardTransfer(data);
+    if (invalid) return { error: invalid };
+    if (pendingDelete || movementBusy.current) return { error: "Attendi il salvataggio in corso oppure annulla l’eliminazione del movimento." };
+    if (!cards.some(card => card.id === data.fromCardId) || !cards.some(card => card.id === data.toCardId)) return { error: "Scegli due carte disponibili per registrare il trasferimento." };
+    movementBusy.current = true;
+    const epoch = transferAccount.current.epoch;
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+      if (error || !uid || uid !== userId || transferAccount.current.id !== uid || transferAccount.current.epoch !== epoch) return { error: "Accedi a ZERO per registrare un trasferimento tra le tue carte." };
+      const result = await persistCardTransfer(supabase, data, requestId);
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !transferAlive.current || currentSession?.user?.id !== uid || transferAccount.current.id !== uid || transferAccount.current.epoch !== epoch) {
+        return { error: "L’account è cambiato durante il salvataggio. Riapri l’account di partenza per verificare il trasferimento." };
+      }
+      if (!("transfer" in result)) return { error: result.error };
+      if (!result.transfer || !result.balances) return { error: "Non riesco a confermare il salvataggio. Riprova senza cambiare i dati del trasferimento." };
+      const transfer = result.transfer;
+      const stillCurrent = () => transferAlive.current && transferAccount.current.id === uid && transferAccount.current.epoch === epoch;
+      setCards(previous => !stillCurrent() ? previous : previous.map(card => {
+        const changed = result.balances?.find(item => item.id === card.id);
+        return changed ? { ...card, balance: changed.balance } : card;
+      }));
+      setTransferState(previous => stillCurrent() ? { owner: uid, items: [transfer, ...(previous.owner === uid ? previous.items.filter(item => item.id !== transfer.id) : [])], loading: false, error: "" } : previous);
+      notifySaved("Trasferimento registrato");
+      return {};
+    } catch {
+      return { error: "Non riesco a confermare il trasferimento. Controlla la connessione e riprova senza cambiare i dati: non verrà registrato due volte." };
+    } finally { movementBusy.current = false; }
+  };
+
   const addTransaction = async (data: {
     title: string;
     category: string;
@@ -1075,6 +1182,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetAllData = async () => {
+    transferAccount.current = { id: null, epoch: transferAccount.current.epoch + 1 };
+    setTransferState({ owner: null, items: [], loading: false, error: "" });
     setCards([]);
     setActiveCardIndex(0);
     setTransactions([]);
@@ -1144,6 +1253,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setActiveCardIndex,
         activeCard,
         transactions: transactions.filter(tx => tx.id !== pendingDelete),
+        transfers: transferState.owner === userId ? transferState.items : [],
+        transfersLoading: transferState.owner === userId && transferState.loading,
+        transferLoadError: transferState.owner === userId ? transferState.error : "",
+        addTransfer,
         subscriptions,
         goals,
         primaryGoalId,
