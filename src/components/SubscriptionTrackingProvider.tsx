@@ -114,7 +114,6 @@ export function SubscriptionTrackingProvider({ children }: { children: React.Rea
   const setCard = useCallback(async (id: string, cardId: string): Promise<{ error?: string }> => {
     if (!ready || !owner.current) return { error: "Accedi al tuo account e attendi il caricamento delle conferme." };
     if (busy.current) return { error: "Attendi il salvataggio in corso e riprova." };
-    if (!subscriptions.some(sub => sub.id === id)) return { error: "Questo abbonamento non è più disponibile." };
     if (cardId && !cards.some(card => card.id === cardId)) return { error: "Questa carta non è più disponibile. Scegline un’altra o Nessuna carta." };
     busy.current = true;
     loadSequence.current++;
@@ -122,6 +121,13 @@ export function SubscriptionTrackingProvider({ children }: { children: React.Rea
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error || user?.id !== accountId || !await currentAccount(accountId, accountEpoch)) return { error: "Accedi al tuo account per salvare questa scelta." };
+      // The creation dialog can still hold the callback from before addSubscription
+      // completed. Verify that new ID on the server before associating its card.
+      if (!subscriptions.some(sub => sub.id === id)) {
+        const { data: existing, error: lookupError } = await supabase.from("subscriptions").select("id").eq("id", id).eq("user_id", accountId).maybeSingle();
+        if (!await currentAccount(accountId, accountEpoch)) return { error: "L’account è cambiato durante il salvataggio. Riapri l’abbonamento." };
+        if (lookupError || existing?.id !== id) return { error: "Questo abbonamento non è più disponibile. Riapri l’elenco e riprova." };
+      }
       const next = readTracking(user.user_metadata?.[TRACKING_KEY]);
       const entry = next.subscriptions[id] || { cardId: "", payments: {} };
       next.subscriptions[id] = { ...entry, cardId };
