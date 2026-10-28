@@ -9,6 +9,7 @@ import { notifySaved } from "@/lib/saveFeedback";
 import { SaveFeedback } from "@/components/SaveFeedback";
 import { validSubscription } from "@/lib/subscriptionFields";
 import { persistCardTransfer, transferFromRow, validateCardTransfer, type CardTransferInput, type CardTransferItem } from "@/lib/cardTransfers";
+import { persistSubscriptionPayment, type SubscriptionPaymentInput, type SubscriptionPaymentResult } from "@/lib/subscriptionPayment";
 
 const STORAGE_KEY = "zero_app_state_v6";
 
@@ -92,6 +93,7 @@ interface AppContextType {
   transfersLoading: boolean;
   transferLoadError: string;
   addTransfer: (data: CardTransferInput, requestId: string) => Promise<{ error?: string }>;
+  recordSubscriptionPayment: (data: SubscriptionPaymentInput) => Promise<SubscriptionPaymentResult>;
   subscriptions: SubscriptionItem[];
   goals: GoalItem[];
   primaryGoalId: string | null;
@@ -574,6 +576,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return {};
     } catch {
       return { error: "Non riesco a confermare il trasferimento. Controlla la connessione e riprova senza cambiare i dati: non verrà registrato due volte." };
+    } finally { movementBusy.current = false; }
+  };
+
+  const recordSubscriptionPayment = async (data: SubscriptionPaymentInput): Promise<SubscriptionPaymentResult> => {
+    if (pendingDelete || movementBusy.current) return { error: "Attendi il salvataggio in corso oppure annulla l’eliminazione del movimento." };
+    movementBusy.current = true;
+    const epoch = transferAccount.current.epoch;
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+      if (error || !uid || uid !== userId || transferAccount.current.id !== uid || transferAccount.current.epoch !== epoch) return { error: "Accedi a ZERO per confermare il pagamento." };
+      const result = await persistSubscriptionPayment(supabase, data);
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      const stillCurrent = () => transferAlive.current && transferAccount.current.id === uid && transferAccount.current.epoch === epoch;
+      if (sessionError || currentSession?.user?.id !== uid || !stillCurrent()) return { error: "L’account è cambiato. Riapri l’account di partenza per verificare il pagamento." };
+      if (!("tracking" in result)) return result;
+      const transaction = result.transaction;
+      const balance = result.balance;
+      if (transaction) setTransactions(previous => !stillCurrent() ? previous : [transaction, ...previous.filter(item => item.id !== transaction.id)]);
+      if (balance) setCards(previous => !stillCurrent() ? previous : previous.map(card => card.id === balance.id ? { ...card, balance: balance.balance } : card));
+      notifySaved(transaction ? "Pagamento registrato nei movimenti" : "Conferma aggiornata");
+      return result;
+    } catch {
+      return { error: "Non riesco a confermare il pagamento. Riprova con gli stessi dati: il rinnovo non verrà registrato due volte." };
     } finally { movementBusy.current = false; }
   };
 
@@ -1257,6 +1283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         transfersLoading: transferState.owner === userId && transferState.loading,
         transferLoadError: transferState.owner === userId ? transferState.error : "",
         addTransfer,
+        recordSubscriptionPayment,
         subscriptions,
         goals,
         primaryGoalId,

@@ -1,5 +1,7 @@
-const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),ts=require('typescript');
-const compile=p=>ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
+const fs=require('fs'),path=require('node:path'),vm=require('vm'),assert=require('node:assert/strict');
+const root=process.argv[2]||path.resolve(__dirname,'..'),ts=require(path.join(root,'node_modules/typescript'));
+const providerPath=process.argv[3]||path.join(root,'src/components/SubscriptionTrackingProvider.tsx');
+const compile=p=>ts.transpileModule(fs.readFileSync(path.isAbsolute(p)?p:path.join(root,p),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
 const load=(p,imports={},extra={})=>{const scope={exports:{},require:name=>imports[name],...extra};vm.runInNewContext(compile(p),scope);return scope.exports;};
 const renewal=load('src/lib/upcomingPayments.ts');
 const logic=load('src/lib/subscriptionTracking.ts',{'./upcomingPayments':renewal});
@@ -30,8 +32,9 @@ function providerHarness(fail=false){
  const day=romeDay(),d=new Date(day+'T12:00:00');
  const sub={...base,date:`${d.getDate()} ${['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'][d.getMonth()]}`,createdAt:day+'T00:00:00Z'};
  const react={createContext:()=>({Provider:'provider'}),useContext:()=>null,useCallback:fn=>fn,useEffect:fn=>effects.push(fn),useRef:initial=>refs[ri++]||(refs[ri-1]={current:initial}),useState:initial=>{const i=cursor++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],value=>states[i]=typeof value==='function'?value(states[i]):value];}};
- const sdk={auth:{getUser:async()=>({data:{user:{id:'owner',user_metadata:metadata}},error:null}),updateUser:async value=>{writes++;if(fail)return{error:{message:'offline'}};metadata={...metadata,...value.data};return{error:null};},onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}};
- const mod=load('src/components/SubscriptionTrackingProvider.tsx',{'react':react,'react/jsx-runtime':{jsx:(tag,props)=>({tag,props})},'@/lib/supabase':{supabase:sdk},'@/context/AppContext':{useApp:()=>({cards:[{id:'card-1'}],subscriptions:[sub]})},'@/lib/subscriptionTracking':logic},{window:{addEventListener(){},removeEventListener(){},setInterval(){return 0;},clearInterval(){}}});
+ const sdk={auth:{getUser:async()=>({data:{user:{id:'owner',user_metadata:metadata}},error:null}),getSession:async()=>({data:{session:{user:{id:'owner',user_metadata:metadata}}},error:null}),updateUser:async value=>{writes++;if(fail)return{error:{message:'offline'}};metadata={...metadata,...value.data};return{error:null};},onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}};
+ const recordSubscriptionPayment=async input=>{if(fail)return{error:'offline'};const value=readTracking(metadata[TRACKING_KEY]),entry=value.subscriptions[input.subscriptionId]||{cardId:'',payments:{}};entry.payments[input.cycleDate]=input.paid;value.subscriptions[input.subscriptionId]=entry;metadata={...metadata,[TRACKING_KEY]:value};return{tracking:value,transaction:input.paid?{id:'fixture-movement'}:null,balance:null};};
+ const mod=load(providerPath,{'react':react,'react/jsx-runtime':{jsx:(tag,props)=>({tag,props})},'@/lib/supabase':{supabase:sdk},'@/context/AppContext':{useApp:()=>({cards:[{id:'card-1'}],subscriptions:[sub],recordSubscriptionPayment})},'@/lib/subscriptionTracking':logic},{window:{addEventListener(){},removeEventListener(){},setInterval(){return 0;},clearInterval(){},setTimeout:fn=>{fn();return 0;}}});
  const render=()=>{cursor=0;ri=0;effects=[];return mod.SubscriptionTrackingProvider({children:null}).props.value;};
  return{render,init:()=>{render();effects[0]();},states,writes:()=>writes,metadata:()=>metadata,sub};
 }

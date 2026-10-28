@@ -1,0 +1,77 @@
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=process.argv[2]||path.resolve(__dirname,'..');
+const providerPath=process.argv[3]||path.join(root,'src/components/SubscriptionTrackingProvider.tsx');
+const statusPath=process.argv[4]||path.join(root,'src/components/SubscriptionPaymentStatus.tsx');
+const ts=require(path.join(root,'node_modules/typescript'));
+const compile=p=>ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
+const plain=value=>JSON.parse(JSON.stringify(value));
+const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
+const jsx={jsx:(tag,props)=>({tag,props}),jsxs:(tag,props)=>({tag,props}),Fragment:'fragment'};
+function load(p,imports={},extra={}){const scope={exports:{},require:name=>imports[name],Date,console,...extra};vm.runInNewContext(compile(p),scope);return scope.exports;}
+const renewals=load(path.join(root,'src/lib/upcomingPayments.ts'));
+const logic=load(path.join(root,'src/lib/subscriptionTracking.ts'),{'./upcomingPayments':renewals});
+const {readTracking,TRACKING_KEY,romeDay}=logic;
+const DAY=romeDay(),localDate=new Date(`${DAY}T12:00:00`),A='account-a',B='account-b',C='card-a',TX='expense-netflix';
+const sub={id:'sub-netflix',name:'Netflix',cost:6.99,frequency:'mese',date:`${localDate.getDate()} ${['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'][localDate.getMonth()]}`,active:true,category:'Streaming',color:'#FDC909',createdAt:`${DAY}T00:00:00Z`};
+function hooks(){let stateIndex=0,refIndex=0,effectIndex=0,dirty=true;const states=[],refs=[],effects=[],pending=[];return{
+ states,refs,react:{createContext:()=>({Provider:'provider'}),useContext:()=>null,useCallback:fn=>fn,useRef:initial=>refs[refIndex++]||(refs[refIndex-1]={current:initial}),useState:initial=>{const i=stateIndex++;if(!(i in states))states[i]=typeof initial==='function'?initial():initial;return[states[i],value=>{const next=typeof value==='function'?value(states[i]):value;if(!Object.is(states[i],next)){states[i]=next;dirty=true;}}];},useEffect:(run,deps)=>{const i=effectIndex++,old=effects[i];if(!old||!deps||deps.some((v,n)=>!Object.is(v,old.deps?.[n])))pending.push(()=>{old?.cleanup?.();effects[i]={deps,cleanup:run()};});}},
+ render(component){stateIndex=0;refIndex=0;effectIndex=0;dirty=false;const value=component();pending.splice(0).forEach(run=>run());return value;},get dirty(){return dirty;},dispose(){effects.forEach(effect=>effect?.cleanup?.());}
+};}
+function harness(options={}){
+ const runtime=hooks(),metadata={
+ [A]:{unrelated:'preserve',...(options.noTracking?{}:{[TRACKING_KEY]:readTracking({startedOn:DAY,subscriptions:{[sub.id]:{cardId:options.noCard?'':C,payments:options.legacyPaid?{[DAY]:true}:{}}}})})},
+ [B]:{[TRACKING_KEY]:readTracking({startedOn:DAY,subscriptions:{}})},
+ };let sessionId=A,callback,api,firstGet=true;const timers=[],calls=[],updates=[],ledger=new Map();let balance=100;
+ const currentUser=()=>sessionId?{id:sessionId,email:`${sessionId}@example.test`,user_metadata:plain(metadata[sessionId])}:null;
+ const sdk={auth:{getUser:async()=>{const user=currentUser();if(firstGet&&options.initialWait){firstGet=false;await options.initialWait.promise;}return{data:{user},error:null};},getSession:async()=>({data:{session:sessionId?{user:currentUser()}:null},error:null}),onAuthStateChange:fn=>{callback=fn;return{data:{subscription:{unsubscribe(){callback=null;}}}};},updateUser:async data=>{const owner=sessionId;updates.push(plain(data));if(options.updateError)return{data:{user:null},error:{message:'offline'}};if(options.updateWait)await options.updateWait.promise;metadata[owner]={...metadata[owner],...data.data};return{data:{user:{id:owner,user_metadata:plain(metadata[owner])}},error:null};}}};
+ const record=async input=>{
+  const owner=sessionId;calls.push(plain(input));if(options.rpcWait)await options.rpcWait.promise;if(options.rpcThrow)throw Error('offline');if(options.rpcError)return{error:'Pagamento non salvato'};
+  if(options.choice&&!input.existingTransactionId&&!input.allowNew)return{needsChoice:true,candidates:[{id:'existing',title:'Netflix',amount:-6.99,date:DAY,type:'expense',category:'Abbonamenti',cardId:C}]};
+  const tracking=readTracking(metadata[owner][TRACKING_KEY]);const entry=tracking.subscriptions[sub.id]||{cardId:'',payments:{}};const key=`${owner}:${input.subscriptionId}:${input.cycleDate}`;let transaction=ledger.get(key)||null;
+  if(!input.paid&&transaction)return{error:'La spesa è nei movimenti: modificala o eliminala prima di cambiare la conferma.',code:'linked-payment'};
+  if(input.paid&&!transaction){transaction={id:input.existingTransactionId||TX,title:sub.name,amount:-sub.cost,date:input.cycleDate,type:'expense',category:'Abbonamenti',cardId:entry.cardId};ledger.set(key,transaction);if(!input.existingTransactionId)balance=93.01;}
+  entry.payments={...entry.payments,[input.cycleDate]:input.paid};tracking.subscriptions[sub.id]=entry;metadata[owner][TRACKING_KEY]=plain(tracking);
+  return{tracking,transaction,balance:input.paid?{id:C,balance}:null};
+ };
+ const mod=load(providerPath,{'react':runtime.react,'react/jsx-runtime':jsx,'@/lib/supabase':{supabase:sdk},'@/context/AppContext':{useApp:()=>({cards:[{id:C}],subscriptions:[sub],recordSubscriptionPayment:record})},'@/lib/subscriptionTracking':logic},{window:{addEventListener(){},removeEventListener(){},setInterval(){return 1;},clearInterval(){},setTimeout:fn=>{timers.push(fn);return timers.length;}}});
+ const render=()=>api=runtime.render(()=>mod.SubscriptionTrackingProvider({children:null})).props.value;
+ const flush=async()=>{for(let n=0;n<25;n++){if(runtime.dirty)render();timers.splice(0).forEach(fn=>fn());await Promise.resolve();}if(runtime.dirty)render();return api;};
+ render();return{runtime,metadata,calls,updates,ledger,flush,render,get api(){return api;},get balance(){return balance;},getSessionOnly(id){sessionId=id;},async event(event,id,staleTracking){sessionId=id;const user=currentUser();if(user&&staleTracking)user.user_metadata[TRACKING_KEY]=plain(staleTracking);callback?.(event,user?{user}:null);await flush();},dispose:()=>runtime.dispose()};
+}
+function nodes(tree,predicate){const result=[];const visit=node=>{if(!node||typeof node!=='object')return;if(predicate(node))result.push(node);const children=node.props?.children;(Array.isArray(children)?children:[children]).flat(Infinity).forEach(visit);};visit(tree);return result;}
+function text(tree){if(tree==null||typeof tree==='boolean')return'';if(typeof tree!=='object')return String(tree);return(Array.isArray(tree)?tree:[tree.props?.children]).flat(Infinity).map(text).join('');}
+function statusHarness(options={}){
+ const runtime=hooks();let tree,status='pending';const calls=[],gate=options.gate;const tracking=readTracking({startedOn:DAY,subscriptions:{[sub.id]:{cardId:C,payments:{}}}});
+ const confirm=async(id,date,paid,details)=>{calls.push({id,date,paid,details});if(gate)await gate.promise;if(options.fail)throw Error('offline');if(options.choice&&!details.existingTransactionId&&!details.allowNew)return{needsChoice:true,candidates:[{id:'existing',title:'Netflix',amount:-6.99,date:DAY,cardId:C}]};if(!paid&&options.linked)return{error:'Modifica o elimina il movimento prima di correggere la conferma.',code:'linked-payment'};tracking.subscriptions[sub.id].payments[DAY]=paid;status=paid?'paid':'unpaid';return{tracking,transaction:paid?{id:TX}:null,balance:null};};
+ const mod=load(statusPath,{'react':runtime.react,'react/jsx-runtime':jsx,'@/context/AppContext':{useApp:()=>({cards:[{id:C,bankName:'Test Bank',number:'•••• 1234'}]})},'@/components/SubscriptionTrackingProvider':{useSubscriptionTracking:()=>({tracking,ready:true,now:new Date(`${DAY}T12:00:00`),confirm})},'@/lib/subscriptionTracking':logic});
+ const render=()=>tree=runtime.render(()=>mod.SubscriptionPaymentStatus({sub}));const flush=async()=>{for(let i=0;i<15;i++){await Promise.resolve();if(runtime.dirty)render();}};render();return{calls,runtime,render,flush,get tree(){return tree;},button(name){const found=nodes(tree,node=>node.tag==='button'&&text(node)===name);assert.equal(found.length,1,`button ${name}`);return found[0];},dispose:()=>runtime.dispose()};
+}
+(async()=>{
+ const h=harness();await h.flush();assert.equal(h.api.ready,true);const initial=plain(h.api.tracking);
+ const saved=await h.api.confirm(sub.id,DAY,true);await h.flush();assert.ok('tracking'in saved);assert.equal(h.api.tracking.subscriptions[sub.id].payments[DAY],true);assert.equal(h.balance,93.01);assert.equal(h.updates.length,0,'paid confirmation never writes metadata again through updateUser');
+ const repeated=await h.api.confirm(sub.id,DAY,true);await h.flush();assert.equal(repeated.transaction.id,saved.transaction.id);assert.equal(h.ledger.size,1);assert.equal(h.balance,93.01);
+ assert.equal((await h.api.confirm(sub.id,DAY,false)).code,'linked-payment');await h.flush();assert.equal(h.api.tracking.subscriptions[sub.id].payments[DAY],true);
+ await h.event('TOKEN_REFRESHED',A,initial);assert.equal(h.api.tracking.subscriptions[sub.id].payments[DAY],true,'stale token metadata cannot overwrite confirmed server tracking');
+ await h.api.setCard(sub.id,C);await h.flush();assert.equal(h.metadata[A].unrelated,'preserve');assert.equal(h.api.tracking.subscriptions[sub.id].payments[DAY],true);
+ assert.ok((await h.api.confirm(sub.id,'2099-01-01',true)).error);assert.ok((await h.api.setCard(sub.id,'removed-card')).error);
+ const legacy=harness({legacyPaid:true});await legacy.flush();assert.ok('tracking'in await legacy.api.confirm(sub.id,DAY,true));assert.equal(legacy.ledger.size,1,'legacy paid confirmation can now register its expense explicitly');
+ const noCard=harness({noCard:true});await noCard.flush();assert.equal((await noCard.api.confirm(sub.id,DAY,true)).code,'missing-card');assert.equal(noCard.calls.length,0);assert.ok('tracking'in await noCard.api.confirm(sub.id,DAY,false));
+ const fresh=harness({noTracking:true});await fresh.flush();assert.equal(fresh.updates.length,1,'initial tracking start day is persisted before confirmations become ready');assert.equal(fresh.api.ready,true);
+ const choice=harness({choice:true});await choice.flush();assert.equal((await choice.api.confirm(sub.id,DAY,true)).needsChoice,true);assert.equal(choice.api.tracking.subscriptions[sub.id].payments[DAY],undefined);assert.ok('tracking'in await choice.api.confirm(sub.id,DAY,true,{existingTransactionId:'existing'}));assert.equal(choice.balance,100);assert.equal(choice.calls.at(-1).existingTransactionId,'existing');
+ const other=harness({choice:true});await other.flush();await other.api.confirm(sub.id,DAY,true,{allowNew:true});assert.equal(other.calls[0].allowNew,true);
+ for(const option of [{rpcError:true},{rpcThrow:true}]){const failed=harness(option);await failed.flush();assert.ok((await failed.api.confirm(sub.id,DAY,true)).error);await failed.flush();assert.equal(failed.api.tracking.subscriptions[sub.id].payments[DAY],undefined);assert.ok((await failed.api.confirm(sub.id,DAY,true)).error);assert.equal(failed.calls.length,2,'failure releases busy guard');}
+ const busyGate=deferred(),busy=harness({rpcWait:busyGate});await busy.flush();const save=busy.api.confirm(sub.id,DAY,true);await busy.flush();assert.ok((await busy.api.confirm(sub.id,DAY,true)).error);assert.ok((await busy.api.setCard(sub.id,C)).error);busyGate.resolve();await save;assert.equal(busy.calls.length,1);
+ for(const target of [null,B,A]){const gate=deferred(),race=harness({rpcWait:gate});await race.flush();const pending=race.api.confirm(sub.id,DAY,true);await race.flush();await race.event(target===null?'SIGNED_OUT':'SIGNED_IN',target===A?B:target);if(target===A)await race.event('SIGNED_IN',A);gate.resolve();assert.ok((await pending).error);await race.flush();assert.equal(race.api.tracking.subscriptions[sub.id]?.payments[DAY],undefined,'late result cannot restore old payment UI');}
+ const session=harness();await session.flush();session.getSessionOnly(B);assert.ok((await session.api.confirm(sub.id,DAY,true)).error);assert.equal(session.calls.length,0);
+ const initGate=deferred(),initRace=harness({initialWait:initGate});await initRace.event('SIGNED_IN',B);initGate.resolve();await initRace.flush();assert.equal(initRace.api.tracking.subscriptions[sub.id],undefined,'old initial load cannot populate a new account');assert.equal(initRace.api.ready,true);
+ const goneGate=deferred(),gone=harness({rpcWait:goneGate});await gone.flush();const late=gone.api.confirm(sub.id,DAY,true);await gone.flush();gone.dispose();goneGate.resolve();assert.ok((await late).error);
+ const ui=statusHarness();assert.ok(text(ui.tree).includes('registri la spesa'));assert.ok(!text(ui.tree).includes('non crea automaticamente'));await ui.button('Sì, pagato').props.onClick();await ui.flush();assert.ok(text(ui.tree).includes('Spesa registrata nei movimenti.'));
+ const uiChoice=statusHarness({choice:true});await uiChoice.button('Sì, pagato').props.onClick();await uiChoice.flush();assert.ok(text(uiChoice.tree).includes('Questa spesa è già nei movimenti?'));const link=nodes(uiChoice.tree,node=>node.tag==='button'&&text(node).includes('Collega questo movimento'))[0];await link.props.onClick();await uiChoice.flush();assert.equal(uiChoice.calls.at(-1).details.existingTransactionId,'existing');
+ const uiNew=statusHarness({choice:true});await uiNew.button('Sì, pagato').props.onClick();await uiNew.flush();await uiNew.button('Registra una spesa diversa').props.onClick();await uiNew.flush();assert.equal(uiNew.calls.at(-1).details.allowNew,true);
+ const uiGate=deferred(),uiBusy=statusHarness({gate:uiGate});const request=uiBusy.button('Sì, pagato').props.onClick();uiBusy.render();assert.equal(uiBusy.tree.props['data-app-update-block'],'true');assert.ok(nodes(uiBusy.tree,node=>node.tag==='button').every(button=>button.props.disabled));uiBusy.button('No, non pagato').props.onClick();assert.equal(uiBusy.calls.length,1);uiGate.resolve();await request;await uiBusy.flush();
+ const uiFail=statusHarness({fail:true});await uiFail.button('Sì, pagato').props.onClick();await uiFail.flush();assert.equal(nodes(uiFail.tree,node=>node.props?.role==='alert').length,1);assert.equal(uiFail.tree.props['data-app-update-block'],undefined);
+ const uiLinked=statusHarness({linked:true});await uiLinked.button('No, non pagato').props.onClick();await uiLinked.flush();assert.ok(text(uiLinked.tree).includes('Modifica o elimina il movimento'));
+ const uiLateGate=deferred(),uiLate=statusHarness({gate:uiLateGate});const uiPending=uiLate.button('Sì, pagato').props.onClick();uiLate.dispose();uiLateGate.resolve();await uiPending;await uiLate.flush();assert.equal(uiLate.runtime.states[3],false,'late unmounted completion cannot announce success');
+ console.log('PASS subscription confirmation: paid→atomic callback, no second metadata write, card/cycle validation, choice/link/new branches, idempotent retry, stale auth/session/load/account results, no implicit backfill, UI saving/failure/duplicate controls.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
+
